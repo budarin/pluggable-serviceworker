@@ -35,7 +35,7 @@ interface ServiceWorkerEventHandlers {
 
 interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
     name: string;
-    priority?: number;
+    order?: number;
 }
 
 interface ServiceWorkerConfig {
@@ -77,16 +77,14 @@ export function createEventHandlers(
         push: [] as ((event: PushEvent) => void | Promise<void>)[],
     };
 
-    // Здесь происходит сортировка плагинов по их приоритету.
-    // Сначала выбираются плагины, у которых явно указан priority (plugin.priority !== undefined),
-    // затем они сортируются по возрастанию этого значения (меньший priority — выше в списке).
-    // После отсортированных по приоритету плагинов добавляются все остальные плагины,
-    // у которых priority не указан (plugin.priority === undefined), сохраняя их исходный порядок.
+    // Сортировка плагинов по порядку выполнения:
+    // 1. Сначала выполняются ВСЕ плагины без order (undefined) в том порядке, в котором они были добавлены
+    // 2. Затем выполняются плагины с order в порядке возрастания значений order
     const sortedPlugins = [
+        ...plugins.filter((plugin) => plugin.order === undefined),
         ...plugins
-            .filter((plugin) => plugin.priority !== undefined)
-            .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)),
-        ...plugins.filter((plugin) => plugin.priority === undefined),
+            .filter((plugin) => plugin.order !== undefined)
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     ];
 
     sortedPlugins.forEach((plugin) => {

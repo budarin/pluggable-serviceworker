@@ -7,7 +7,7 @@
 ## ✨ Особенности
 
 - 🔌 **Система плагинов** - модульная архитектура для расширения функциональности
-- 📊 **Приоритеты** - контроль порядка выполнения плагинов
+- 📊 **Порядок выполнения** - предсказуемый контроль порядка выполнения плагинов
 - 🛡️ **Обработка ошибок** - централизованная обработка ошибок
 - 🎯 **TypeScript** - полная поддержка типов
 - 🚀 **Простота использования** - минимальная настройка
@@ -51,14 +51,14 @@ const cachePlugin = {
 initializeServiceWorker([cachePlugin]);
 ```
 
-### Использование с приоритетами
+### Использование с порядком выполнения
 
 ```typescript
 import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
 
 const authPlugin = {
     name: 'auth-plugin',
-    priority: 1, // Выполняется первым
+    // Без order - выполняется первым (в порядке добавления)
 
     fetch: async (event) => {
         // Проверка авторизации для API запросов
@@ -72,19 +72,9 @@ const authPlugin = {
     },
 };
 
-const cachePlugin = {
-    name: 'cache-plugin',
-    priority: 2, // Выполняется вторым
-
-    fetch: async (event) => {
-        const cachedResponse = await caches.match(event.request);
-        return cachedResponse || fetch(event.request);
-    },
-};
-
 const loggingPlugin = {
     name: 'logging-plugin',
-    // Без приоритета - выполняется последним
+    // Без order - выполняется вторым (в порядке добавления)
 
     fetch: async (event) => {
         console.log('Запрос:', event.request.url);
@@ -92,7 +82,35 @@ const loggingPlugin = {
     },
 };
 
-initializeServiceWorker([authPlugin, cachePlugin, loggingPlugin]);
+const cachePlugin = {
+    name: 'cache-plugin',
+    order: 1, // Выполняется после плагинов без order
+
+    fetch: async (event) => {
+        const cachedResponse = await caches.match(event.request);
+        return cachedResponse || fetch(event.request);
+    },
+};
+
+const fallbackPlugin = {
+    name: 'fallback-plugin',
+    order: 2, // Выполняется последним
+
+    fetch: async (event) => {
+        // Возвращаем fallback страницу для навигационных запросов
+        if (event.request.mode === 'navigate') {
+            return caches.match('/offline.html');
+        }
+        return null;
+    },
+};
+
+initializeServiceWorker([
+    authPlugin,
+    loggingPlugin,
+    cachePlugin,
+    fallbackPlugin,
+]);
 ```
 
 ### Обработка ошибок
@@ -196,7 +214,7 @@ enum ServiceWorkerErrorType {
 ```typescript
 interface ServiceWorkerPlugin {
     name: string; // Уникальное имя плагина
-    priority?: number; // Приоритет выполнения (меньше = раньше)
+    order?: number; // Порядок выполнения (плагины без order выполняются первыми)
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | null>;
@@ -240,7 +258,7 @@ interface ServiceWorkerConfig {
 ```typescript
 const cachePlugin = {
     name: 'advanced-cache',
-    priority: 10,
+    order: 1,
 
     install: async (event) => {
         const cache = await caches.open('app-cache-v1');
@@ -364,45 +382,34 @@ async function doPeriodicSync() {
         console.error('Ошибка периодической синхронизации:', error);
     }
 }
-
-// Регистрация синхронизации из основного потока (main thread):
-//
-// // Фоновая синхронизация (одноразовая)
-// navigator.serviceWorker.ready.then(registration => {
-//     return registration.sync.register('sync-data');
-// });
-//
-// // Периодическая синхронизация (требует разрешения)
-// navigator.serviceWorker.ready.then(async registration => {
-//     const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
-//     if (status.state === 'granted') {
-//         await registration.periodicSync.register('content-sync', {
-//             minInterval: 24 * 60 * 60 * 1000 // 24 часа
-//         });
-//     }
-// });
 ```
 
 ## 🎯 Порядок выполнения
 
 Плагины выполняются в следующем порядке:
 
-1. **Плагины с приоритетом** - сортируются по возрастанию значения `priority`
-2. **Плагины без приоритета** - выполняются в порядке добавления
+1. **Сначала ВСЕ плагины без `order`** - в том порядке, в котором они были добавлены
+2. **Затем плагины с `order`** - в порядке возрастания значений `order`
 
 ### Пример:
 
 ```typescript
 const plugins = [
-    { name: 'third', priority: 30 },
-    { name: 'first', priority: 10 },
-    { name: 'fourth' }, // без приоритета
-    { name: 'second', priority: 20 },
-    { name: 'fifth' }, // без приоритета
+    { name: 'first' }, // без order - выполняется первым
+    { name: 'fourth', order: 2 },
+    { name: 'second' }, // без order - выполняется вторым
+    { name: 'third', order: 1 },
+    { name: 'fifth' }, // без order - выполняется третьим
 ];
 
-// Порядок выполнения: first → second → third → fourth → fifth
+// Порядок выполнения: first → second → fifth → third → fourth
 ```
+
+**Преимущества новой системы:**
+
+- 🎯 **Предсказуемость** - плагины без `order` всегда выполняются первыми
+- 🔧 **Простота** - не нужно знать, какие номера уже заняты
+- 📈 **Масштабируемость** - легко добавлять новые плагины в нужном порядке
 
 ## ⚡ Логика выполнения обработчиков
 
@@ -450,7 +457,7 @@ const installPlugin2 = {
 ```typescript
 const authPlugin = {
     name: 'auth',
-    priority: 1,
+    // Без order - выполняется первым
     fetch: async (event) => {
         if (needsAuth(event.request)) {
             return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
@@ -461,13 +468,13 @@ const authPlugin = {
 
 const cachePlugin = {
     name: 'cache',
-    priority: 2,
+    order: 1, // Выполняется после плагинов без order
     fetch: async (event) => {
         return await caches.match(event.request); // Может вернуть Response или null
     },
 };
 
-// Выполнение: auth → cache → fetch(event.request) если все вернули null
+// Выполнение: auth (без order) → cache (order: 1) → fetch(event.request) если все вернули null
 ```
 
 #### Push - без прерывания
