@@ -167,11 +167,11 @@ initializeServiceWorker(
 
 Используйте enum `ServiceWorkerErrorType` для типизированной обработки ошибок:
 
-- **`ServiceWorkerErrorType.ERROR`** - JavaScript ошибки (ErrorEvent)
-- **`ServiceWorkerErrorType.MESSAGE_ERROR`** - Ошибки при обработке сообщений (MessageEvent)
-- **`ServiceWorkerErrorType.UNHANDLED_REJECTION`** - Необработанные Promise rejection
-- **`ServiceWorkerErrorType.REJECTION_HANDLED`** - Обработанные Promise rejection
-- **`ServiceWorkerErrorType.PLUGIN_ERROR`** - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
+- _`ServiceWorkerErrorType.ERROR`_ - JavaScript ошибки (ErrorEvent)
+- _`ServiceWorkerErrorType.MESSAGE_ERROR`_ - Ошибки при обработке сообщений (MessageEvent)
+- _`ServiceWorkerErrorType.UNHANDLED_REJECTION`_ - Необработанные Promise rejection
+- _`ServiceWorkerErrorType.REJECTION_HANDLED`_ - Обработанные Promise rejection
+- _`ServiceWorkerErrorType.PLUGIN_ERROR`_ - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
 
 ## 🔧 API
 
