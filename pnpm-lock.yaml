@@ -14,6 +14,9 @@ importers:
       '@types/serviceworker':
         specifier: ^0.0.153
         version: 0.0.153
+      '@types/web':
+        specifier: ^0.0.269
+        version: 0.0.269
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -28,6 +31,9 @@ packages:
 
   '@types/serviceworker@0.0.153':
     resolution: {integrity: sha512-/cg6dFEkNchJLyRCGo4Gb8mF200qr3xskM5dCPgbtK0OzXxcFcXa6BEBdyG7JksRsTrvCR+V6aFPncoOYAwYhQ==}
+
+  '@types/web@0.0.269':
+    resolution: {integrity: sha512-V0GRvvdAa79Wok8aRrlaSLcGxjixiQbcet3kq+5ixIq9L4jsG+QZd91HEYOXTMF+My745N/KtsM9eyPY1iVINg==}
 
   prettier@3.6.2:
     resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
@@ -49,6 +55,8 @@ snapshots:
       undici-types: 7.12.0
 
   '@types/serviceworker@0.0.153': {}
+
+  '@types/web@0.0.269': {}
 
   prettier@3.6.2: {}
 

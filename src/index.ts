@@ -1,3 +1,15 @@
+interface SyncEvent extends ExtendableEvent {
+    readonly tag: string;
+    readonly lastChance: boolean;
+}
+
+// Extend ServiceWorkerGlobalScope to include sync event
+declare global {
+    interface ServiceWorkerGlobalScopeEventMap {
+        sync: SyncEvent;
+    }
+}
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
@@ -27,12 +39,16 @@ export function createEventHandlers(
     activate: (event: ExtendableEvent) => void;
     fetch: (event: FetchEvent) => void;
     message: (event: MessageEvent) => void;
+    sync: (event: SyncEvent) => void;
+    push: (event: PushEvent) => void;
 } {
     const handlers = {
         install: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         fetch: [] as ((event: FetchEvent) => FetchResponse)[],
         message: [] as ((event: MessageEvent) => void)[],
+        sync: [] as ((event: SyncEvent) => void)[],
+        push: [] as ((event: PushEvent) => void)[],
     };
 
     // Здесь происходит сортировка плагинов по их приоритету.
@@ -52,6 +68,8 @@ export function createEventHandlers(
         if (plugin.activate) handlers.activate.push(plugin.activate);
         if (plugin.fetch) handlers.fetch.push(plugin.fetch);
         if (plugin.message) handlers.message.push(plugin.message);
+        if (plugin.sync) handlers.sync.push(plugin.sync);
+        if (plugin.push) handlers.push.push(plugin.push);
     });
 
     return {
@@ -108,5 +126,31 @@ export function createEventHandlers(
                 }
             });
         },
+
+        sync: (event: SyncEvent): void => {
+            handlers.sync.forEach((handler) => {
+                handler(event);
+            });
+        },
+
+        push: (event: PushEvent): void => {
+            handlers.push.forEach((handler) => {
+                handler(event);
+            });
+        },
     };
+}
+
+export function initializeServiceWorker(
+    plugins: ServiceWorkerPlugin[],
+    config?: ServiceWorkerConfig
+): void {
+    const handlers = createEventHandlers(plugins, config);
+
+    self.addEventListener('install', handlers.install);
+    self.addEventListener('activate', handlers.activate);
+    self.addEventListener('fetch', handlers.fetch);
+    self.addEventListener('message', handlers.message);
+    self.addEventListener('sync', handlers.sync);
+    self.addEventListener('push', handlers.push);
 }
