@@ -1,3 +1,11 @@
+export enum ServiceWorkerErrorType {
+    ERROR = 'error',
+    MESSAGE_ERROR = 'messageerror',
+    UNHANDLED_REJECTION = 'unhandledrejection',
+    REJECTION_HANDLED = 'rejectionhandled',
+    PLUGIN_ERROR = 'plugin_error',
+}
+
 interface SyncEvent extends ExtendableEvent {
     readonly tag: string;
     readonly lastChance: boolean;
@@ -32,7 +40,11 @@ interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
 
 interface ServiceWorkerConfig {
     plugins?: ServiceWorkerPlugin[];
-    onError?: (error: Error | any, event: Event, errorType?: string) => void;
+    onError?: (
+        error: Error | any,
+        event: Event,
+        errorType?: ServiceWorkerErrorType
+    ) => void;
 }
 
 type FetchResponse = Promise<Response | null>;
@@ -95,7 +107,11 @@ export function createEventHandlers(
                     handlers.install.map((handler) =>
                         Promise.resolve(handler(event)).catch(
                             (error: unknown) =>
-                                config.onError?.(error as Error, event)
+                                config.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                )
                         )
                     )
                 )
@@ -108,7 +124,11 @@ export function createEventHandlers(
                     handlers.activate.map((handler) =>
                         Promise.resolve(handler(event)).catch(
                             (error: unknown) =>
-                                config.onError?.(error as Error, event)
+                                config.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                )
                         )
                     )
                 )
@@ -125,7 +145,11 @@ export function createEventHandlers(
                                 return result;
                             }
                         } catch (error) {
-                            config.onError?.(error as Error, event);
+                            config.onError?.(
+                                error as Error,
+                                event,
+                                ServiceWorkerErrorType.PLUGIN_ERROR
+                            );
                         }
                     }
                     return fetch(event.request);
@@ -149,7 +173,11 @@ export function createEventHandlers(
                     handlers.sync.map((handler) =>
                         Promise.resolve(handler(event)).catch(
                             (error: unknown) =>
-                                config.onError?.(error as Error, event)
+                                config.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                )
                         )
                     )
                 )
@@ -162,7 +190,11 @@ export function createEventHandlers(
                     handlers.periodicsync.map((handler) =>
                         Promise.resolve(handler(event)).catch(
                             (error: unknown) =>
-                                config.onError?.(error as Error, event)
+                                config.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                )
                         )
                     )
                 )
@@ -176,7 +208,11 @@ export function createEventHandlers(
                         try {
                             await Promise.resolve(handler(event));
                         } catch (error) {
-                            config.onError?.(error as Error, event);
+                            config.onError?.(
+                                error as Error,
+                                event,
+                                ServiceWorkerErrorType.PLUGIN_ERROR
+                            );
                         }
                     }
                 })()
@@ -185,7 +221,11 @@ export function createEventHandlers(
 
         error: (event: ErrorEvent): void => {
             try {
-                config.onError?.(event.error, event, 'error');
+                config.onError?.(
+                    event.error,
+                    event,
+                    ServiceWorkerErrorType.ERROR
+                );
             } catch (error) {
                 console.error('Error in error handler:', error);
             }
@@ -193,7 +233,11 @@ export function createEventHandlers(
 
         messageerror: (event: MessageEvent): void => {
             try {
-                config.onError?.(event.data, event, 'messageerror');
+                config.onError?.(
+                    event.data,
+                    event,
+                    ServiceWorkerErrorType.MESSAGE_ERROR
+                );
             } catch (error) {
                 console.error('Error in messageerror handler:', error);
             }
@@ -201,7 +245,11 @@ export function createEventHandlers(
 
         unhandledrejection: (event: PromiseRejectionEvent): void => {
             try {
-                config.onError?.(event.reason, event, 'unhandledrejection');
+                config.onError?.(
+                    event.reason,
+                    event,
+                    ServiceWorkerErrorType.UNHANDLED_REJECTION
+                );
             } catch (error) {
                 console.error('Error in unhandledrejection handler:', error);
             }
@@ -209,7 +257,11 @@ export function createEventHandlers(
 
         rejectionhandled: (event: PromiseRejectionEvent): void => {
             try {
-                config.onError?.(event.reason, event, 'rejectionhandled');
+                config.onError?.(
+                    event.reason,
+                    event,
+                    ServiceWorkerErrorType.REJECTION_HANDLED
+                );
             } catch (error) {
                 console.error('Error in rejectionhandled handler:', error);
             }

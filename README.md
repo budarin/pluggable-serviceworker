@@ -100,31 +100,39 @@ initializeServiceWorker([authPlugin, cachePlugin, loggingPlugin]);
 Библиотека предоставляет единый обработчик для всех типов ошибок в Service Worker:
 
 ```typescript
-import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
+import {
+    initializeServiceWorker,
+    ServiceWorkerErrorType,
+} from '@budarin/pluggable-serviceworker';
 
 const config = {
     onError: (error, event, errorType) => {
         console.log(`Ошибка типа "${errorType}":`, error);
 
         switch (errorType) {
-            case 'error':
+            case ServiceWorkerErrorType.ERROR:
                 // JavaScript ошибки
                 console.error('JavaScript error:', error);
                 break;
 
-            case 'messageerror':
+            case ServiceWorkerErrorType.MESSAGE_ERROR:
                 // Ошибки сообщений
                 console.error('Message error:', error);
                 break;
 
-            case 'unhandledrejection':
+            case ServiceWorkerErrorType.UNHANDLED_REJECTION:
                 // Необработанные Promise rejection
                 console.error('Unhandled promise rejection:', error);
                 break;
 
-            case 'rejectionhandled':
+            case ServiceWorkerErrorType.REJECTION_HANDLED:
                 // Обработанные Promise rejection
                 console.log('Promise rejection handled:', error);
+                break;
+
+            case ServiceWorkerErrorType.PLUGIN_ERROR:
+                // Ошибки в плагинах
+                console.error('Plugin error:', error);
                 break;
 
             default:
@@ -157,13 +165,29 @@ initializeServiceWorker(
 
 #### Типы ошибок
 
-- **`'error'`** - JavaScript ошибки (ErrorEvent)
-- **`'messageerror'`** - Ошибки при обработке сообщений (MessageEvent)
-- **`'unhandledrejection'`** - Необработанные Promise rejection
-- **`'rejectionhandled'`** - Обработанные Promise rejection
-- **`undefined`** - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
+Используйте enum `ServiceWorkerErrorType` для типизированной обработки ошибок:
+
+- **`ServiceWorkerErrorType.ERROR`** - JavaScript ошибки (ErrorEvent)
+- **`ServiceWorkerErrorType.MESSAGE_ERROR`** - Ошибки при обработке сообщений (MessageEvent)
+- **`ServiceWorkerErrorType.UNHANDLED_REJECTION`** - Необработанные Promise rejection
+- **`ServiceWorkerErrorType.REJECTION_HANDLED`** - Обработанные Promise rejection
+- **`ServiceWorkerErrorType.PLUGIN_ERROR`** - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
 
 ## 🔧 API
+
+### ServiceWorkerErrorType
+
+Перечисление типов ошибок Service Worker:
+
+```typescript
+enum ServiceWorkerErrorType {
+    ERROR = 'error', // JavaScript ошибки
+    MESSAGE_ERROR = 'messageerror', // Ошибки сообщений
+    UNHANDLED_REJECTION = 'unhandledrejection', // Необработанные Promise rejection
+    REJECTION_HANDLED = 'rejectionhandled', // Обработанные Promise rejection
+    PLUGIN_ERROR = 'plugin_error', // Ошибки в плагинах
+}
+```
 
 ### ServiceWorkerPlugin
 
@@ -201,7 +225,11 @@ function initializeServiceWorker(
 ```typescript
 interface ServiceWorkerConfig {
     plugins?: ServiceWorkerPlugin[];
-    onError?: (error: Error | any, event: Event, errorType?: string) => void;
+    onError?: (
+        error: Error | any,
+        event: Event,
+        errorType?: ServiceWorkerErrorType
+    ) => void;
 }
 ```
 
