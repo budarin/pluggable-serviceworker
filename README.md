@@ -1,4 +1,4 @@
-# @vadimbudarin/pluggable-serviceworker
+# @budarin/pluggable-serviceworker
 
 🔌 Расширяемый через плагины Service Worker
 
@@ -15,13 +15,13 @@
 ## 📦 Установка
 
 ```bash
-npm install @vadimbudarin/pluggable-serviceworker
+npm install @budarin/pluggable-serviceworker
 ```
 
 или
 
 ```bash
-pnpm add @vadimbudarin/pluggable-serviceworker
+pnpm add @budarin/pluggable-serviceworker
 ```
 
 ## 🚀 Быстрый старт
@@ -30,7 +30,7 @@ pnpm add @vadimbudarin/pluggable-serviceworker
 
 ```typescript
 // sw.js
-import { initializeServiceWorker } from '@vadimbudarin/pluggable-serviceworker';
+import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
 
 // Простой плагин для кеширования
 const cachePlugin = {
@@ -54,7 +54,7 @@ initializeServiceWorker([cachePlugin]);
 ### Использование с приоритетами
 
 ```typescript
-import { initializeServiceWorker } from '@vadimbudarin/pluggable-serviceworker';
+import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
 
 const authPlugin = {
     name: 'auth-plugin',
@@ -98,7 +98,7 @@ initializeServiceWorker([authPlugin, cachePlugin, loggingPlugin]);
 ### Обработка ошибок
 
 ```typescript
-import { initializeServiceWorker } from '@vadimbudarin/pluggable-serviceworker';
+import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
 
 const config = {
     onError: (error, event) => {

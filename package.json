@@ -1,6 +1,6 @@
 {
     "name": "@budarin/pluggable-serviceworker",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Extensible via plugins service worker",
     "keywords": [
         "serviceworker",
