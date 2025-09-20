@@ -3,10 +3,15 @@ interface SyncEvent extends ExtendableEvent {
     readonly lastChance: boolean;
 }
 
-// Extend ServiceWorkerGlobalScope to include sync event
+interface PeriodicSyncEvent extends ExtendableEvent {
+    readonly tag: string;
+}
+
+// Extend ServiceWorkerGlobalScope to include sync events
 declare global {
     interface ServiceWorkerGlobalScopeEventMap {
         sync: SyncEvent;
+        periodicsync: PeriodicSyncEvent;
     }
 }
 
@@ -15,8 +20,9 @@ interface ServiceWorkerEventHandlers {
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | null>;
     message?: (event: MessageEvent) => void;
-    sync?: (event: SyncEvent) => void;
-    push?: (event: PushEvent) => void;
+    sync?: (event: SyncEvent) => void | Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>;
+    push?: (event: PushEvent) => void | Promise<void>;
 }
 
 interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
@@ -40,6 +46,7 @@ export function createEventHandlers(
     fetch: (event: FetchEvent) => void;
     message: (event: MessageEvent) => void;
     sync: (event: SyncEvent) => void;
+    periodicsync: (event: PeriodicSyncEvent) => void;
     push: (event: PushEvent) => void;
 } {
     const handlers = {
@@ -47,8 +54,11 @@ export function createEventHandlers(
         activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         fetch: [] as ((event: FetchEvent) => FetchResponse)[],
         message: [] as ((event: MessageEvent) => void)[],
-        sync: [] as ((event: SyncEvent) => void)[],
-        push: [] as ((event: PushEvent) => void)[],
+        sync: [] as ((event: SyncEvent) => void | Promise<void>)[],
+        periodicsync: [] as ((
+            event: PeriodicSyncEvent
+        ) => void | Promise<void>)[],
+        push: [] as ((event: PushEvent) => void | Promise<void>)[],
     };
 
     // Здесь происходит сортировка плагинов по их приоритету.
@@ -69,6 +79,8 @@ export function createEventHandlers(
         if (plugin.fetch) handlers.fetch.push(plugin.fetch);
         if (plugin.message) handlers.message.push(plugin.message);
         if (plugin.sync) handlers.sync.push(plugin.sync);
+        if (plugin.periodicsync)
+            handlers.periodicsync.push(plugin.periodicsync);
         if (plugin.push) handlers.push.push(plugin.push);
     });
 
@@ -128,15 +140,43 @@ export function createEventHandlers(
         },
 
         sync: (event: SyncEvent): void => {
-            handlers.sync.forEach((handler) => {
-                handler(event);
-            });
+            event.waitUntil(
+                Promise.all(
+                    handlers.sync.map((handler) =>
+                        Promise.resolve(handler(event)).catch(
+                            (error: unknown) =>
+                                config.onError?.(error as Error, event)
+                        )
+                    )
+                )
+            );
+        },
+
+        periodicsync: (event: PeriodicSyncEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.periodicsync.map((handler) =>
+                        Promise.resolve(handler(event)).catch(
+                            (error: unknown) =>
+                                config.onError?.(error as Error, event)
+                        )
+                    )
+                )
+            );
         },
 
         push: (event: PushEvent): void => {
-            handlers.push.forEach((handler) => {
-                handler(event);
-            });
+            event.waitUntil(
+                (async (): Promise<void> => {
+                    for (const handler of handlers.push) {
+                        try {
+                            await Promise.resolve(handler(event));
+                        } catch (error) {
+                            config.onError?.(error as Error, event);
+                        }
+                    }
+                })()
+            );
         },
     };
 }
@@ -152,5 +192,6 @@ export function initializeServiceWorker(
     self.addEventListener('fetch', handlers.fetch);
     self.addEventListener('message', handlers.message);
     self.addEventListener('sync', handlers.sync);
+    self.addEventListener('periodicsync', handlers.periodicsync);
     self.addEventListener('push', handlers.push);
 }

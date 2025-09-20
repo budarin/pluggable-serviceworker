@@ -142,8 +142,9 @@ interface ServiceWorkerPlugin {
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | null>;
     message?: (event: MessageEvent) => void;
-    sync?: (event: SyncEvent) => void;
-    push?: (event: PushEvent) => void;
+    sync?: (event: SyncEvent) => void | Promise<void>; // Фоновая синхронизация
+    periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>; // Периодическая синхронизация
+    push?: (event: PushEvent) => void | Promise<void>; // Может быть асинхронным
 }
 ```
 
@@ -218,7 +219,7 @@ const cachePlugin = {
 const notificationPlugin = {
     name: 'notifications',
 
-    push: (event) => {
+    push: async (event) => {
         const data = event.data?.json() || {};
 
         const options = {
@@ -229,7 +230,7 @@ const notificationPlugin = {
             data: data.url ? { url: data.url } : undefined,
         };
 
-        self.registration.showNotification(
+        await self.registration.showNotification(
             data.title || 'Уведомление',
             options
         );
@@ -250,9 +251,19 @@ const notificationPlugin = {
 const backgroundSyncPlugin = {
     name: 'background-sync',
 
-    sync: (event) => {
-        if (event.tag === 'background-sync') {
-            event.waitUntil(doBackgroundSync());
+    sync: async (event) => {
+        // Тег 'sync-data' регистрируется через:
+        // await self.registration.sync.register('sync-data');
+        if (event.tag === 'sync-data') {
+            await doBackgroundSync();
+        }
+    },
+
+    periodicsync: async (event) => {
+        // Тег 'content-sync' регистрируется через:
+        // await self.registration.periodicSync.register('content-sync', { minInterval: 24 * 60 * 60 * 1000 });
+        if (event.tag === 'content-sync') {
+            await doPeriodicSync();
         }
     },
 };
@@ -275,6 +286,38 @@ async function doBackgroundSync() {
         }
     }
 }
+
+async function doPeriodicSync() {
+    // Периодическая синхронизация данных
+    try {
+        const response = await fetch('/api/sync');
+        const data = await response.json();
+
+        // Сохранение данных в кеш или IndexedDB
+        await updateLocalData(data);
+
+        console.log('Периодическая синхронизация завершена');
+    } catch (error) {
+        console.error('Ошибка периодической синхронизации:', error);
+    }
+}
+
+// Регистрация синхронизации из основного потока (main thread):
+//
+// // Фоновая синхронизация (одноразовая)
+// navigator.serviceWorker.ready.then(registration => {
+//     return registration.sync.register('sync-data');
+// });
+//
+// // Периодическая синхронизация (требует разрешения)
+// navigator.serviceWorker.ready.then(async registration => {
+//     const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+//     if (status.state === 'granted') {
+//         await registration.periodicSync.register('content-sync', {
+//             minInterval: 24 * 60 * 60 * 1000 // 24 часа
+//         });
+//     }
+// });
 ```
 
 ## 🎯 Порядок выполнения
@@ -297,6 +340,111 @@ const plugins = [
 
 // Порядок выполнения: first → second → third → fourth → fifth
 ```
+
+## ⚡ Логика выполнения обработчиков
+
+Разные типы событий Service Worker обрабатываются по-разному в зависимости от их специфики:
+
+### 🔄 Параллельное выполнение
+
+**События:** `install`, `activate`, `message`, `sync`, `periodicsync`
+
+Все обработчики выполняются **одновременно** с помощью `Promise.all()`:
+
+```typescript
+// Все плагины инициализируются параллельно
+const installPlugin1 = {
+    name: 'cache',
+    install: async () => {
+        /* кеширование */
+    },
+};
+const installPlugin2 = {
+    name: 'db',
+    install: async () => {
+        /* инициализация БД */
+    },
+};
+
+// Оба install обработчика выполнятся одновременно
+```
+
+**Почему параллельно:**
+
+- **install/activate**: Все плагины должны инициализироваться независимо
+- **message**: Все плагины должны получить сообщение одновременно
+- **sync**: Разные задачи синхронизации независимы (синхронизация данных + кеша)
+- **periodicsync**: Периодические задачи независимы друг от друга
+
+### ➡️ Последовательное выполнение
+
+**События:** `fetch`, `push`
+
+Обработчики выполняются **по очереди** до первого успешного результата:
+
+#### Fetch - с прерыванием цепочки
+
+```typescript
+const authPlugin = {
+    name: 'auth',
+    priority: 1,
+    fetch: async (event) => {
+        if (needsAuth(event.request)) {
+            return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
+        }
+        return null; // Передает следующему плагину
+    },
+};
+
+const cachePlugin = {
+    name: 'cache',
+    priority: 2,
+    fetch: async (event) => {
+        return await caches.match(event.request); // Может вернуть Response или null
+    },
+};
+
+// Выполнение: auth → cache → fetch(event.request) если все вернули null
+```
+
+#### Push - без прерывания
+
+```typescript
+const notificationPlugin = {
+    name: 'notifications',
+    push: async (event) => {
+        await self.registration.showNotification('Уведомление');
+        // Не прерывает выполнение других плагинов
+    },
+};
+
+const analyticsPlugin = {
+    name: 'analytics',
+    push: async (event) => {
+        await sendPushAnalytics(event.data);
+        // Выполнится после notifications
+    },
+};
+
+// Все push обработчики выполнятся последовательно
+```
+
+**Почему последовательно:**
+
+- **fetch**: Нужен только один ответ, первый успешный прерывает цепочку
+- **push**: Избегает конфликтов уведомлений, но все плагины должны обработать событие
+
+### 📋 Сводная таблица
+
+| Событие        | Выполнение      | Прерывание | Причина                          |
+| -------------- | --------------- | ---------- | -------------------------------- |
+| `install`      | Параллельно     | Нет        | Независимая инициализация        |
+| `activate`     | Параллельно     | Нет        | Независимая активация            |
+| `fetch`        | Последовательно | Да         | Нужен один ответ                 |
+| `message`      | Параллельно     | Нет        | Все получают сообщение           |
+| `sync`         | Параллельно     | Нет        | Независимые задачи               |
+| `periodicsync` | Параллельно     | Нет        | Независимые периодические задачи |
+| `push`         | Последовательно | Нет        | Избегание конфликтов             |
 
 ## 🛡️ Обработка ошибок
 
