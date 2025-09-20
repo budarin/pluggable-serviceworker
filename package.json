@@ -1,0 +1,32 @@
+{
+    "name": "@vadimbudarin/pluggable-serviceworker",
+    "version": "1.0.0",
+    "description": "Extensible via plugins service worker",
+    "keywords": [
+        "serviceworker",
+        "plugins",
+        "extensible",
+        "serviceworker-plugins",
+        "serviceworker-plugins-extensible"
+    ],
+    "author": "Vadim Budarin",
+    "license": "MIT",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": "./dist/index.js",
+        "./types": "./dist/index.d.ts"
+    },
+    "devDependencies": {
+        "@types/node": "^24.5.2",
+        "@types/serviceworker": "^0.0.153",
+        "prettier": "^3.6.2",
+        "typescript": "^5.9.2"
+    },
+    "scripts": {
+        "build": "tsc",
+        "publish-package": "pnpm build && pnpm publish --access=public"
+    },
+    "packageManager": "pnpm@10.16.1"
+}
