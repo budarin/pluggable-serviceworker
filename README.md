@@ -136,8 +136,8 @@ const config = {
                 break;
 
             default:
-                // Ошибки в обработчиках событий (fetch, install, etc.)
-                console.error('Handler error in', event.type, ':', error);
+                // Неизвестные типы ошибок
+                console.error('Unknown error type:', error);
 
                 // Отправка ошибки в аналитику
                 fetch('/api/errors', {
@@ -171,7 +171,7 @@ initializeServiceWorker(
 - _`ServiceWorkerErrorType.MESSAGE_ERROR`_ - Ошибки при обработке сообщений (MessageEvent)
 - _`ServiceWorkerErrorType.UNHANDLED_REJECTION`_ - Необработанные Promise rejection
 - _`ServiceWorkerErrorType.REJECTION_HANDLED`_ - Обработанные Promise rejection
-- _`ServiceWorkerErrorType.PLUGIN_ERROR`_ - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
+- _`ServiceWorkerErrorType.PLUGIN_ERROR`_ - Ошибки в плагинах
 
 ## 🔧 API
 
