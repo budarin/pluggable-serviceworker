@@ -32,7 +32,7 @@ interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
 
 interface ServiceWorkerConfig {
     plugins?: ServiceWorkerPlugin[];
-    onError?: (error: Error, event: Event) => void;
+    onError?: (error: Error | any, event: Event, errorType?: string) => void;
 }
 
 type FetchResponse = Promise<Response | null>;
@@ -48,6 +48,10 @@ export function createEventHandlers(
     sync: (event: SyncEvent) => void;
     periodicsync: (event: PeriodicSyncEvent) => void;
     push: (event: PushEvent) => void;
+    error: (event: ErrorEvent) => void;
+    messageerror: (event: MessageEvent) => void;
+    unhandledrejection: (event: PromiseRejectionEvent) => void;
+    rejectionhandled: (event: PromiseRejectionEvent) => void;
 } {
     const handlers = {
         install: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
@@ -178,6 +182,38 @@ export function createEventHandlers(
                 })()
             );
         },
+
+        error: (event: ErrorEvent): void => {
+            try {
+                config.onError?.(event.error, event, 'error');
+            } catch (error) {
+                console.error('Error in error handler:', error);
+            }
+        },
+
+        messageerror: (event: MessageEvent): void => {
+            try {
+                config.onError?.(event.data, event, 'messageerror');
+            } catch (error) {
+                console.error('Error in messageerror handler:', error);
+            }
+        },
+
+        unhandledrejection: (event: PromiseRejectionEvent): void => {
+            try {
+                config.onError?.(event.reason, event, 'unhandledrejection');
+            } catch (error) {
+                console.error('Error in unhandledrejection handler:', error);
+            }
+        },
+
+        rejectionhandled: (event: PromiseRejectionEvent): void => {
+            try {
+                config.onError?.(event.reason, event, 'rejectionhandled');
+            } catch (error) {
+                console.error('Error in rejectionhandled handler:', error);
+            }
+        },
     };
 }
 
@@ -187,6 +223,7 @@ export function initializeServiceWorker(
 ): void {
     const handlers = createEventHandlers(plugins, config);
 
+    // Регистрируем стандартные обработчики событий Service Worker
     self.addEventListener('install', handlers.install);
     self.addEventListener('activate', handlers.activate);
     self.addEventListener('fetch', handlers.fetch);
@@ -194,4 +231,10 @@ export function initializeServiceWorker(
     self.addEventListener('sync', handlers.sync);
     self.addEventListener('periodicsync', handlers.periodicsync);
     self.addEventListener('push', handlers.push);
+
+    // Регистрируем глобальные обработчики ошибок
+    self.addEventListener('error', handlers.error);
+    self.addEventListener('messageerror', handlers.messageerror);
+    self.addEventListener('unhandledrejection', handlers.unhandledrejection);
+    self.addEventListener('rejectionhandled', handlers.rejectionhandled);
 }

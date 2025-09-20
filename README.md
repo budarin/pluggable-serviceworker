@@ -97,25 +97,52 @@ initializeServiceWorker([authPlugin, cachePlugin, loggingPlugin]);
 
 ### Обработка ошибок
 
+Библиотека предоставляет единый обработчик для всех типов ошибок в Service Worker:
+
 ```typescript
 import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
 
 const config = {
-    onError: (error, event) => {
-        console.error('Ошибка в Service Worker:', error);
+    onError: (error, event, errorType) => {
+        console.log(`Ошибка типа "${errorType}":`, error);
 
-        // Отправка ошибки в аналитику
-        if ('fetch' in event) {
-            fetch('/api/errors', {
-                method: 'POST',
-                body: JSON.stringify({
-                    error: error.message,
-                    url: event.request?.url,
-                    timestamp: Date.now(),
-                }),
-            }).catch(() => {
-                // Игнорируем ошибки отправки логов
-            });
+        switch (errorType) {
+            case 'error':
+                // JavaScript ошибки
+                console.error('JavaScript error:', error);
+                break;
+
+            case 'messageerror':
+                // Ошибки сообщений
+                console.error('Message error:', error);
+                break;
+
+            case 'unhandledrejection':
+                // Необработанные Promise rejection
+                console.error('Unhandled promise rejection:', error);
+                break;
+
+            case 'rejectionhandled':
+                // Обработанные Promise rejection
+                console.log('Promise rejection handled:', error);
+                break;
+
+            default:
+                // Ошибки в обработчиках событий (fetch, install, etc.)
+                console.error('Handler error in', event.type, ':', error);
+
+                // Отправка ошибки в аналитику
+                fetch('/api/errors', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        error: error.message,
+                        eventType: event.type,
+                        url: event.request?.url,
+                        timestamp: Date.now(),
+                    }),
+                }).catch(() => {
+                    // Игнорируем ошибки отправки логов
+                });
         }
     },
 };
@@ -127,6 +154,14 @@ initializeServiceWorker(
     config
 );
 ```
+
+#### Типы ошибок
+
+- **`'error'`** - JavaScript ошибки (ErrorEvent)
+- **`'messageerror'`** - Ошибки при обработке сообщений (MessageEvent)
+- **`'unhandledrejection'`** - Необработанные Promise rejection
+- **`'rejectionhandled'`** - Обработанные Promise rejection
+- **`undefined`** - Ошибки в обработчиках событий плагинов (fetch, install, etc.)
 
 ## 🔧 API
 
@@ -166,7 +201,7 @@ function initializeServiceWorker(
 ```typescript
 interface ServiceWorkerConfig {
     plugins?: ServiceWorkerPlugin[];
-    onError?: (error: Error, event: Event) => void;
+    onError?: (error: Error | any, event: Event, errorType?: string) => void;
 }
 ```
 
@@ -448,9 +483,11 @@ const analyticsPlugin = {
 
 ## 🛡️ Обработка ошибок
 
-- Ошибки в плагинах автоматически перехватываются
-- Можно настроить кастомный обработчик через `config.onError`
-- Ошибка в одном плагине не останавливает выполнение других
+- **Единый обработчик** - все типы ошибок обрабатываются через `config.onError`
+- **Типизированные ошибки** - третий параметр `errorType` указывает тип ошибки
+- **Глобальные события** - автоматическая обработка `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`
+- **Изоляция ошибок** - ошибка в одном плагине не останавливает выполнение других
+- **Безопасность** - ошибки в самих обработчиках ошибок логируются в консоль
 
 ## 📄 Лицензия
 
