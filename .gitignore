@@ -139,6 +139,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 src
+.vscode
 .prettierrc.mjs
 .prettierignore
 tsconfig.json
