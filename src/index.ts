@@ -27,7 +27,7 @@ interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | null>;
-    message?: (event: MessageEvent) => void;
+    message?: (event: ExtendableMessageEvent) => void;
     sync?: (event: SyncEvent) => void | Promise<void>;
     periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>;
     push?: (event: PushEvent) => void | Promise<void>;
@@ -56,7 +56,7 @@ export function createEventHandlers(
     install: (event: ExtendableEvent) => void;
     activate: (event: ExtendableEvent) => void;
     fetch: (event: FetchEvent) => void;
-    message: (event: MessageEvent) => void;
+    message: (event: ExtendableMessageEvent) => void;
     sync: (event: SyncEvent) => void;
     periodicsync: (event: PeriodicSyncEvent) => void;
     push: (event: PushEvent) => void;
@@ -69,7 +69,7 @@ export function createEventHandlers(
         install: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         fetch: [] as ((event: FetchEvent) => FetchResponse)[],
-        message: [] as ((event: MessageEvent) => void)[],
+        message: [] as ((event: ExtendableMessageEvent) => void)[],
         sync: [] as ((event: SyncEvent) => void | Promise<void>)[],
         periodicsync: [] as ((
             event: PeriodicSyncEvent
@@ -155,7 +155,7 @@ export function createEventHandlers(
             );
         },
 
-        message: (event: MessageEvent): void => {
+        message: (event: ExtendableMessageEvent): void => {
             handlers.message.forEach((handler) => {
                 try {
                     handler(event);
