@@ -33,7 +33,7 @@ interface ServiceWorkerEventHandlers {
     push?: (event: PushEvent) => void | Promise<void>;
 }
 
-interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
+export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
     name: string;
     order?: number;
 }
