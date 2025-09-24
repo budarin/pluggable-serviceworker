@@ -47,7 +47,7 @@ interface ServiceWorkerConfig {
     ) => void;
 }
 
-type FetchResponse = Promise<Response | null>;
+export type FetchResponse = Promise<Response | null>;
 
 export function createEventHandlers(
     plugins: ServiceWorkerPlugin[],
