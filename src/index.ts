@@ -15,7 +15,6 @@ interface PeriodicSyncEvent extends ExtendableEvent {
     readonly tag: string;
 }
 
-// Extend ServiceWorkerGlobalScope to include sync events
 declare global {
     interface ServiceWorkerGlobalScopeEventMap {
         sync: SyncEvent;
@@ -23,11 +22,17 @@ declare global {
     }
 }
 
+export interface SwMessageEvent extends Omit<ExtendableMessageEvent, 'data'> {
+    data: {
+        type: string;
+    };
+}
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | null>;
-    message?: (event: ExtendableMessageEvent) => void;
+    message?: (event: SwMessageEvent) => void;
     sync?: (event: SyncEvent) => void | Promise<void>;
     periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>;
     push?: (event: PushEvent) => void | Promise<void>;
@@ -56,7 +61,7 @@ export function createEventHandlers(
     install: (event: ExtendableEvent) => void;
     activate: (event: ExtendableEvent) => void;
     fetch: (event: FetchEvent) => void;
-    message: (event: ExtendableMessageEvent) => void;
+    message: (event: SwMessageEvent) => void;
     sync: (event: SyncEvent) => void;
     periodicsync: (event: PeriodicSyncEvent) => void;
     push: (event: PushEvent) => void;
@@ -69,7 +74,7 @@ export function createEventHandlers(
         install: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         fetch: [] as ((event: FetchEvent) => FetchResponse)[],
-        message: [] as ((event: ExtendableMessageEvent) => void)[],
+        message: [] as ((event: SwMessageEvent) => void)[],
         sync: [] as ((event: SyncEvent) => void | Promise<void>)[],
         periodicsync: [] as ((
             event: PeriodicSyncEvent
