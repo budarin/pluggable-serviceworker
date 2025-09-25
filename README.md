@@ -68,7 +68,7 @@ const authPlugin = {
                 return new Response('Unauthorized', { status: 401 });
             }
         }
-        return null; // Передать обработку следующему плагину
+        return undefined; // Передать обработку следующему плагину
     },
 };
 
@@ -78,7 +78,7 @@ const loggingPlugin = {
 
     fetch: async (event) => {
         console.log('Запрос:', event.request.url);
-        return null;
+        return undefined;
     },
 };
 
@@ -101,7 +101,7 @@ const fallbackPlugin = {
         if (event.request.mode === 'navigate') {
             return caches.match('/offline.html');
         }
-        return null;
+        return undefined;
     },
 };
 
@@ -193,6 +193,18 @@ initializeServiceWorker(
 
 ## 🔧 API
 
+### SwMessageEvent
+
+Типизированный интерфейс для событий сообщений Service Worker:
+
+```typescript
+interface SwMessageEvent extends Omit<ExtendableMessageEvent, 'data'> {
+    data: {
+        type: string;
+    };
+}
+```
+
 ### ServiceWorkerErrorType
 
 Перечисление типов ошибок Service Worker:
@@ -207,6 +219,14 @@ enum ServiceWorkerErrorType {
 }
 ```
 
+### FetchResponse
+
+Тип для ответов fetch обработчиков:
+
+```typescript
+type FetchResponse = Promise<Response | undefined>;
+```
+
 ### ServiceWorkerPlugin
 
 Интерфейс плагина:
@@ -217,12 +237,35 @@ interface ServiceWorkerPlugin {
     order?: number; // Порядок выполнения (плагины без order выполняются первыми)
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
-    fetch?: (event: FetchEvent) => Promise<Response | null>;
-    message?: (event: MessageEvent) => void;
+    fetch?: (event: FetchEvent) => Promise<Response | undefined>;
+    message?: (event: SwMessageEvent) => void;
     sync?: (event: SyncEvent) => void | Promise<void>; // Фоновая синхронизация
     periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>; // Периодическая синхронизация
     push?: (event: PushEvent) => void | Promise<void>; // Может быть асинхронным
 }
+```
+
+### createEventHandlers
+
+Функция для создания обработчиков событий (экспортируется для продвинутого использования):
+
+```typescript
+function createEventHandlers(
+    plugins: ServiceWorkerPlugin[],
+    config: ServiceWorkerConfig = {}
+): {
+    install: (event: ExtendableEvent) => void;
+    activate: (event: ExtendableEvent) => void;
+    fetch: (event: FetchEvent) => void;
+    message: (event: SwMessageEvent) => void;
+    sync: (event: SyncEvent) => void;
+    periodicsync: (event: PeriodicSyncEvent) => void;
+    push: (event: PushEvent) => void;
+    error: (event: ErrorEvent) => void;
+    messageerror: (event: MessageEvent) => void;
+    unhandledrejection: (event: PromiseRejectionEvent) => void;
+    rejectionhandled: (event: PromiseRejectionEvent) => void;
+};
 ```
 
 ### initializeServiceWorker
@@ -289,7 +332,7 @@ const cachePlugin = {
             }
         }
 
-        return null;
+        return undefined;
     },
 };
 ```
@@ -462,7 +505,7 @@ const authPlugin = {
         if (needsAuth(event.request)) {
             return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
         }
-        return null; // Передает следующему плагину
+        return undefined; // Передает следующему плагину
     },
 };
 

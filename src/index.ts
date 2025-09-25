@@ -33,8 +33,8 @@ interface ServiceWorkerEventHandlers {
     activate?: (event: ExtendableEvent) => void | Promise<void>;
     fetch?: (event: FetchEvent) => Promise<Response | undefined>;
     message?: (event: SwMessageEvent) => void;
-    sync?: (event: SyncEvent) => void | Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>;
+    sync?: (event: SyncEvent) => Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent) => Promise<void>;
     push?: (event: PushEvent) => void | Promise<void>;
 }
 
@@ -75,10 +75,8 @@ export function createEventHandlers(
         activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
         fetch: [] as ((event: FetchEvent) => FetchResponse)[],
         message: [] as ((event: SwMessageEvent) => void)[],
-        sync: [] as ((event: SyncEvent) => void | Promise<void>)[],
-        periodicsync: [] as ((
-            event: PeriodicSyncEvent
-        ) => void | Promise<void>)[],
+        sync: [] as ((event: SyncEvent) => Promise<void>)[],
+        periodicsync: [] as ((event: PeriodicSyncEvent) => Promise<void>)[],
         push: [] as ((event: PushEvent) => void | Promise<void>)[],
     };
 
