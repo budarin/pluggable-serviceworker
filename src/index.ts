@@ -31,7 +31,7 @@ export interface SwMessageEvent extends Omit<ExtendableMessageEvent, 'data'> {
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
-    fetch?: (event: FetchEvent) => Promise<Response | null>;
+    fetch?: (event: FetchEvent) => Promise<Response | undefined>;
     message?: (event: SwMessageEvent) => void;
     sync?: (event: SyncEvent) => void | Promise<void>;
     periodicsync?: (event: PeriodicSyncEvent) => void | Promise<void>;
@@ -52,7 +52,7 @@ interface ServiceWorkerConfig {
     ) => void;
 }
 
-export type FetchResponse = Promise<Response | null>;
+export type FetchResponse = Promise<Response | undefined>;
 
 export function createEventHandlers(
     plugins: ServiceWorkerPlugin[],
@@ -144,7 +144,7 @@ export function createEventHandlers(
                     for (const handler of handlers.fetch) {
                         try {
                             const result = await handler(event);
-                            if (result) {
+                            if (result !== undefined) {
                                 return result;
                             }
                         } catch (error) {
