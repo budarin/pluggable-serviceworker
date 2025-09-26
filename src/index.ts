@@ -28,6 +28,13 @@ export interface SwMessageEvent extends Omit<ExtendableMessageEvent, 'data'> {
     };
 }
 
+export interface Logger {
+    info: (...data: unknown[]) => void;
+    warn: (...data: unknown[]) => void;
+    error: (...data: unknown[]) => void;
+    debug: (...data: unknown[]) => void;
+}
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
@@ -44,7 +51,7 @@ export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
 }
 
 interface ServiceWorkerConfig {
-    plugins?: ServiceWorkerPlugin[];
+    logger?: Logger;
     onError?: (
         error: Error | any,
         event: Event,
@@ -228,7 +235,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.ERROR
                 );
             } catch (error) {
-                console.error('Error in error handler:', error);
+                config.logger?.error('Error in error handler:', error);
             }
         },
 
@@ -240,7 +247,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
-                console.error('Error in messageerror handler:', error);
+                config.logger?.error('Error in messageerror handler:', error);
             }
         },
 
@@ -252,7 +259,10 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                console.error('Error in unhandledrejection handler:', error);
+                config.logger?.error(
+                    'Error in unhandledrejection handler:',
+                    error
+                );
             }
         },
 
@@ -264,7 +274,10 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.REJECTION_HANDLED
                 );
             } catch (error) {
-                console.error('Error in rejectionhandled handler:', error);
+                config.logger?.error(
+                    'Error in rejectionhandled handler:',
+                    error
+                );
             }
         },
     };

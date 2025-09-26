@@ -9,6 +9,7 @@
 - 🔌 **Система плагинов** - модульная архитектура для расширения функциональности
 - 📊 **Порядок выполнения** - предсказуемый контроль порядка выполнения плагинов
 - 🛡️ **Обработка ошибок** - централизованная обработка ошибок
+- 📝 **Логирование** - настраиваемое логирование с поддержкой различных уровней
 - 🎯 **TypeScript** - полная поддержка типов
 - 🚀 **Простота использования** - минимальная настройка
 
@@ -124,6 +125,12 @@ import {
 } from '@budarin/pluggable-serviceworker';
 
 const config = {
+    logger: {
+        info: (...data) => console.log('[SW INFO]', ...data),
+        warn: (...data) => console.warn('[SW WARN]', ...data),
+        error: (...data) => console.error('[SW ERROR]', ...data),
+        debug: (...data) => console.debug('[SW DEBUG]', ...data),
+    },
     onError: (error, event, errorType) => {
         console.log(`Ошибка типа "${errorType}":`, error);
 
@@ -180,6 +187,59 @@ initializeServiceWorker(
     config
 );
 ```
+
+### Логирование
+
+Библиотека поддерживает настраиваемое логирование через параметр `logger`:
+
+```typescript
+import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
+
+// Простой logger с префиксами
+const logger = {
+    info: (...data) => console.log('[SW INFO]', ...data),
+    warn: (...data) => console.warn('[SW WARN]', ...data),
+    error: (...data) => console.error('[SW ERROR]', ...data),
+    debug: (...data) => console.debug('[SW DEBUG]', ...data),
+};
+
+// Logger с отправкой в аналитику
+const analyticsLogger = {
+    info: (...data) => {
+        console.log('[SW INFO]', ...data);
+        // Отправка в аналитику для важных событий
+    },
+    warn: (...data) => {
+        console.warn('[SW WARN]', ...data);
+        sendToAnalytics('warning', data);
+    },
+    error: (...data) => {
+        console.error('[SW ERROR]', ...data);
+        sendToAnalytics('error', data);
+    },
+    debug: (...data) => {
+        if (process.env.NODE_ENV === 'development') {
+            console.debug('[SW DEBUG]', ...data);
+        }
+    },
+};
+
+const config = {
+    logger: analyticsLogger,
+    onError: (error, event, errorType) => {
+        // Обработка ошибок
+    },
+};
+
+initializeServiceWorker(
+    [
+        /* плагины */
+    ],
+    config
+);
+```
+
+Logger используется внутри библиотеки для логирования ошибок в обработчиках ошибок, что предотвращает бесконечные циклы при ошибках в самих обработчиках ошибок.
 
 #### Типы ошибок
 
@@ -279,13 +339,26 @@ function initializeServiceWorker(
 ): void;
 ```
 
+### Logger
+
+Интерфейс для логирования:
+
+```typescript
+interface Logger {
+    info: (...data: unknown[]) => void;
+    warn: (...data: unknown[]) => void;
+    error: (...data: unknown[]) => void;
+    debug: (...data: unknown[]) => void;
+}
+```
+
 ### ServiceWorkerConfig
 
 Конфигурация Service Worker:
 
 ```typescript
 interface ServiceWorkerConfig {
-    plugins?: ServiceWorkerPlugin[];
+    logger?: Logger;
     onError?: (
         error: Error | any,
         event: Event,
