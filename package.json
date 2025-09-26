@@ -27,6 +27,8 @@
     },
     "scripts": {
         "build": "tsc",
+        "pnpm-install": "pnpm install",
+        "upgrade-deps": "pnpm upgrade -i",
         "publish-package": "pnpm build && pnpm publish --access=public"
     },
     "packageManager": "pnpm@10.16.1"
