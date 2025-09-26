@@ -49,7 +49,7 @@ const cachePlugin = {
 };
 
 // Инициализация Service Worker с плагинами
-initializeServiceWorker([cachePlugin]);
+initializeServiceWorker([cachePlugin], { logger: console });
 ```
 
 ### Использование с порядком выполнения

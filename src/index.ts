@@ -35,6 +35,10 @@ export interface Logger {
     debug: (...data: unknown[]) => void;
 }
 
+const sw = self as unknown as ServiceWorkerGlobalScope & {
+    logger: Logger;
+};
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
@@ -51,7 +55,7 @@ export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
 }
 
 interface ServiceWorkerConfig {
-    logger?: Logger;
+    logger: Logger;
     onError?: (
         error: Error | any,
         event: Event,
@@ -63,7 +67,7 @@ export type FetchResponse = Promise<Response | undefined>;
 
 export function createEventHandlers(
     plugins: ServiceWorkerPlugin[],
-    config: ServiceWorkerConfig = {}
+    config: ServiceWorkerConfig
 ): {
     install: (event: ExtendableEvent) => void;
     activate: (event: ExtendableEvent) => void;
@@ -235,7 +239,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.ERROR
                 );
             } catch (error) {
-                config.logger?.error('Error in error handler:', error);
+                sw.logger.error('Error in error handler:', error);
             }
         },
 
@@ -247,7 +251,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
-                config.logger?.error('Error in messageerror handler:', error);
+                sw.logger.error('Error in messageerror handler:', error);
             }
         },
 
@@ -259,10 +263,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                config.logger?.error(
-                    'Error in unhandledrejection handler:',
-                    error
-                );
+                sw.logger.error('Error in unhandledrejection handler:', error);
             }
         },
 
@@ -274,10 +275,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.REJECTION_HANDLED
                 );
             } catch (error) {
-                config.logger?.error(
-                    'Error in rejectionhandled handler:',
-                    error
-                );
+                sw.logger.error('Error in rejectionhandled handler:', error);
             }
         },
     };
@@ -285,8 +283,10 @@ export function createEventHandlers(
 
 export function initializeServiceWorker(
     plugins: ServiceWorkerPlugin[],
-    config?: ServiceWorkerConfig
+    config: ServiceWorkerConfig
 ): void {
+    sw.logger = config.logger;
+
     const handlers = createEventHandlers(plugins, config);
 
     // Регистрируем стандартные обработчики событий Service Worker
