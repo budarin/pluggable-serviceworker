@@ -1,6 +1,6 @@
 {
     "name": "@budarin/pluggable-serviceworker",
-    "version": "1.0.23",
+    "version": "1.0.24",
     "description": "Extensible via plugins service worker",
     "keywords": [
         "serviceworker",
@@ -31,8 +31,8 @@
         "upgrade-deps": "pnpm upgrade -i",
         "publish-package": "pnpm build && pnpm publish --access=public"
     },
-    "packageManager": "pnpm@10.16.1",
     "dependencies": {
-        "@budarin/http-constants": "^1.0.12"
-    }
+        "@budarin/http-constants": "^1.0.13"
+    },
+    "packageManager": "pnpm@10.16.1"
 }
