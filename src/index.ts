@@ -38,6 +38,17 @@ export interface Logger {
 const sw = self as unknown as ServiceWorkerGlobalScope & {
     logger: Logger;
 };
+export const SW_EVENT_INSTALL = 'install';
+export const SW_EVENT_ACTIVATE = 'activate';
+export const SW_EVENT_FETCH = 'fetch';
+export const SW_EVENT_MESSAGE = 'message';
+export const SW_EVENT_SYNC = 'sync';
+export const SW_EVENT_PERIODICSYNC = 'periodicsync';
+export const SW_EVENT_PUSH = 'push';
+export const SW_EVENT_ERROR = 'error';
+export const SW_EVENT_MESSAGEERROR = 'messageerror';
+export const SW_EVENT_UNHANDLEDREJECTION = 'unhandledrejection';
+export const SW_EVENT_REJECTIONHANDLED = 'rejectionhandled';
 
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
@@ -290,17 +301,20 @@ export function initializeServiceWorker(
     const handlers = createEventHandlers(plugins, config);
 
     // Регистрируем стандартные обработчики событий Service Worker
-    self.addEventListener('install', handlers.install);
-    self.addEventListener('activate', handlers.activate);
-    self.addEventListener('fetch', handlers.fetch);
-    self.addEventListener('message', handlers.message);
-    self.addEventListener('sync', handlers.sync);
-    self.addEventListener('periodicsync', handlers.periodicsync);
-    self.addEventListener('push', handlers.push);
+    self.addEventListener(SW_EVENT_INSTALL, handlers.install);
+    self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
+    self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
+    self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
+    self.addEventListener(SW_EVENT_SYNC, handlers.sync);
+    self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
+    self.addEventListener(SW_EVENT_PUSH, handlers.push);
 
     // Регистрируем глобальные обработчики ошибок
-    self.addEventListener('error', handlers.error);
-    self.addEventListener('messageerror', handlers.messageerror);
-    self.addEventListener('unhandledrejection', handlers.unhandledrejection);
-    self.addEventListener('rejectionhandled', handlers.rejectionhandled);
+    self.addEventListener(SW_EVENT_ERROR, handlers.error);
+    self.addEventListener(SW_EVENT_MESSAGEERROR, handlers.messageerror);
+    self.addEventListener(
+        SW_EVENT_UNHANDLEDREJECTION,
+        handlers.unhandledrejection
+    );
+    self.addEventListener(SW_EVENT_REJECTIONHANDLED, handlers.rejectionhandled);
 }
