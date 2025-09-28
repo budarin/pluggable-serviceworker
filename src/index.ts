@@ -1,3 +1,17 @@
+import {
+    SW_EVENT_ACTIVATE,
+    SW_EVENT_ERROR,
+    SW_EVENT_FETCH,
+    SW_EVENT_INSTALL,
+    SW_EVENT_MESSAGE,
+    SW_EVENT_MESSAGEERROR,
+    SW_EVENT_PERIODICSYNC,
+    SW_EVENT_PUSH,
+    SW_EVENT_REJECTIONHANDLED,
+    SW_EVENT_SYNC,
+    SW_EVENT_UNHANDLEDREJECTION,
+} from '@budarin/http-constants';
+
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
     MESSAGE_ERROR = 'messageerror',
@@ -38,17 +52,6 @@ export interface Logger {
 const sw = self as unknown as ServiceWorkerGlobalScope & {
     logger: Logger;
 };
-export const SW_EVENT_INSTALL = 'install';
-export const SW_EVENT_ACTIVATE = 'activate';
-export const SW_EVENT_FETCH = 'fetch';
-export const SW_EVENT_MESSAGE = 'message';
-export const SW_EVENT_SYNC = 'sync';
-export const SW_EVENT_PERIODICSYNC = 'periodicsync';
-export const SW_EVENT_PUSH = 'push';
-export const SW_EVENT_ERROR = 'error';
-export const SW_EVENT_MESSAGEERROR = 'messageerror';
-export const SW_EVENT_UNHANDLEDREJECTION = 'unhandledrejection';
-export const SW_EVENT_REJECTIONHANDLED = 'rejectionhandled';
 
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;

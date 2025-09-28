@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@budarin/http-constants':
+        specifier: ^1.0.2
+        version: 1.0.2
     devDependencies:
       '@types/node':
         specifier: ^24.5.2
@@ -25,6 +29,9 @@ importers:
         version: 5.9.2
 
 packages:
+
+  '@budarin/http-constants@1.0.2':
+    resolution: {integrity: sha512-vHyCdkGVb4FkIRTegCX9/uyM4nnWKAhfsML1lpPmdAoOfKeq6ocE0MSZoq+FMWvz0OVJrKwwd/Hi2NDn9ntIcg==}
 
   '@types/node@24.5.2':
     resolution: {integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==}
@@ -49,6 +56,8 @@ packages:
     resolution: {integrity: sha512-goOacqME2GYyOZZfb5Lgtu+1IDmAlAEu5xnD3+xTzS10hT0vzpf0SPjkXwAw9Jm+4n/mQGDP3LO8CPbYROeBfQ==}
 
 snapshots:
+
+  '@budarin/http-constants@1.0.2': {}
 
   '@types/node@24.5.2':
     dependencies:
