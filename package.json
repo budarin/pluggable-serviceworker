@@ -1,6 +1,6 @@
 {
     "name": "@budarin/pluggable-serviceworker",
-    "version": "1.0.21",
+    "version": "1.0.22",
     "description": "Extensible via plugins service worker",
     "keywords": [
         "serviceworker",
@@ -33,6 +33,6 @@
     },
     "packageManager": "pnpm@10.16.1",
     "dependencies": {
-        "@budarin/http-constants": "^1.0.2"
+        "@budarin/http-constants": "^1.0.11"
     }
 }
