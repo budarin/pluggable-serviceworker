@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@budarin/http-constants':
-        specifier: ^1.0.15
-        version: 1.0.15
+        specifier: ^1.0.16
+        version: 1.0.16
     devDependencies:
       '@types/node':
         specifier: ^24.5.2
@@ -30,8 +30,8 @@ importers:
 
 packages:
 
-  '@budarin/http-constants@1.0.15':
-    resolution: {integrity: sha512-x7C1cXwI009tHGJJi72qTYg1Q/X/f4FqTcLZee4wwEDOYPQcGuE775JuSaWWKnh/OaiZ8YmgI0cV6q8cfVxGwA==}
+  '@budarin/http-constants@1.0.16':
+    resolution: {integrity: sha512-oF/y81xKBK+WvcOtEvvVI5kglDDspnmk047HoRC2gUK1JGJmzqIPXe8db8TpSOIsBd4Bb9aA8mktOXuPOSaTbg==}
 
   '@types/node@24.5.2':
     resolution: {integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==}
@@ -57,7 +57,7 @@ packages:
 
 snapshots:
 
-  '@budarin/http-constants@1.0.15': {}
+  '@budarin/http-constants@1.0.16': {}
 
   '@types/node@24.5.2':
     dependencies:

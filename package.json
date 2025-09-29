@@ -32,7 +32,7 @@
         "publish-package": "pnpm build && pnpm publish --access=public"
     },
     "dependencies": {
-        "@budarin/http-constants": "^1.0.15"
+        "@budarin/http-constants": "^1.0.16"
     },
     "packageManager": "pnpm@10.16.1"
 }
