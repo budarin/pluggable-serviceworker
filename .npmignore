@@ -2,3 +2,11 @@
 .prettierrc.mjs
 .prettierignore
 tsconfig.json
+src/
+*.ts
+*.ts.map
+*.js.map
+.gitignore
+README.md
+TODO.md
+pnpm-lock.yaml
