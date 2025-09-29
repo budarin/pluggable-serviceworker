@@ -90,12 +90,6 @@ import {
 } from '@budarin/pluggable-serviceworker';
 
 const config = {
-    logger: {
-        info: (...data) => console.log('[SW INFO]', ...data),
-        warn: (...data) => console.warn('[SW WARN]', ...data),
-        error: (...data) => console.error('[SW ERROR]', ...data),
-        debug: (...data) => console.debug('[SW DEBUG]', ...data),
-    },
     onError: (error, event, errorType) => {
         console.log(`Ошибка типа "${errorType}":`, error);
 
