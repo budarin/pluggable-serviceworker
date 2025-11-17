@@ -295,7 +295,7 @@ export function createEventHandlers(
     };
 }
 
-export function initializeServiceWorker(
+export function initServiceWorker(
     plugins: ServiceWorkerPlugin[],
     config: ServiceWorkerConfig
 ): void {

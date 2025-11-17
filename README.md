@@ -58,7 +58,7 @@ pnpm add @budarin/pluggable-serviceworker
 
 ```typescript
 // sw.js
-import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
+import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 // Простой плагин для кеширования
 const cachePlugin = {
@@ -76,7 +76,7 @@ const cachePlugin = {
 };
 
 // Инициализация Service Worker с плагинами
-initializeServiceWorker([cachePlugin], { logger: console });
+initServiceWorker([cachePlugin], { logger: console });
 ```
 
 ## ⚙️ Конфигурация
@@ -158,7 +158,7 @@ initializeServiceWorker([cachePlugin], {
 
 ```typescript
 import {
-    initializeServiceWorker,
+    initServiceWorker,
     ServiceWorkerErrorType,
 } from '@budarin/pluggable-serviceworker';
 
@@ -212,7 +212,7 @@ const config = {
     },
 };
 
-initializeServiceWorker(
+initServiceWorker(
     [
         /* ваши плагины */
     ],
