@@ -1,92 +1,74 @@
 lockfileVersion: '9.0'
 
 settings:
-    autoInstallPeers: true
-    excludeLinksFromLockfile: false
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
 importers:
-    .:
-        dependencies:
-            '@budarin/http-constants':
-                specifier: ^1.0.16
-                version: 1.0.16
-        devDependencies:
-            '@types/node':
-                specifier: ^24.10.1
-                version: 24.10.1
-            '@types/serviceworker':
-                specifier: ^0.0.153
-                version: 0.0.153
-            '@types/web':
-                specifier: ^0.0.269
-                version: 0.0.269
-            prettier:
-                specifier: ^3.6.2
-                version: 3.6.2
-            typescript:
-                specifier: ^5.9.3
-                version: 5.9.3
+
+  .:
+    dependencies:
+      '@budarin/http-constants':
+        specifier: ^1.0.16
+        version: 1.0.16
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.10.1
+      '@types/serviceworker':
+        specifier: ^0.0.153
+        version: 0.0.153
+      '@types/web':
+        specifier: ^0.0.269
+        version: 0.0.269
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
-    '@budarin/http-constants@1.0.16':
-        resolution:
-            {
-                integrity: sha512-oF/y81xKBK+WvcOtEvvVI5kglDDspnmk047HoRC2gUK1JGJmzqIPXe8db8TpSOIsBd4Bb9aA8mktOXuPOSaTbg==,
-            }
 
-    '@types/node@24.5.2':
-        resolution:
-            {
-                integrity: sha512-FYxk1I7wPv3K2XBaoyH2cTnocQEu8AOZ60hPbsyukMPLv5/5qr7V1i8PLHdl6Zf87I+xZXFvPCXYjiTFq+YSDQ==,
-            }
+  '@budarin/http-constants@1.0.16':
+    resolution: {integrity: sha512-oF/y81xKBK+WvcOtEvvVI5kglDDspnmk047HoRC2gUK1JGJmzqIPXe8db8TpSOIsBd4Bb9aA8mktOXuPOSaTbg==}
 
-    '@types/serviceworker@0.0.153':
-        resolution:
-            {
-                integrity: sha512-/cg6dFEkNchJLyRCGo4Gb8mF200qr3xskM5dCPgbtK0OzXxcFcXa6BEBdyG7JksRsTrvCR+V6aFPncoOYAwYhQ==,
-            }
+  '@types/node@24.10.1':
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
-    '@types/web@0.0.269':
-        resolution:
-            {
-                integrity: sha512-V0GRvvdAa79Wok8aRrlaSLcGxjixiQbcet3kq+5ixIq9L4jsG+QZd91HEYOXTMF+My745N/KtsM9eyPY1iVINg==,
-            }
+  '@types/serviceworker@0.0.153':
+    resolution: {integrity: sha512-/cg6dFEkNchJLyRCGo4Gb8mF200qr3xskM5dCPgbtK0OzXxcFcXa6BEBdyG7JksRsTrvCR+V6aFPncoOYAwYhQ==}
 
-    prettier@3.6.2:
-        resolution:
-            {
-                integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==,
-            }
-        engines: { node: '>=14' }
-        hasBin: true
+  '@types/web@0.0.269':
+    resolution: {integrity: sha512-V0GRvvdAa79Wok8aRrlaSLcGxjixiQbcet3kq+5ixIq9L4jsG+QZd91HEYOXTMF+My745N/KtsM9eyPY1iVINg==}
 
-    typescript@5.9.3:
-        resolution:
-            {
-                integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==,
-            }
-        engines: { node: '>=14.17' }
-        hasBin: true
+  prettier@3.6.2:
+    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
+    engines: {node: '>=14'}
+    hasBin: true
 
-    undici-types@7.16.0:
-        resolution:
-            {
-                integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==,
-            }
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
 snapshots:
-    '@budarin/http-constants@1.0.16': {}
 
-    '@types/node@24.5.2':
-        dependencies:
-            undici-types: 7.16.0
+  '@budarin/http-constants@1.0.16': {}
 
-    '@types/serviceworker@0.0.153': {}
+  '@types/node@24.10.1':
+    dependencies:
+      undici-types: 7.16.0
 
-    '@types/web@0.0.269': {}
+  '@types/serviceworker@0.0.153': {}
 
-    prettier@3.6.2: {}
+  '@types/web@0.0.269': {}
 
-    typescript@5.9.3: {}
+  prettier@3.6.2: {}
 
-    undici-types@7.16.0: {}
+  typescript@5.9.3: {}
+
+  undici-types@7.16.0: {}
