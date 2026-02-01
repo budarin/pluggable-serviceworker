@@ -55,6 +55,11 @@ const sw = self as unknown as ServiceWorkerGlobalScope & {
 
 let serviceWorkerInitialized = false;
 
+/** Сбрасывает состояние инициализации (только для тестов). */
+export function __resetServiceWorkerState(): void {
+    serviceWorkerInitialized = false;
+}
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
@@ -133,14 +138,15 @@ export function createEventHandlers(
             event.waitUntil(
                 Promise.all(
                     handlers.install.map((handler) =>
-                        Promise.resolve(handler(event)).catch(
-                            (error: unknown) =>
+                        Promise.resolve()
+                            .then(() => handler(event))
+                            .catch((error: unknown) =>
                                 config.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
                                 )
-                        )
+                            )
                     )
                 )
             );
@@ -150,14 +156,15 @@ export function createEventHandlers(
             event.waitUntil(
                 Promise.all(
                     handlers.activate.map((handler) =>
-                        Promise.resolve(handler(event)).catch(
-                            (error: unknown) =>
+                        Promise.resolve()
+                            .then(() => handler(event))
+                            .catch((error: unknown) =>
                                 config.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
                                 )
-                        )
+                            )
                     )
                 )
             );
@@ -203,14 +210,15 @@ export function createEventHandlers(
             event.waitUntil(
                 Promise.all(
                     handlers.sync.map((handler) =>
-                        Promise.resolve(handler(event)).catch(
-                            (error: unknown) =>
+                        Promise.resolve()
+                            .then(() => handler(event))
+                            .catch((error: unknown) =>
                                 config.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
                                 )
-                        )
+                            )
                     )
                 )
             );
@@ -220,14 +228,15 @@ export function createEventHandlers(
             event.waitUntil(
                 Promise.all(
                     handlers.periodicsync.map((handler) =>
-                        Promise.resolve(handler(event)).catch(
-                            (error: unknown) =>
+                        Promise.resolve()
+                            .then(() => handler(event))
+                            .catch((error: unknown) =>
                                 config.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
                                 )
-                        )
+                            )
                     )
                 )
             );
