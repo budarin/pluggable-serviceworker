@@ -13,8 +13,8 @@ importers:
         version: 1.0.16
     devDependencies:
       '@types/node':
-        specifier: ^24.10.0
-        version: 24.10.0
+        specifier: ^24.10.1
+        version: 24.10.1
       '@types/serviceworker':
         specifier: ^0.0.153
         version: 0.0.153
@@ -33,8 +33,8 @@ packages:
   '@budarin/http-constants@1.0.16':
     resolution: {integrity: sha512-oF/y81xKBK+WvcOtEvvVI5kglDDspnmk047HoRC2gUK1JGJmzqIPXe8db8TpSOIsBd4Bb9aA8mktOXuPOSaTbg==}
 
-  '@types/node@24.10.0':
-    resolution: {integrity: sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==}
+  '@types/node@24.10.1':
+    resolution: {integrity: sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==}
 
   '@types/serviceworker@0.0.153':
     resolution: {integrity: sha512-/cg6dFEkNchJLyRCGo4Gb8mF200qr3xskM5dCPgbtK0OzXxcFcXa6BEBdyG7JksRsTrvCR+V6aFPncoOYAwYhQ==}
@@ -59,7 +59,7 @@ snapshots:
 
   '@budarin/http-constants@1.0.16': {}
 
-  '@types/node@24.10.0':
+  '@types/node@24.10.1':
     dependencies:
       undici-types: 7.16.0
 
