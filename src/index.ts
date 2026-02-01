@@ -53,6 +53,8 @@ const sw = self as unknown as ServiceWorkerGlobalScope & {
     logger: Logger;
 };
 
+let serviceWorkerInitialized = false;
+
 interface ServiceWorkerEventHandlers {
     install?: (event: ExtendableEvent) => void | Promise<void>;
     activate?: (event: ExtendableEvent) => void | Promise<void>;
@@ -68,10 +70,10 @@ export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
     order?: number;
 }
 
-interface ServiceWorkerConfig {
+export interface ServiceWorkerConfig {
     logger?: Logger;
     onError?: (
-        error: Error | any,
+        error: Error | unknown,
         event: Event,
         errorType?: ServiceWorkerErrorType
     ) => void;
@@ -183,7 +185,7 @@ export function createEventHandlers(
             );
         },
 
-        message: (event: ExtendableMessageEvent): void => {
+        message: (event: SwMessageEvent): void => {
             handlers.message.forEach((handler) => {
                 try {
                     handler(event);
@@ -257,7 +259,7 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.ERROR
                 );
             } catch (error) {
-                sw.logger.error('Error in error handler:', error);
+                (sw.logger ?? console).error('Error in error handler:', error);
             }
         },
 
@@ -269,7 +271,10 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
-                sw.logger.error('Error in messageerror handler:', error);
+                (sw.logger ?? console).error(
+                    'Error in messageerror handler:',
+                    error
+                );
             }
         },
 
@@ -281,7 +286,10 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                sw.logger.error('Error in unhandledrejection handler:', error);
+                (sw.logger ?? console).error(
+                    'Error in unhandledrejection handler:',
+                    error
+                );
             }
         },
 
@@ -293,7 +301,10 @@ export function createEventHandlers(
                     ServiceWorkerErrorType.REJECTION_HANDLED
                 );
             } catch (error) {
-                sw.logger.error('Error in rejectionhandled handler:', error);
+                (sw.logger ?? console).error(
+                    'Error in rejectionhandled handler:',
+                    error
+                );
             }
         },
     };
@@ -301,20 +312,26 @@ export function createEventHandlers(
 
 export function initServiceWorker(
     plugins: ServiceWorkerPlugin[],
-    config: ServiceWorkerConfig
+    config?: ServiceWorkerConfig
 ): void {
-    sw.logger = config.logger || console;
+    if (serviceWorkerInitialized) {
+        return;
+    }
+    serviceWorkerInitialized = true;
 
-    const handlers = createEventHandlers(plugins, config);
+    sw.logger = config?.logger ?? console;
 
-    // Регистрируем стандартные обработчики событий Service Worker
-    self.addEventListener(SW_EVENT_INSTALL, handlers.install);
-    self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
-    self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
-    self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
-    self.addEventListener(SW_EVENT_SYNC, handlers.sync);
-    self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
-    self.addEventListener(SW_EVENT_PUSH, handlers.push);
+    const names = new Set<string>();
+    for (const plugin of plugins) {
+        if (names.has(plugin.name)) {
+            (sw.logger ?? console).warn(
+                `Duplicate plugin name: "${plugin.name}"`
+            );
+        }
+        names.add(plugin.name);
+    }
+
+    const handlers = createEventHandlers(plugins, config ?? {});
 
     // Регистрируем глобальные обработчики ошибок
     self.addEventListener(SW_EVENT_ERROR, handlers.error);
@@ -324,4 +341,13 @@ export function initServiceWorker(
         handlers.unhandledrejection
     );
     self.addEventListener(SW_EVENT_REJECTIONHANDLED, handlers.rejectionhandled);
+
+    // Регистрируем стандартные обработчики событий Service Worker
+    self.addEventListener(SW_EVENT_INSTALL, handlers.install);
+    self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
+    self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
+    self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
+    self.addEventListener(SW_EVENT_SYNC, handlers.sync);
+    self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
+    self.addEventListener(SW_EVENT_PUSH, handlers.push);
 }
