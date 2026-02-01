@@ -69,7 +69,7 @@ export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
 }
 
 interface ServiceWorkerConfig {
-    logger: Logger;
+    logger?: Logger;
     onError?: (
         error: Error | any,
         event: Event,
@@ -188,7 +188,11 @@ export function createEventHandlers(
                 try {
                     handler(event);
                 } catch (error) {
-                    config.onError?.(error as Error, event);
+                    config.onError?.(
+                        error as Error,
+                        event,
+                        ServiceWorkerErrorType.PLUGIN_ERROR
+                    );
                 }
             });
         },
@@ -295,11 +299,11 @@ export function createEventHandlers(
     };
 }
 
-export function initializeServiceWorker(
+export function initServiceWorker(
     plugins: ServiceWorkerPlugin[],
     config: ServiceWorkerConfig
 ): void {
-    sw.logger = config.logger;
+    sw.logger = config.logger || console;
 
     const handlers = createEventHandlers(plugins, config);
 

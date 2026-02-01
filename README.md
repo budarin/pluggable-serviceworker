@@ -58,7 +58,7 @@ pnpm add @budarin/pluggable-serviceworker
 
 ```typescript
 // sw.js
-import { initializeServiceWorker } from '@budarin/pluggable-serviceworker';
+import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 // Простой плагин для кеширования
 const cachePlugin = {
@@ -76,17 +76,16 @@ const cachePlugin = {
 };
 
 // Инициализация Service Worker с плагинами
-initializeServiceWorker([cachePlugin], { logger: console });
+initServiceWorker([cachePlugin], { logger: console });
 ```
 
 ## ⚙️ Конфигурация
 
-Функция `initializeServiceWorker` принимает второй параметр `config` типа `ServiceWorkerConfig`:
+Функция `initServiceWorker` принимает второй параметр `config` типа `ServiceWorkerConfig`:
 
 ```typescript
 interface ServiceWorkerConfig {
-    logger: Logger; // Обязательное поле
-    // Опциональное поле
+    logger?: Logger; // Опционально, по умолчанию console
     onError?: (
         error: Error | any,
         event: Event,
@@ -97,9 +96,9 @@ interface ServiceWorkerConfig {
 
 ### Поля конфигурации
 
-#### `logger: Logger` (обязательное)
+#### `logger?: Logger` (опциональное)
 
-Объект для логирования с методами `info`, `warn`, `error`, `debug`. Может быть передан `console` или любой другой объект, реализующий интерфейс `Logger`.
+Объект для логирования с методами `info`, `warn`, `error`, `debug`. По умолчанию используется `console`. Может быть передан любой объект, реализующий интерфейс `Logger`.
 
 ```typescript
 interface Logger {
@@ -113,8 +112,10 @@ interface Logger {
 **Пример:**
 
 ```typescript
+const logger = console; // Использование стандартного console
+
 const config = {
-    logger: console, // Использование стандартного console
+    logger,
     // или
     logger: {
         info: (...data) => customLog('INFO', ...data),
@@ -141,13 +142,15 @@ const config = {
 
 ```typescript
 // Без onError - ошибки будут проигнорированы
-initializeServiceWorker([cachePlugin], { logger: console });
+initServiceWorker([cachePlugin], { logger: console });
 
 // С onError - ошибки будут обработаны
-initializeServiceWorker([cachePlugin], {
-    logger: console,
+const logger = console; // Использование стандартного console
+
+initServiceWorker([cachePlugin], {
+    logger,
     onError: (error, event, errorType) => {
-        console.error('Service Worker error:', error, errorType);
+        logger.error('Service Worker error:', error, errorType);
     },
 });
 ```
@@ -158,45 +161,48 @@ initializeServiceWorker([cachePlugin], {
 
 ```typescript
 import {
-    initializeServiceWorker,
+    initServiceWorker,
     ServiceWorkerErrorType,
 } from '@budarin/pluggable-serviceworker';
 
+const logger = console; // или свой объект с методами info, warn, error, debug
+
 const config = {
+    logger,
     onError: (error, event, errorType) => {
-        console.log(`Ошибка типа "${errorType}":`, error);
+        logger.info(`Ошибка типа "${errorType}":`, error);
 
         switch (errorType) {
             case ServiceWorkerErrorType.ERROR:
                 // JavaScript ошибки
-                console.error('JavaScript error:', error);
+                logger.error('JavaScript error:', error);
                 break;
 
             case ServiceWorkerErrorType.MESSAGE_ERROR:
                 // Ошибки сообщений
-                console.error('Message error:', error);
+                logger.error('Message error:', error);
                 break;
 
             case ServiceWorkerErrorType.UNHANDLED_REJECTION:
                 // Необработанные Promise rejection
-                console.error('Unhandled promise rejection:', error);
+                logger.error('Unhandled promise rejection:', error);
                 break;
 
             case ServiceWorkerErrorType.REJECTION_HANDLED:
                 // Обработанные Promise rejection
-                console.log('Promise rejection handled:', error);
+                logger.info('Promise rejection handled:', error);
                 break;
 
             case ServiceWorkerErrorType.PLUGIN_ERROR:
                 // Ошибки в плагинах
-                console.error('Plugin error:', error);
+                logger.error('Plugin error:', error);
                 break;
 
             default:
                 // Неизвестные типы ошибок
-                console.error('Unknown error type:', error);
+                logger.error('Unknown error type:', error);
 
-                // Отправка ошибки в аналитику
+                // можно даже так - отправка ошибки в аналитику
                 fetch('/api/errors', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -212,7 +218,7 @@ const config = {
     },
 };
 
-initializeServiceWorker(
+initServiceWorker(
     [
         /* ваши плагины */
     ],
@@ -244,7 +250,7 @@ interface ServiceWorkerPlugin {
     ) => Promise<Response | undefined> | Response | undefined;
 
     /** Обработчик события message */
-    message?: (event: ExtendableMessageEvent) => Promise<void> | void;
+    message?: (event: SwMessageEvent) => void;
 
     /** Обработчик события sync */
     sync?: (event: SyncEvent) => Promise<void> | void;
