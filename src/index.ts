@@ -1,23 +1,23 @@
 import {
-    SW_EVENT_ACTIVATE,
+    SW_EVENT_PUSH,
+    SW_EVENT_SYNC,
     SW_EVENT_ERROR,
     SW_EVENT_FETCH,
     SW_EVENT_INSTALL,
     SW_EVENT_MESSAGE,
-    SW_EVENT_MESSAGEERROR,
+    SW_EVENT_ACTIVATE,
     SW_EVENT_PERIODICSYNC,
-    SW_EVENT_PUSH,
+    SW_EVENT_MESSAGEERROR,
     SW_EVENT_REJECTIONHANDLED,
-    SW_EVENT_SYNC,
     SW_EVENT_UNHANDLEDREJECTION,
 } from '@budarin/http-constants';
 
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
-    MESSAGE_ERROR = 'messageerror',
-    UNHANDLED_REJECTION = 'unhandledrejection',
-    REJECTION_HANDLED = 'rejectionhandled',
     PLUGIN_ERROR = 'plugin_error',
+    MESSAGE_ERROR = 'messageerror',
+    REJECTION_HANDLED = 'rejectionhandled',
+    UNHANDLED_REJECTION = 'unhandledrejection',
 }
 
 interface SyncEvent extends ExtendableEvent {
