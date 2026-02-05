@@ -70,8 +70,8 @@ const cachePlugin = {
     },
 
     fetch: async (event) => {
-        const cachedResponse = await caches.match(event.request);
-        return cachedResponse; // если результат undefined → фреймворк сам вызовет fetch(event.request)
+        // если результат undefined → фреймворк сам вызовет fetch(event.request)
+        return caches.match(event.request);
     },
 };
 
