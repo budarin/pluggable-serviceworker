@@ -43,15 +43,26 @@ export interface SwMessageEvent extends Omit<ExtendableMessageEvent, 'data'> {
 }
 
 export interface Logger {
+    trace: (...data: unknown[]) => void;
+    debug: (...data: unknown[]) => void;
     info: (...data: unknown[]) => void;
     warn: (...data: unknown[]) => void;
     error: (...data: unknown[]) => void;
-    debug: (...data: unknown[]) => void;
 }
 
-const sw = self as unknown as ServiceWorkerGlobalScope & {
-    logger: Logger;
-};
+/** Базовый контекст, передаётся во все обработчики плагинов вторым аргументом. Без onError — он используется только библиотекой. */
+export interface SwContext {
+    logger?: Logger;
+}
+
+/** Опции инициализации: контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
+export interface ServiceWorkerInitOptions extends SwContext {
+    onError?: (
+        error: Error | unknown,
+        event: Event,
+        errorType?: ServiceWorkerErrorType
+    ) => void;
+}
 
 let serviceWorkerInitialized = false;
 
@@ -60,35 +71,79 @@ export function __resetServiceWorkerState(): void {
     serviceWorkerInitialized = false;
 }
 
-interface ServiceWorkerEventHandlers {
-    install?: (event: ExtendableEvent) => void | Promise<void>;
-    activate?: (event: ExtendableEvent) => void | Promise<void>;
-    fetch?: (event: FetchEvent) => Promise<Response | undefined>;
-    message?: (event: SwMessageEvent) => void;
-    sync?: (event: SyncEvent) => Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent) => Promise<void>;
-    push?: (event: PushEvent) => void | Promise<void>;
+/** Тип контекста, требуемого плагином (извлекается из ServiceWorkerPlugin<C>). */
+export type ContextOfPlugin<P> =
+    P extends ServiceWorkerPlugin<infer C> ? C : SwContext;
+
+/** Юнион типов контекстов превращается в пересечение (все поля обязательны). */
+export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+
+/** Требуемый тип options по массиву плагинов (пересечение контекстов). */
+export type RequiredOptions<P extends readonly ServiceWorkerPlugin<SwContext>[]> =
+    UnionToIntersection<ContextOfPlugin<P[number]>>;
+
+interface ServiceWorkerEventHandlers<C extends SwContext = SwContext> {
+    install?: (
+        event: ExtendableEvent,
+        context?: C
+    ) => void | Promise<void>;
+    activate?: (
+        event: ExtendableEvent,
+        context?: C
+    ) => void | Promise<void>;
+    fetch?: (
+        event: FetchEvent,
+        context?: C
+    ) => Promise<Response | undefined>;
+    message?: (event: SwMessageEvent, context?: C) => void;
+    sync?: (event: SyncEvent, context?: C) => Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent, context?: C) => Promise<void>;
+    push?: (event: PushEvent, context?: C) => void | Promise<void>;
 }
 
-export interface ServiceWorkerPlugin extends ServiceWorkerEventHandlers {
+export interface ServiceWorkerPlugin<C extends SwContext = SwContext>
+    extends ServiceWorkerEventHandlers<C> {
     name: string;
     order?: number;
 }
 
-export interface ServiceWorkerConfig {
-    logger?: Logger;
-    onError?: (
-        error: Error | unknown,
-        event: Event,
-        errorType?: ServiceWorkerErrorType
-    ) => void;
-}
 
+/** @deprecated Используйте ServiceWorkerInitOptions. Оставлено для обратной совместимости. */
+export type ServiceWorkerConfig = ServiceWorkerInitOptions;
 export type FetchResponse = Promise<Response | undefined>;
 
-export function createEventHandlers(
-    plugins: ServiceWorkerPlugin[],
-    config: ServiceWorkerConfig
+type InstallHandler<C extends SwContext> = (
+    event: ExtendableEvent,
+    context?: C
+) => void | Promise<void>;
+type ActivateHandler<C extends SwContext> = (
+    event: ExtendableEvent,
+    context?: C
+) => void | Promise<void>;
+type FetchHandler<C extends SwContext> = (
+    event: FetchEvent,
+    context?: C
+) => FetchResponse;
+type MessageHandler<C extends SwContext> = (
+    event: SwMessageEvent,
+    context?: C
+) => void;
+type SyncHandler<C extends SwContext> = (
+    event: SyncEvent,
+    context?: C
+) => Promise<void>;
+type PeriodicsyncHandler<C extends SwContext> = (
+    event: PeriodicSyncEvent,
+    context?: C
+) => Promise<void>;
+type PushHandler<C extends SwContext> = (
+    event: PushEvent,
+    context?: C
+) => void | Promise<void>;
+
+export function createEventHandlers<C extends SwContext>(
+    plugins: readonly ServiceWorkerPlugin<C>[],
+    options: C & ServiceWorkerInitOptions
 ): {
     install: (event: ExtendableEvent) => void;
     activate: (event: ExtendableEvent) => void;
@@ -103,14 +158,16 @@ export function createEventHandlers(
     rejectionhandled: (event: PromiseRejectionEvent) => void;
 } {
     const handlers = {
-        install: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
-        activate: [] as ((event: ExtendableEvent) => void | Promise<void>)[],
-        fetch: [] as ((event: FetchEvent) => FetchResponse)[],
-        message: [] as ((event: SwMessageEvent) => void)[],
-        sync: [] as ((event: SyncEvent) => Promise<void>)[],
-        periodicsync: [] as ((event: PeriodicSyncEvent) => Promise<void>)[],
-        push: [] as ((event: PushEvent) => void | Promise<void>)[],
+        install: [] as InstallHandler<C>[],
+        activate: [] as ActivateHandler<C>[],
+        fetch: [] as FetchHandler<C>[],
+        message: [] as MessageHandler<C>[],
+        sync: [] as SyncHandler<C>[],
+        periodicsync: [] as PeriodicsyncHandler<C>[],
+        push: [] as PushHandler<C>[],
     };
+
+    const logger = options.logger ?? console;
 
     // Сортировка плагинов по порядку выполнения:
     // 1. Сначала выполняются ВСЕ плагины без order (undefined) в том порядке, в котором они были добавлены
@@ -123,14 +180,14 @@ export function createEventHandlers(
     ];
 
     sortedPlugins.forEach((plugin) => {
-        if (plugin.install) handlers.install.push(plugin.install);
-        if (plugin.activate) handlers.activate.push(plugin.activate);
-        if (plugin.fetch) handlers.fetch.push(plugin.fetch);
-        if (plugin.message) handlers.message.push(plugin.message);
-        if (plugin.sync) handlers.sync.push(plugin.sync);
+        if (plugin.install) handlers.install.push(plugin.install as InstallHandler<C>);
+        if (plugin.activate) handlers.activate.push(plugin.activate as ActivateHandler<C>);
+        if (plugin.fetch) handlers.fetch.push(plugin.fetch as FetchHandler<C>);
+        if (plugin.message) handlers.message.push(plugin.message as MessageHandler<C>);
+        if (plugin.sync) handlers.sync.push(plugin.sync as SyncHandler<C>);
         if (plugin.periodicsync)
-            handlers.periodicsync.push(plugin.periodicsync);
-        if (plugin.push) handlers.push.push(plugin.push);
+            handlers.periodicsync.push(plugin.periodicsync as PeriodicsyncHandler<C>);
+        if (plugin.push) handlers.push.push(plugin.push as PushHandler<C>);
     });
 
     return {
@@ -139,9 +196,9 @@ export function createEventHandlers(
                 Promise.all(
                     handlers.install.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event))
+                            .then(() => handler(event, options))
                             .catch((error: unknown) =>
-                                config.onError?.(
+                                options.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
@@ -157,9 +214,9 @@ export function createEventHandlers(
                 Promise.all(
                     handlers.activate.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event))
+                            .then(() => handler(event, options))
                             .catch((error: unknown) =>
-                                config.onError?.(
+                                options.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
@@ -175,12 +232,12 @@ export function createEventHandlers(
                 (async (): Promise<Response> => {
                     for (const handler of handlers.fetch) {
                         try {
-                            const result = await handler(event);
+                            const result = await handler(event, options);
                             if (result !== undefined) {
                                 return result;
                             }
                         } catch (error) {
-                            config.onError?.(
+                            options.onError?.(
                                 error as Error,
                                 event,
                                 ServiceWorkerErrorType.PLUGIN_ERROR
@@ -195,9 +252,9 @@ export function createEventHandlers(
         message: (event: SwMessageEvent): void => {
             handlers.message.forEach((handler) => {
                 try {
-                    handler(event);
+                    handler(event, options);
                 } catch (error) {
-                    config.onError?.(
+                    options.onError?.(
                         error as Error,
                         event,
                         ServiceWorkerErrorType.PLUGIN_ERROR
@@ -211,9 +268,9 @@ export function createEventHandlers(
                 Promise.all(
                     handlers.sync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event))
+                            .then(() => handler(event, options))
                             .catch((error: unknown) =>
-                                config.onError?.(
+                                options.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
@@ -229,9 +286,9 @@ export function createEventHandlers(
                 Promise.all(
                     handlers.periodicsync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event))
+                            .then(() => handler(event, options))
                             .catch((error: unknown) =>
-                                config.onError?.(
+                                options.onError?.(
                                     error as Error,
                                     event,
                                     ServiceWorkerErrorType.PLUGIN_ERROR
@@ -247,9 +304,9 @@ export function createEventHandlers(
                 (async (): Promise<void> => {
                     for (const handler of handlers.push) {
                         try {
-                            await Promise.resolve(handler(event));
+                            await Promise.resolve(handler(event, options));
                         } catch (error) {
-                            config.onError?.(
+                            options.onError?.(
                                 error as Error,
                                 event,
                                 ServiceWorkerErrorType.PLUGIN_ERROR
@@ -262,85 +319,73 @@ export function createEventHandlers(
 
         error: (event: ErrorEvent): void => {
             try {
-                config.onError?.(
+                options.onError?.(
                     event.error,
                     event,
                     ServiceWorkerErrorType.ERROR
                 );
             } catch (error) {
-                (sw.logger ?? console).error('Error in error handler:', error);
+                logger.error('Error in error handler:', error);
             }
         },
 
         messageerror: (event: MessageEvent): void => {
             try {
-                config.onError?.(
+                options.onError?.(
                     event.data,
                     event,
                     ServiceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
-                (sw.logger ?? console).error(
-                    'Error in messageerror handler:',
-                    error
-                );
+                logger.error('Error in messageerror handler:', error);
             }
         },
 
         unhandledrejection: (event: PromiseRejectionEvent): void => {
             try {
-                config.onError?.(
+                options.onError?.(
                     event.reason,
                     event,
                     ServiceWorkerErrorType.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                (sw.logger ?? console).error(
-                    'Error in unhandledrejection handler:',
-                    error
-                );
+                logger.error('Error in unhandledrejection handler:', error);
             }
         },
 
         rejectionhandled: (event: PromiseRejectionEvent): void => {
             try {
-                config.onError?.(
+                options.onError?.(
                     event.reason,
                     event,
                     ServiceWorkerErrorType.REJECTION_HANDLED
                 );
             } catch (error) {
-                (sw.logger ?? console).error(
-                    'Error in rejectionhandled handler:',
-                    error
-                );
+                logger.error('Error in rejectionhandled handler:', error);
             }
         },
     };
 }
 
-export function initServiceWorker(
-    plugins: ServiceWorkerPlugin[],
-    config?: ServiceWorkerConfig
-): void {
+export function initServiceWorker<
+    P extends readonly ServiceWorkerPlugin<SwContext>[],
+>(plugins: P, options: RequiredOptions<P> & ServiceWorkerInitOptions): void {
     if (serviceWorkerInitialized) {
         return;
     }
     serviceWorkerInitialized = true;
 
-    sw.logger = config?.logger ?? console;
+    const logger = options.logger ?? console;
 
     const names = new Set<string>();
     for (const plugin of plugins) {
         if (names.has(plugin.name)) {
-            (sw.logger ?? console).warn(
-                `Duplicate plugin name: "${plugin.name}"`
-            );
+            logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
         names.add(plugin.name);
     }
 
-    const handlers = createEventHandlers(plugins, config ?? {});
+    const handlers = createEventHandlers(plugins, options);
 
     // Регистрируем глобальные обработчики ошибок
     self.addEventListener(SW_EVENT_ERROR, handlers.error);

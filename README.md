@@ -58,43 +58,60 @@ pnpm add @budarin/pluggable-serviceworker
 
 ```typescript
 // sw.js
-import { initServiceWorker } from '@budarin/pluggable-serviceworker';
+import {
+    initServiceWorker,
+    type ServiceWorkerPlugin,
+    type SwContext,
+} from '@budarin/pluggable-serviceworker';
 
-// Простой плагин для кеширования
-const cachePlugin = {
+// Контекст, который нужен этому плагину (описываем тип)
+interface CachePluginContext extends SwContext {
+    assets: string[];
+    cacheName: string;
+}
+
+const cachePlugin: ServiceWorkerPlugin<CachePluginContext> = {
     name: 'cache-plugin',
 
-    install: async (event) => {
-        const cache = await caches.open('my-cache-v1');
-        await cache.addAll(['/', '/styles.css', '/script.js']);
+    install: async (event, context) => {
+        const cache = await caches.open(context.cacheName);
+        await cache.addAll(context.assets);
     },
 
     fetch: async (event) => {
-        // если результат undefined → фреймворк сам вызовет fetch(event.request)
         return caches.match(event.request);
     },
 };
 
-// Инициализация Service Worker с плагинами
-initServiceWorker([cachePlugin], { logger: console });
+// TypeScript проверит, что в options есть assets и cacheName
+initServiceWorker([cachePlugin], {
+    logger: console,
+    assets: ['/', '/styles.css', '/script.js'],
+    cacheName: 'my-cache-v1',
+});
 ```
 
-**Важно:** для `fetch` плагину не нужно самому вызывать `fetch(event.request)`, если все плагины вернули `undefined` - фреймворк сам выполняет запрос в сеть.
+**Важно:** для `fetch` плагину не нужно самому вызывать `fetch(event.request)`, если все плагины вернули `undefined` - фреймворк сам выполняет запрос в сеть. Во все обработчики плагинов вторым аргументом передаётся **контекст** — те же данные, что вы передали в `initServiceWorker`.
 
-## ⚙️ Конфигурация
+## ⚙️ Конфигурация и контекст (options)
 
-Функция `initServiceWorker` принимает второй параметр `config` типа `ServiceWorkerConfig`:
+Функция `initServiceWorker` принимает второй параметр `options` типа `ServiceWorkerInitOptions` (контекст для плагинов + `onError` для библиотеки). В обработчики плагинов вторым аргументом передаётся **контекст** — часть этого объекта без `onError` (тип контекста — `SwContext` и ваши поля; при типизированных плагинах — пересечение требуемых ими полей).
 
 ```typescript
-interface ServiceWorkerConfig {
-    logger?: Logger; // Опционально, по умолчанию console
-    onError?: (
-        error: Error | any,
-        event: Event,
-        errorType?: ServiceWorkerErrorType
-    ) => void;
+interface SwContext {
+    logger?: Logger; // по умолчанию console
+    // сюда можно добавлять свои поля: version, assets, cacheName и т.д.
+}
+
+// В initServiceWorker передаётся ServiceWorkerInitOptions = SwContext + onError:
+interface ServiceWorkerInitOptions extends SwContext {
+    onError?: (error, event, errorType?) => void; // только для библиотеки, в плагины не передаётся
 }
 ```
+
+В тип контекста, который видят плагины, входит только `SwContext` и ваши поля; `onError` в этот тип не входит и используется только библиотекой.
+
+Формируйте объект `options` в своём сервис-воркере (контекст для плагинов + при необходимости `onError`) и передавайте его в `initServiceWorker`. В плагины передаётся тот же объект как контекст — плагины получают доступ к полям контекста, а `onError` остаётся внутренним делом библиотеки.
 
 ### Поля конфигурации
 
@@ -104,10 +121,11 @@ interface ServiceWorkerConfig {
 
 ```typescript
 interface Logger {
+    trace: (...data: unknown[]) => void;
+    debug: (...data: unknown[]) => void;
     info: (...data: unknown[]) => void;
     warn: (...data: unknown[]) => void;
     error: (...data: unknown[]) => void;
-    debug: (...data: unknown[]) => void;
 }
 ```
 
@@ -116,14 +134,15 @@ interface Logger {
 ```typescript
 const logger = console; // Использование стандартного console
 
-const config = {
+const options = {
     logger,
     // или
     logger: {
+        trace: (...data) => customLog('TRACE', ...data),
+        debug: (...data) => customLog('DEBUG', ...data),
         info: (...data) => customLog('INFO', ...data),
         warn: (...data) => customLog('WARN', ...data),
         error: (...data) => customLog('ERROR', ...data),
-        debug: (...data) => customLog('DEBUG', ...data),
     },
 };
 ```
@@ -144,15 +163,13 @@ const config = {
 
 ```typescript
 // Без onError - ошибки будут проигнорированы
-initServiceWorker([cachePlugin], { logger: console });
+initServiceWorker([cachePlugin], {});
 
 // С onError - ошибки будут обработаны
-const logger = console; // Использование стандартного console
-
 initServiceWorker([cachePlugin], {
-    logger,
+    logger: console,
     onError: (error, event, errorType) => {
-        logger.error('Service Worker error:', error, errorType);
+        console.error('Service Worker error:', error, errorType);
     },
 });
 ```
@@ -169,7 +186,7 @@ import {
 
 const logger = console; // или свой объект с методами info, warn, error, debug
 
-const config = {
+const options = {
     logger,
     onError: (error, event, errorType) => {
         logger.info(`Ошибка типа "${errorType}":`, error);
@@ -224,46 +241,36 @@ initServiceWorker(
     [
         /* ваши плагины */
     ],
-    config
+    options
 );
 ```
 
 ## 🔌 Интерфейс плагина
 
-Каждый плагин должен реализовывать интерфейс `ServiceWorkerPlugin`:
+Каждый плагин реализует интерфейс `ServiceWorkerPlugin<C>`, где `C extends SwContext` — тип контекста, который плагин ожидает. Во все обработчики вторым аргументом передаётся контекст (те же данные, что в `options` при инициализации, без `onError`).
 
 ```typescript
-interface ServiceWorkerPlugin {
-    /** Уникальное имя плагина */
+interface ServiceWorkerPlugin<C extends SwContext = SwContext> {
     name: string;
-
-    /** Порядок выполнения (опционально) */
     order?: number;
 
-    /** Обработчик события install */
-    install?: (event: ExtendableEvent) => Promise<void> | void;
-
-    /** Обработчик события activate */
-    activate?: (event: ExtendableEvent) => Promise<void> | void;
-
-    /** Обработчик события fetch */
+    install?: (event: ExtendableEvent, context?: C) => Promise<void> | void;
+    activate?: (event: ExtendableEvent, context?: C) => Promise<void> | void;
     fetch?: (
-        event: FetchEvent
+        event: FetchEvent,
+        context?: C
     ) => Promise<Response | undefined> | Response | undefined;
-
-    /** Обработчик события message */
-    message?: (event: SwMessageEvent) => void;
-
-    /** Обработчик события sync */
-    sync?: (event: SyncEvent) => Promise<void> | void;
-
-    /** Обработчик события push */
-    push?: (event: PushEvent) => Promise<void> | void;
-
-    /** Обработчик события periodicsync */
-    periodicsync?: (event: PeriodicSyncEvent) => Promise<void> | void;
+    message?: (event: SwMessageEvent, context?: C) => void;
+    sync?: (event: SyncEvent, context?: C) => Promise<void> | void;
+    push?: (event: PushEvent, context?: C) => Promise<void> | void;
+    periodicsync?: (
+        event: PeriodicSyncEvent,
+        context?: C
+    ) => Promise<void> | void;
 }
 ```
+
+Плагин может объявить требуемый контекст через дженерик: `ServiceWorkerPlugin<SwContext & { assets: string[]; cacheName: string }>`. Тогда TypeScript потребует передать в `initServiceWorker` объект `options` с полями `assets` и `cacheName` (при вызове с литералом массива плагинов тип `options` выводится автоматически).
 
 ### 📝 Описание методов
 
@@ -279,9 +286,10 @@ interface ServiceWorkerPlugin {
 
 ### 🎯 Особенности обработчиков
 
-- **`fetch`**: Возвращает `Response` для завершения цепочки или `undefined` для передачи следующему плагину. Если все плагины вернули `undefined`, фреймворк вызывает `fetch(event.request)`
-- **Остальные**: Не возвращают значения, выполняются для всех плагинов
-- **Все методы опциональны** - реализуйте только нужные события
+- Во все обработчики вторым аргументом передаётся **контекст** (данные из объекта, переданного в `initServiceWorker`, без `onError`). Параметр можно не использовать, если плагину контекст не нужен.
+- **`fetch`**: Возвращает `Response` для завершения цепочки или `undefined` для передачи следующему плагину. Если все плагины вернули `undefined`, фреймворк вызывает `fetch(event.request)`.
+- **Остальные**: Не возвращают значения, выполняются для всех плагинов.
+- **Все методы опциональны** — реализуйте только нужные события.
 
 ### 🔄 Обновление Service Worker (skipWaiting / clients.claim)
 
@@ -401,16 +409,16 @@ const authPlugin = {
 
 ## 🛡️ Обработка ошибок
 
-Библиотека автоматически перехватывает и обрабатывает все типы ошибок в Service Worker через единый обработчик `config.onError` (см. раздел [Конфигурация](#-конфигурация)).
+Библиотека перехватывает и обрабатывает все типы ошибок в Service Worker через единый обработчик `options.onError` (см. раздел [Конфигурация и контекст](#-конфигурация-и-контекст-options)).
 
 **Особенности:**
 
-- **Единый обработчик** - все типы ошибок обрабатываются через `config.onError` (опциональное поле)
+- **Единый обработчик** — все типы ошибок обрабатываются через `options.onError` (опциональное поле)
 - **Дефолтного обработчика нет** - если `onError` не указан, ошибки будут проигнорированы
 - **Типизированные ошибки** - третий параметр `errorType` указывает тип ошибки из `ServiceWorkerErrorType`
 - **Глобальные события** - автоматическая обработка `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`
 - **Изоляция ошибок** - ошибка в одном плагине не останавливает выполнение других
-- **Безопасность** - ошибки в самих обработчиках ошибок логируются через `logger.error`
+- **Безопасность** — ошибки в самих обработчиках ошибок логируются через `options.logger`
 
 ## Режим разработки
 
