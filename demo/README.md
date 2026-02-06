@@ -1,0 +1,52 @@
+# Демо: React + Vite + offlineFirst
+
+Минимальное приложение на React и Vite с Service Worker на пресете **offlineFirst** и активацией по сигналу со страницы (`activateOnSignalServiceWorker`).
+
+## Локальный запуск (с SW и офлайном)
+
+Из корня репозитория:
+
+```bash
+pnpm install
+pnpm build
+cd demo && pnpm install && pnpm run build && pnpm run preview
+```
+
+Откройте указанный URL (обычно `http://localhost:4173`). В DevTools → Network включите «Offline» и обновите страницу — контент должен отдаваться из кеша.
+
+Только разработка UI (без SW):
+
+```bash
+cd demo
+pnpm install
+pnpm run dev
+```
+
+## Сборка
+
+```bash
+cd demo
+pnpm run build
+pnpm run preview
+```
+
+При каждом запросе `sw.js` сервер (в демо — `vite preview`) отдаёт его с заголовками `Cache-Control: no-store, no-cache`, поэтому браузер при проверке обновлений не использует кеш и получает актуальный скрипт. На своём проде настройте то же самое для пути к SW.
+
+## Песочницы (онлайн-демо)
+
+Демо можно открыть в публичных песочницах (предварительно соберите библиотеку в корне: `pnpm build`):
+
+- **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/github/budarin/pluggable-serviceworker/tree/main/demo) — замените `budarin/pluggable-serviceworker` на ваш форк/репо при необходимости.
+- **CodeSandbox:** импортируйте репозиторий и укажите корень приложения как папку `demo`; либо откройте по ссылке вида
+  `https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/main/demo`.
+
+В песочнице выполните в корне репо: `pnpm install`, `pnpm build`, затем перейдите в `demo`, `pnpm install`, `pnpm run preview` (или используйте настройки проекта для запуска из `demo`).
+
+## Что демонстрируется
+
+- Регистрация SW из приложения (`/sw.js`).
+- Пресет `offlineFirst`: precache при `install`, отдача из кеша в `fetch`.
+- Плагин `claimOnMessage`: по сообщению `SW_ACTIVATE` со страницы — `skipWaiting`; плагин `claim` в `activate` вызывает `clients.claim()`.
+- Кнопка «Применить» отправляет сообщение **ожидающему** воркеру (`reg.waiting`), после чего он активируется и забирает клиентов.
+- Если после «Проверить обновление» кнопка «Применить» не появляется и новая версия сразу активна — в Chrome DevTools (Application → Service Workers) снимите галку **Update on reload**. Для отладки: откройте консоль у воркера (кнопка «inspect» у SW). При нажатии «Применить» там появится лог `[claimOnMessage] Получен сигнал активации`; если этот лог есть без нажатия — сигнал шлёт другой код (вкладка, расширение).
+- Индикатор онлайн/офлайн и статус SW.

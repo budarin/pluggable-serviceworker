@@ -73,6 +73,8 @@ export interface OfflineFirstContext extends SwContext {
     cacheName: string;
     /** Тип сообщения со страницы, по которому вызывать skipWaiting/claim (для claimOnMessage). По умолчанию `'SW_ACTIVATE'`. */
     claimMessageType?: string;
+    /** При true serveFromCache ищет в кеше с ignoreSearch (для dev, когда URL с query меняются). */
+    cacheMatchIgnoreSearch?: boolean;
 }
 
 let serviceWorkerInitialized = false;
@@ -263,7 +265,16 @@ export function createEventHandlers<C extends SwContext>(
                             );
                         }
                     }
-                    return fetch(event.request);
+                    try {
+                        return await fetch(event.request);
+                    } catch (error) {
+                        // Офлайн или сетевая ошибка — не оставляем promise в respondWith rejected
+                        options.onError?.(error as Error, event, ServiceWorkerErrorType.PLUGIN_ERROR);
+                        return new Response('', {
+                            status: 503,
+                            statusText: 'Service Unavailable',
+                        });
+                    }
                 })()
             );
         },

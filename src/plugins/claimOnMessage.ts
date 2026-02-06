@@ -11,9 +11,10 @@ export const claimOnMessage: ServiceWorkerPlugin<OfflineFirstContext> = {
     message: (event: SwMessageEvent, context) => {
         const type = context.claimMessageType ?? DEFAULT_CLAIM_MESSAGE_TYPE;
 
-        if (event.data?.type === type) {
-            self.skipWaiting();
-            void self.clients.claim();
-        }
+        if (event.data?.type !== type) return;
+
+        // self.state в Service Worker не в спецификации и отсутствует во многих браузерах — не проверяем.
+        context.logger?.info?.('[claimOnMessage] Получен сигнал активации, вызываю skipWaiting()');
+        self.skipWaiting();
     },
 };

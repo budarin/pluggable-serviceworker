@@ -43,6 +43,5 @@
     },
     "dependencies": {
         "@budarin/http-constants": "^1.0.16"
-    },
-    "packageManager": "pnpm@10.16.1"
+    }
 }
