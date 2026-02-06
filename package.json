@@ -20,7 +20,10 @@
         "README.md"
     ],
     "exports": {
-        ".": "./dist/index.js"
+        ".": "./dist/index.js",
+        "./plugins": "./dist/plugins/index.js",
+        "./presets": "./dist/presets/index.js",
+        "./sw": "./dist/sw/index.js"
     },
     "devDependencies": {
         "@types/node": "^24.10.1",

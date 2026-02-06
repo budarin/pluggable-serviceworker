@@ -1,0 +1,9 @@
+export { precache } from './precache.js';
+export { skipWaiting } from './skipWaiting.js';
+export { claim } from './claim.js';
+export { claimOnMessage } from './claimOnMessage.js';
+export { serveFromCache } from './serveFromCache.js';
+export { restoreAssetToCache } from './restoreAssetToCache.js';
+export { cacheFirst } from './cacheFirst.js';
+export { networkFirst } from './networkFirst.js';
+export { staleWhileRevalidate } from './staleWhileRevalidate.js';

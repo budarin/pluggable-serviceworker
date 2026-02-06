@@ -64,6 +64,17 @@ export interface ServiceWorkerInitOptions extends SwContext {
     ) => void;
 }
 
+/** Объект для показа push-уведомления: то, что принимает Notification API. Возвращается из обработчика push; библиотека вызывает showNotification. */
+export type PushNotificationPayload = { title: string } & NotificationOptions;
+
+/** Контекст для встроенных примитивов/пресетов: assets, cacheName, опционально тип сообщения для активации. */
+export interface OfflineFirstContext extends SwContext {
+    assets: string[];
+    cacheName: string;
+    /** Тип сообщения со страницы, по которому вызывать skipWaiting/claim (для claimOnMessage). По умолчанию `'SW_ACTIVATE'`. */
+    claimMessageType?: string;
+}
+
 let serviceWorkerInitialized = false;
 
 /** Сбрасывает состояние инициализации (только для тестов). */
@@ -78,27 +89,35 @@ export type ContextOfPlugin<P> =
 /** Юнион типов контекстов превращается в пересечение (все поля обязательны). */
 export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
+/** Плагины с любым контекстом, расширяющим SwContext (для типизации initServiceWorker). */
+export type AnyServiceWorkerPlugin =
+    | ServiceWorkerPlugin<SwContext>
+    | ServiceWorkerPlugin<OfflineFirstContext>;
+
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). */
-export type RequiredOptions<P extends readonly ServiceWorkerPlugin<SwContext>[]> =
+export type RequiredOptions<P extends readonly AnyServiceWorkerPlugin[]> =
     UnionToIntersection<ContextOfPlugin<P[number]>>;
 
 interface ServiceWorkerEventHandlers<C extends SwContext = SwContext> {
     install?: (
         event: ExtendableEvent,
-        context?: C
+        context: C
     ) => void | Promise<void>;
     activate?: (
         event: ExtendableEvent,
-        context?: C
+        context: C
     ) => void | Promise<void>;
     fetch?: (
         event: FetchEvent,
-        context?: C
+        context: C
     ) => Promise<Response | undefined>;
-    message?: (event: SwMessageEvent, context?: C) => void;
-    sync?: (event: SyncEvent, context?: C) => Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent, context?: C) => Promise<void>;
-    push?: (event: PushEvent, context?: C) => void | Promise<void>;
+    message?: (event: SwMessageEvent, context: C) => void;
+    sync?: (event: SyncEvent, context: C) => Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent, context: C) => Promise<void>;
+    push?: (
+        event: PushEvent,
+        context: C
+    ) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
 }
 
 export interface ServiceWorkerPlugin<C extends SwContext = SwContext>
@@ -114,32 +133,32 @@ export type FetchResponse = Promise<Response | undefined>;
 
 type InstallHandler<C extends SwContext> = (
     event: ExtendableEvent,
-    context?: C
+    context: C
 ) => void | Promise<void>;
 type ActivateHandler<C extends SwContext> = (
     event: ExtendableEvent,
-    context?: C
+    context: C
 ) => void | Promise<void>;
 type FetchHandler<C extends SwContext> = (
     event: FetchEvent,
-    context?: C
+    context: C
 ) => FetchResponse;
 type MessageHandler<C extends SwContext> = (
     event: SwMessageEvent,
-    context?: C
+    context: C
 ) => void;
 type SyncHandler<C extends SwContext> = (
     event: SyncEvent,
-    context?: C
+    context: C
 ) => Promise<void>;
 type PeriodicsyncHandler<C extends SwContext> = (
     event: PeriodicSyncEvent,
-    context?: C
+    context: C
 ) => Promise<void>;
 type PushHandler<C extends SwContext> = (
     event: PushEvent,
-    context?: C
-) => void | Promise<void>;
+    context: C
+) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
 
 export function createEventHandlers<C extends SwContext>(
     plugins: readonly ServiceWorkerPlugin<C>[],
@@ -304,7 +323,22 @@ export function createEventHandlers<C extends SwContext>(
                 (async (): Promise<void> => {
                     for (const handler of handlers.push) {
                         try {
-                            await Promise.resolve(handler(event, options));
+                            const result = await Promise.resolve(
+                                handler(event, options)
+                            );
+                            if (
+                                result != null &&
+                                typeof result === 'object' &&
+                                'title' in result &&
+                                typeof result.title === 'string'
+                            ) {
+                                const { title, ...opts } = result;
+                                await self.registration.showNotification(
+                                    title,
+                                    opts
+                                );
+                                return;
+                            }
                         } catch (error) {
                             options.onError?.(
                                 error as Error,
@@ -368,24 +402,27 @@ export function createEventHandlers<C extends SwContext>(
 }
 
 export function initServiceWorker<
-    P extends readonly ServiceWorkerPlugin<SwContext>[],
+    P extends readonly AnyServiceWorkerPlugin[],
 >(plugins: P, options: RequiredOptions<P> & ServiceWorkerInitOptions): void {
     if (serviceWorkerInitialized) {
         return;
     }
     serviceWorkerInitialized = true;
 
-    const logger = options.logger ?? console;
+    const opts = { ...options, logger: options.logger ?? console };
 
     const names = new Set<string>();
     for (const plugin of plugins) {
         if (names.has(plugin.name)) {
-            logger.warn(`Duplicate plugin name: "${plugin.name}"`);
+            opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
         names.add(plugin.name);
     }
 
-    const handlers = createEventHandlers(plugins, options);
+    const handlers = createEventHandlers(
+        plugins as readonly ServiceWorkerPlugin<SwContext>[],
+        opts
+    );
 
     // Регистрируем глобальные обработчики ошибок
     self.addEventListener(SW_EVENT_ERROR, handlers.error);
