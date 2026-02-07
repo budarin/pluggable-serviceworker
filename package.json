@@ -26,10 +26,10 @@
         "./sw": "./dist/sw/index.js"
     },
     "devDependencies": {
-        "@types/node": "^24.10.1",
+        "@types/node": "^24.10.11",
         "@types/serviceworker": "^0.0.153",
         "@types/web": "^0.0.269",
-        "prettier": "^3.6.2",
+        "prettier": "^3.8.1",
         "typescript": "^5.9.3",
         "vitest": "^3.2.4"
     },
