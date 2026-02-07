@@ -51,12 +51,12 @@ export interface Logger {
 }
 
 /** Базовый контекст, передаётся во все обработчики плагинов вторым аргументом. Без onError — он используется только библиотекой. */
-export interface SwContext {
+export interface PluginContext {
     logger?: Logger;
 }
 
 /** Опции инициализации: контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
-export interface ServiceWorkerInitOptions extends SwContext {
+export interface ServiceWorkerInitOptions extends PluginContext {
     onError?: (
         error: Error | unknown,
         event: Event,
@@ -68,7 +68,7 @@ export interface ServiceWorkerInitOptions extends SwContext {
 export type PushNotificationPayload = { title: string } & NotificationOptions;
 
 /** Контекст для встроенных примитивов/пресетов: assets, cacheName, опционально тип сообщения для активации. */
-export interface OfflineFirstContext extends SwContext {
+export interface OfflineFirstContext extends PluginContext {
     assets: string[];
     cacheName: string;
     /** Тип сообщения со страницы, по которому вызывать skipWaiting/claim (для claimOnMessage). По умолчанию `'SW_ACTIVATE'`. */
@@ -86,21 +86,21 @@ export function __resetServiceWorkerState(): void {
 
 /** Тип контекста, требуемого плагином (извлекается из ServiceWorkerPlugin<C>). */
 export type ContextOfPlugin<P> =
-    P extends ServiceWorkerPlugin<infer C> ? C : SwContext;
+    P extends ServiceWorkerPlugin<infer C> ? C : PluginContext;
 
 /** Юнион типов контекстов превращается в пересечение (все поля обязательны). */
 export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
-/** Плагины с любым контекстом, расширяющим SwContext (для типизации initServiceWorker). */
+/** Плагины с любым контекстом, расширяющим PluginContext (для типизации initServiceWorker). */
 export type AnyServiceWorkerPlugin =
-    | ServiceWorkerPlugin<SwContext>
+    | ServiceWorkerPlugin<PluginContext>
     | ServiceWorkerPlugin<OfflineFirstContext>;
 
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). */
 export type RequiredOptions<P extends readonly AnyServiceWorkerPlugin[]> =
     UnionToIntersection<ContextOfPlugin<P[number]>>;
 
-interface ServiceWorkerEventHandlers<C extends SwContext = SwContext> {
+interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
     install?: (
         event: ExtendableEvent,
         context: C
@@ -122,7 +122,7 @@ interface ServiceWorkerEventHandlers<C extends SwContext = SwContext> {
     ) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
 }
 
-export interface ServiceWorkerPlugin<C extends SwContext = SwContext>
+export interface ServiceWorkerPlugin<C extends PluginContext = PluginContext>
     extends ServiceWorkerEventHandlers<C> {
     name: string;
     order?: number;
@@ -133,36 +133,36 @@ export interface ServiceWorkerPlugin<C extends SwContext = SwContext>
 export type ServiceWorkerConfig = ServiceWorkerInitOptions;
 export type FetchResponse = Promise<Response | undefined>;
 
-type InstallHandler<C extends SwContext> = (
+type InstallHandler<C extends PluginContext> = (
     event: ExtendableEvent,
     context: C
 ) => void | Promise<void>;
-type ActivateHandler<C extends SwContext> = (
+type ActivateHandler<C extends PluginContext> = (
     event: ExtendableEvent,
     context: C
 ) => void | Promise<void>;
-type FetchHandler<C extends SwContext> = (
+type FetchHandler<C extends PluginContext> = (
     event: FetchEvent,
     context: C
 ) => FetchResponse;
-type MessageHandler<C extends SwContext> = (
+type MessageHandler<C extends PluginContext> = (
     event: SwMessageEvent,
     context: C
 ) => void;
-type SyncHandler<C extends SwContext> = (
+type SyncHandler<C extends PluginContext> = (
     event: SyncEvent,
     context: C
 ) => Promise<void>;
-type PeriodicsyncHandler<C extends SwContext> = (
+type PeriodicsyncHandler<C extends PluginContext> = (
     event: PeriodicSyncEvent,
     context: C
 ) => Promise<void>;
-type PushHandler<C extends SwContext> = (
+type PushHandler<C extends PluginContext> = (
     event: PushEvent,
     context: C
 ) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
 
-export function createEventHandlers<C extends SwContext>(
+export function createEventHandlers<C extends PluginContext>(
     plugins: readonly ServiceWorkerPlugin<C>[],
     options: C & ServiceWorkerInitOptions
 ): {
@@ -431,7 +431,7 @@ export function initServiceWorker<
     }
 
     const handlers = createEventHandlers(
-        plugins as readonly ServiceWorkerPlugin<SwContext>[],
+        plugins as readonly ServiceWorkerPlugin<PluginContext>[],
         opts
     );
 
