@@ -14,14 +14,6 @@ cd demo && pnpm install && pnpm run build && pnpm run preview
 
 Откройте указанный URL (обычно `http://localhost:4173`). В DevTools → Network включите «Offline» и обновите страницу — контент должен отдаваться из кеша.
 
-Только разработка UI (без SW):
-
-```bash
-cd demo
-pnpm install
-pnpm run dev
-```
-
 ## Сборка
 
 ```bash
