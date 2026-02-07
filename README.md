@@ -59,13 +59,15 @@ pnpm add @budarin/pluggable-serviceworker
 ```typescript
 // sw.js
 import {
-    initServiceWorker,
-    type ServiceWorkerPlugin,
+    type Logger,
     type SwContext,
+    type ServiceWorkerPlugin,
+    initServiceWorker,
 } from '@budarin/pluggable-serviceworker';
 
 // Контекст: список ассетов для precache и имя кеша
 interface PrecacheAndServeContext extends SwContext {
+    logger: Logger;
     assets: string[];
     cacheName: string;
 }
@@ -74,13 +76,24 @@ const precacheAndServePlugin: ServiceWorkerPlugin<PrecacheAndServeContext> = {
     name: 'precache-and-serve',
 
     install: async (_event, context) => {
+        if (import.meta.env.DEV) {
+            logger.debug('precache-and-serve: cache assets');
+        }
         const cache = await caches.open(context.cacheName);
         await cache.addAll(context.assets);
     },
 
     fetch: async (event, context) => {
         const cache = await caches.open(context.cacheName);
-        return cache.match(event.request) ?? undefined;
+        const asset = cache.match(event.request);
+
+        if (!asset && import.meta.env.DEV) {
+            logger.debug(
+                `precache-and-serve: asset ${event.request.url} not found in cache!`
+            );
+        }
+
+        return asset ?? undefined;
     },
 };
 
@@ -446,8 +459,8 @@ const authPlugin = {
 | Название                 | Событие  | Описание                                                                                                                                                                            |
 | ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **precache**             | install  | Кеширует список `context.assets` в кеш `context.cacheName`.                                                                                                                         |
-| **precacheMissing**      | install  | Добавляет в кеш только те URL из `context.assets`, которых ещё нет в кеше (сравнение по нормализованному URL).                                                                         |
-| **pruneStaleCache**      | activate | Удаляет из кеша записи, чей URL не входит в `context.assets`.                                                                                                                        |
+| **precacheMissing**      | install  | Добавляет в кеш только те URL из `context.assets`, которых ещё нет в кеше (сравнение по нормализованному URL).                                                                      |
+| **pruneStaleCache**      | activate | Удаляет из кеша записи, чей URL не входит в `context.assets`.                                                                                                                       |
 | **skipWaiting**          | install  | Вызывает `skipWaiting()`.                                                                                                                                                           |
 | **claim**                | activate | Вызывает `clients.claim()`.                                                                                                                                                         |
 | **claimOnMessage**       | message  | При сообщении с `event.data.type === context.claimMessageType` (по умолчанию `'SW_ACTIVATE'`) вызывает `skipWaiting()`. `clients.claim()` вызывается плагином **claim** в activate. |
