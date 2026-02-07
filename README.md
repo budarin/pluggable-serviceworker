@@ -98,6 +98,8 @@ initServiceWorker([precacheAndServePlugin], {
 
 В папке [demo/](demo/) — приложение **React + Vite** с пресетом **offlineFirst** и типовым сервис-воркером **activateOnSignal**. Запуск из корня: `pnpm install && pnpm build`, затем `cd demo && pnpm install && pnpm run dev`. Подробности и ссылки на публичные песочницы (StackBlitz, CodeSandbox) — в [demo/README.md](demo/README.md).
 
+[Open in CodeSandbox](https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/main/demo)
+
 ## `initServiceWorker(plugins, options)`
 
 `initServiceWorker` — точка входа: она регистрирует обработчики событий Service Worker (`install`, `activate`, `fetch`, …) и прогоняет их через список плагинов.
@@ -441,17 +443,17 @@ const authPlugin = {
 
 Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
 
-| Название                 | Событие  | Описание                                                                                                                                    |
-| ------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **precache**             | install  | Кеширует список `context.assets` в кеш `context.cacheName`.                                                                                 |
-| **skipWaiting**          | install  | Вызывает `skipWaiting()`.                                                                                                                   |
-| **claim**                | activate | Вызывает `clients.claim()`.                                                                                                                 |
+| Название                 | Событие  | Описание                                                                                                                                                                            |
+| ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **precache**             | install  | Кеширует список `context.assets` в кеш `context.cacheName`.                                                                                                                         |
+| **skipWaiting**          | install  | Вызывает `skipWaiting()`.                                                                                                                                                           |
+| **claim**                | activate | Вызывает `clients.claim()`.                                                                                                                                                         |
 | **claimOnMessage**       | message  | При сообщении с `event.data.type === context.claimMessageType` (по умолчанию `'SW_ACTIVATE'`) вызывает `skipWaiting()`. `clients.claim()` вызывается плагином **claim** в activate. |
-| **serveFromCache**       | fetch    | Отдаёт из кеша; при промахе — undefined.                                                                                                    |
-| **restoreAssetToCache**  | fetch    | Для URL из `context.assets`: сначала из кеша; если в кеше нет — запрос с сервера, в кеш, ответ браузеру.                                    |
-| **cacheFirst**           | fetch    | Кеш → при промахе сеть, ответ в кеш.                                                                                                        |
-| **networkFirst**         | fetch    | Сеть → при ошибке/офлайне из кеша.                                                                                                          |
-| **staleWhileRevalidate** | fetch    | Отдаёт из кеша, в фоне обновляет кеш из сети.                                                                                               |
+| **serveFromCache**       | fetch    | Отдаёт из кеша; при промахе — undefined.                                                                                                                                            |
+| **restoreAssetToCache**  | fetch    | Для URL из `context.assets`: сначала из кеша; если в кеше нет — запрос с сервера, в кеш, ответ браузеру.                                                                            |
+| **cacheFirst**           | fetch    | Кеш → при промахе сеть, ответ в кеш.                                                                                                                                                |
+| **networkFirst**         | fetch    | Сеть → при ошибке/офлайне из кеша.                                                                                                                                                  |
+| **staleWhileRevalidate** | fetch    | Отдаёт из кеша, в фоне обновляет кеш из сети.                                                                                                                                       |
 
 Контекст для кеширующих примитивов: `OfflineFirstContext` (assets, cacheName, опционально claimMessageType). Импортируйте тип из основного пакета.
 
