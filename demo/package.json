@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite build && vite preview"
     },
     "dependencies": {
         "@budarin/pluggable-serviceworker": "^1.2.0",
