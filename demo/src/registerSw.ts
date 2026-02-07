@@ -1,5 +1,4 @@
-const SW_SCOPE = '/';
-export const CLAIM_MESSAGE_TYPE = 'SW_ACTIVATE';
+import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants';
 
 /** В dev SW не регистрируется; демо с SW только после build + preview. */
 export function registerSw(): Promise<ServiceWorkerRegistration | undefined> {
@@ -7,7 +6,7 @@ export function registerSw(): Promise<ServiceWorkerRegistration | undefined> {
     if (import.meta.env.DEV) return Promise.resolve(undefined);
 
     return navigator.serviceWorker
-        .register('/sw.js', { scope: SW_SCOPE })
+        .register('/sw.js')
         .then((reg) => {
             console.info('SW зарегистрирован:', reg.scope);
             return reg;
@@ -26,5 +25,5 @@ export function sendActivateSignal(
         console.warn('Нет ожидающего обновления (reg.waiting)');
         return;
     }
-    reg.waiting.postMessage({ type: CLAIM_MESSAGE_TYPE });
+    reg.waiting.postMessage({ type: SW_MSG_SKIP_WAITING });
 }
