@@ -38,7 +38,7 @@ pnpm run preview
 
 - **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/github/budarin/pluggable-serviceworker/tree/main/demo) — замените `budarin/pluggable-serviceworker` на ваш форк/репо при необходимости.
 - **CodeSandbox:** импортируйте репозиторий и укажите корень приложения как папку `demo`; либо откройте по ссылке вида
-  `https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/main/demo`.
+  [Open in CodeSandbox](https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/main/demo).
 
 В песочнице выполните в корне репо: `pnpm install`, `pnpm build`, затем перейдите в `demo`, `pnpm install`, `pnpm run preview` (или используйте настройки проекта для запуска из `demo`).
 

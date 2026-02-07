@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, JSX } from 'react';
 import { sendActivateSignal } from './registerSw';
 
 type SwPhase =
@@ -40,14 +40,20 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
         });
 
         const onControllerChange = () => updatePhase(regRef.current);
-        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        navigator.serviceWorker.addEventListener(
+            'controllerchange',
+            onControllerChange
+        );
 
         const interval = setInterval(() => {
             if (regRef.current) updatePhase(regRef.current);
         }, 300);
 
         return () => {
-            navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+            navigator.serviceWorker.removeEventListener(
+                'controllerchange',
+                onControllerChange
+            );
             clearInterval(interval);
         };
     }, [registrationPromise]);
@@ -78,7 +84,9 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
 
         // После перезагрузки из кеша в офлайне navigator.onLine бывает устаревшим. Запрос к URL не из кеша:
         // офлайн → SW вернёт 503 или fetch отклонится.
-        fetch(window.location.origin + '/?__ping=' + Date.now(), { cache: 'no-store' })
+        fetch(window.location.origin + '/?__ping=' + Date.now(), {
+            cache: 'no-store',
+        })
             .then((r) => setOnline(r.status !== 503))
             .catch(() => setOnline(false));
 
@@ -99,9 +107,10 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
         <main style={styles.main}>
             <h1 style={styles.h1}>@budarin/pluggable-serviceworker</h1>
             <p style={styles.p}>
-                Демо: пресет <strong>offlineFirst</strong>. При первом запуске (нет контроллера)
-                браузер сам активирует SW. Кнопка «Применить» появляется, когда есть новая версия
-                в состоянии waiting — нажмите «Проверить обновление», чтобы её получить.
+                Демо: пресет <strong>offlineFirst</strong>. При первом запуске
+                (нет контроллера) браузер сам активирует SW. Кнопка «Применить»
+                появляется, когда есть новая версия в состоянии waiting —
+                нажмите «Проверить обновление», чтобы её получить.
             </p>
 
             <section style={styles.section}>
@@ -115,7 +124,10 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
                     </li>
                     <li>
                         <strong>Service Worker:</strong>{' '}
-                        <SwPhaseLabel phase={phase} isDev={import.meta.env.DEV} />
+                        <SwPhaseLabel
+                            phase={phase}
+                            isDev={import.meta.env.DEV}
+                        />
                     </li>
                 </ul>
             </section>
@@ -123,7 +135,8 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
             {phase === 'not-installed' && import.meta.env.DEV && (
                 <section style={styles.section}>
                     <p style={styles.hint}>
-                        В dev SW не регистрируется. Для проверки офлайна и кнопки обновления:{' '}
+                        В dev SW не регистрируется. Для проверки офлайна и
+                        кнопки обновления:{' '}
                         <code>pnpm run build && pnpm run preview</code>.
                     </p>
                 </section>
@@ -153,17 +166,17 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
                         Проверить обновление
                     </button>
                     <p style={styles.hint}>
-                        Вызовет <code>registration.update()</code>. Если сервер отдаст новый скрипт
-                        SW — появится статус «есть обновление» и кнопка «Применить».
+                        Вызовет <code>registration.update()</code>. Если сервер
+                        отдаст новый скрипт SW — появится статус «есть
+                        обновление» и кнопка «Применить».
                     </p>
                     <h2 style={styles.h2}>Проверка офлайна</h2>
                     <p style={styles.p}>
-                        Включите в DevTools (Network) режим «Offline» и обновите страницу —
-                        контент должен отдаваться из кеша.
+                        Включите в DevTools (Network) режим «Offline» и обновите
+                        страницу — контент должен отдаваться из кеша.
                     </p>
                 </section>
             )}
-
         </main>
     );
 }
