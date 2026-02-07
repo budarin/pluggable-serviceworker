@@ -36,7 +36,7 @@ alwaysApply: true
 - [ ] Create todo list (if 3+ steps)
 - [ ] Apply changes per plan
 - [ ] **TypeScript** — `pnpm type-check` (or `npm run type-check`)
-- [ ] **Lint** — `pnpm lint` (or `npm run lint`)
+- [ ] **Lint** — `pnpm lint` (if exists)
 - [ ] **Tests** — `pnpm test` (or `npm test`)
 - [ ] Fix all errors
 

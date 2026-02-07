@@ -1,4 +1,6 @@
 export { precache } from './precache.js';
+export { precacheMissing } from './precacheMissing.js';
+export { pruneStaleCache } from './pruneStaleCache.js';
 export { skipWaiting } from './skipWaiting.js';
 export { claim } from './claim.js';
 export { claimOnMessage } from './claimOnMessage.js';

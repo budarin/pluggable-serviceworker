@@ -36,6 +36,7 @@
     "scripts": {
         "build": "tsc",
         "test": "vitest run",
+        "type-check": "tsc -b -noEmit",
         "test:watch": "vitest",
         "pnpm-install": "pnpm install",
         "upgrade-deps": "pnpm upgrade -i",
