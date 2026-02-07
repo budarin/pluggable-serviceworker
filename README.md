@@ -85,7 +85,7 @@ const precacheAndServePlugin: ServiceWorkerPlugin<PrecacheAndServeContext> = {
 
     fetch: async (event, context) => {
         const cache = await caches.open(context.cacheName);
-        const asset = cache.match(event.request);
+        const asset = await cache.match(event.request);
 
         if (!asset && import.meta.env.DEV) {
             logger.debug(
