@@ -1,5 +1,5 @@
 import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
-import { normalizeUrl } from '../utils/url.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 /**
  * При install: по списку assets и ключам кэша определяет отсутствующие в кэше URL

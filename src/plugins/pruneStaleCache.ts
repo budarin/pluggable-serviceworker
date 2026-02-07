@@ -1,5 +1,5 @@
 import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
-import { normalizeUrl } from '../utils/url.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 /**
  * При activate: обходит ключи кэша и удаляет записи, чей URL не входит в context.assets.

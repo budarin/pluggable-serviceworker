@@ -1,22 +1,5 @@
 import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
-
-function isAssetRequest(requestUrl: string, assets: string[]): boolean {
-    try {
-        const url = new URL(requestUrl);
-        const pathname = url.pathname;
-        return assets.some((asset) => {
-            try {
-                const assetUrl = new URL(asset, self.location.origin);
-                return url.href === assetUrl.href;
-            } catch {
-                const norm = asset.startsWith('/') ? asset : `/${asset}`;
-                return pathname === norm;
-            }
-        });
-    } catch {
-        return false;
-    }
-}
+import { isAssetRequest } from '../utils/isAssetRequest.js';
 
 /**
  * Для запросов, чей URL входит в context.assets: сначала отдаёт из кеша, если есть.
