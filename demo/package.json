@@ -4,6 +4,7 @@
     "version": "0.0.1",
     "type": "module",
     "dependencies": {
+        "@budarin/http-constants": "^1.0.16",
         "@budarin/pluggable-serviceworker": "^1.2.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
