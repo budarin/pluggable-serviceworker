@@ -317,6 +317,9 @@ export function createEventHandlers<C extends PluginContext>(
         push: (event: PushEvent): void => {
             event.waitUntil(
                 (async (): Promise<void> => {
+                    const nonUndefinedReturns: (Record<string, unknown> & {
+                        title?: unknown;
+                    })[] = [];
                     for (const handler of handlers.push) {
                         try {
                             const result = await Promise.resolve(
@@ -327,21 +330,7 @@ export function createEventHandlers<C extends PluginContext>(
                                 typeof result === 'object' &&
                                 !Array.isArray(result)
                             ) {
-                                if (
-                                    'title' in result &&
-                                    typeof (result as { title: unknown }).title ===
-                                        'string'
-                                ) {
-                                    const { title, ...opts } = result as {
-                                        title: string;
-                                    } & Record<string, unknown>;
-                                    await self.registration.showNotification(
-                                        title,
-                                        opts
-                                    );
-                                    return;
-                                }
-                                return;
+                                nonUndefinedReturns.push(result as Record<string, unknown> & { title?: unknown });
                             }
                         } catch (error) {
                             options.onError?.(
@@ -351,8 +340,23 @@ export function createEventHandlers<C extends PluginContext>(
                             );
                         }
                     }
+                    const payloads = nonUndefinedReturns.filter(
+                        (r): r is { title: string } & Record<string, unknown> =>
+                            'title' in r &&
+                            typeof r.title === 'string'
+                    );
+                    if (
+                        nonUndefinedReturns.length === 1 &&
+                        payloads.length === 0
+                    )
+                        return;
+                    for (const payload of payloads) {
+                        const { title, ...opts } = payload;
+                        await self.registration.showNotification(title, opts);
+                    }
+                    if (payloads.length > 0) return;
 
-                    // Fallback: ни один плагин не вернул payload — показать из event.data или по умолчанию
+                    // Fallback: ни один плагин не вернул payload с title
                     try {
                         const data = event.data;
                         if (!data) return;
