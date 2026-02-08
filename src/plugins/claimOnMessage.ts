@@ -4,7 +4,7 @@ import type {
     ServiceWorkerPlugin,
 } from '../index.js';
 
-import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants';
+import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants/service-worker';
 
 export interface ClaimOnMessageContext extends PluginContext {
     claimMessageType?: string;

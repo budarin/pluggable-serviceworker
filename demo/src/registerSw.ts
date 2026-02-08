@@ -1,4 +1,4 @@
-import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants';
+import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants/service-worker';
 
 export async function registerSw(): Promise<
     ServiceWorkerRegistration | undefined
@@ -9,7 +9,6 @@ export async function registerSw(): Promise<
         const reg = await navigator.serviceWorker.register('/sw.js', {
             type: 'module',
         });
-        console.info('SW зарегистрирован:', reg.scope);
         return reg;
     } catch (err) {
         console.error('Ошибка регистрации SW:', err);

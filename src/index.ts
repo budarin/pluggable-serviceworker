@@ -10,7 +10,7 @@ import {
     SW_EVENT_MESSAGEERROR,
     SW_EVENT_REJECTIONHANDLED,
     SW_EVENT_UNHANDLEDREJECTION,
-} from '@budarin/http-constants';
+} from '@budarin/http-constants/service-worker';
 
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
