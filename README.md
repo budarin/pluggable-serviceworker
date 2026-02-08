@@ -490,6 +490,7 @@ function authPlugin(config: {
 
 ```typescript
 import type { ServiceWorkerPlugin } from '@budarin/pluggable-serviceworker';
+
 import { runClaimAndReloadClients } from '@budarin/pluggable-serviceworker/plugins';
 
 export const claimAndReloadClients: ServiceWorkerPlugin = {
@@ -520,12 +521,13 @@ import type {
     ServiceWorkerPlugin,
     PluginContext,
 } from '@budarin/pluggable-serviceworker';
-import { initServiceWorker } from '@budarin/pluggable-serviceworker';
+
 import {
     precache,
     serveFromCache,
     staleWhileRevalidateFetch,
 } from '@budarin/pluggable-serviceworker/plugins';
+import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 function postsSwrPlugin(config: {
     cacheName: string;
