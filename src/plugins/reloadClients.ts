@@ -8,7 +8,7 @@ export async function reloadAllClients(): Promise<void> {
 
 export const reloadClients: ServiceWorkerPlugin = {
     name: 'reloadClients',
-    activate: (event, _context) => {
+    activate: (event, _logger) => {
         event.waitUntil(reloadAllClients());
     },
 };

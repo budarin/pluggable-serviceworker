@@ -1,24 +1,26 @@
 import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 
-interface NetworkFirstContext extends PluginContext {
+export interface NetworkFirstConfig {
     cacheName: string;
 }
 
-export const networkFirst: ServiceWorkerPlugin<NetworkFirstContext> = {
-    name: 'networkFirst',
-    fetch: async (event, context) => {
-        const cache = await caches.open(context.cacheName);
-
-        try {
-            const response = await fetch(event.request);
-
-            if (response.ok) {
-                await cache.put(event.request, response.clone());
+export function networkFirst(
+    config: NetworkFirstConfig
+): ServiceWorkerPlugin<PluginContext> {
+    const { cacheName } = config;
+    return {
+        name: 'networkFirst',
+        fetch: async (event) => {
+            const cache = await caches.open(cacheName);
+            try {
+                const response = await fetch(event.request);
+                if (response.ok) {
+                    await cache.put(event.request, response.clone());
+                }
+                return response;
+            } catch {
+                return (await cache.match(event.request)) ?? undefined;
             }
-
-            return response;
-        } catch {
-            return (await cache.match(event.request)) ?? undefined;
-        }
-    },
-};
+        },
+    };
+}

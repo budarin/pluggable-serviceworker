@@ -50,7 +50,7 @@ export interface Logger {
     error: (...data: unknown[]) => void;
 }
 
-/** Базовый контекст, передаётся во все обработчики плагинов вторым аргументом. Без onError — он используется только библиотекой. */
+/** Опции, доступные плагинам. В обработчики передаётся только logger (второй аргумент). */
 export interface PluginContext {
     logger?: Logger;
 }
@@ -90,16 +90,28 @@ export type RequiredOptions<P extends readonly unknown[]> = UnionToIntersection<
     ContextOfPlugin<P[number]>
 >;
 
-interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
-    install?: (event: ExtendableEvent, context: C) => void | Promise<void>;
-    activate?: (event: ExtendableEvent, context: C) => void | Promise<void>;
-    fetch?: (event: FetchEvent, context: C) => Promise<Response | undefined>;
-    message?: (event: SwMessageEvent, context: C) => void;
-    sync?: (event: SyncEvent, context: C) => Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent, context: C) => Promise<void>;
+interface ServiceWorkerEventHandlers {
+    install?: (
+        event: ExtendableEvent,
+        logger: Logger
+    ) => void | Promise<void>;
+    activate?: (
+        event: ExtendableEvent,
+        logger: Logger
+    ) => void | Promise<void>;
+    fetch?: (
+        event: FetchEvent,
+        logger: Logger
+    ) => Promise<Response | undefined>;
+    message?: (event: SwMessageEvent, logger: Logger) => void;
+    sync?: (event: SyncEvent, logger: Logger) => Promise<void>;
+    periodicsync?: (
+        event: PeriodicSyncEvent,
+        logger: Logger
+    ) => Promise<void>;
     push?: (
         event: PushEvent,
-        context: C
+        logger: Logger
     ) =>
         | void
         | PushNotificationPayload
@@ -108,8 +120,8 @@ interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
 }
 
 export interface ServiceWorkerPlugin<
-    C extends PluginContext = PluginContext,
-> extends ServiceWorkerEventHandlers<C> {
+    _C extends PluginContext = PluginContext,
+> extends ServiceWorkerEventHandlers {
     name: string;
     order?: number;
 }
@@ -118,42 +130,38 @@ export interface ServiceWorkerPlugin<
 export type ServiceWorkerConfig = ServiceWorkerInitOptions;
 export type FetchResponse = Promise<Response | undefined>;
 
-type InstallHandler<C extends PluginContext> = (
+type InstallHandler = (
     event: ExtendableEvent,
-    context: C
+    logger: Logger
 ) => void | Promise<void>;
-type ActivateHandler<C extends PluginContext> = (
+type ActivateHandler = (
     event: ExtendableEvent,
-    context: C
+    logger: Logger
 ) => void | Promise<void>;
-type FetchHandler<C extends PluginContext> = (
+type FetchHandler = (
     event: FetchEvent,
-    context: C
+    logger: Logger
 ) => FetchResponse;
-type MessageHandler<C extends PluginContext> = (
-    event: SwMessageEvent,
-    context: C
-) => void;
-type SyncHandler<C extends PluginContext> = (
-    event: SyncEvent,
-    context: C
-) => Promise<void>;
-type PeriodicsyncHandler<C extends PluginContext> = (
+type MessageHandler = (event: SwMessageEvent, logger: Logger) => void;
+type SyncHandler = (event: SyncEvent, logger: Logger) => Promise<void>;
+type PeriodicsyncHandler = (
     event: PeriodicSyncEvent,
-    context: C
+    logger: Logger
 ) => Promise<void>;
-type PushHandler<C extends PluginContext> = (
+type PushHandler = (
     event: PushEvent,
-    context: C
+    logger: Logger
 ) =>
     | void
     | PushNotificationPayload
     | false
     | Promise<void | PushNotificationPayload | false>;
 
-export function createEventHandlers<C extends PluginContext>(
-    plugins: readonly ServiceWorkerPlugin<C>[],
-    options: C & ServiceWorkerInitOptions
+export function createEventHandlers<
+    _C extends PluginContext = PluginContext,
+>(
+    plugins: readonly ServiceWorkerPlugin<_C>[],
+    options: _C & ServiceWorkerInitOptions
 ): {
     install: (event: ExtendableEvent) => void;
     activate: (event: ExtendableEvent) => void;
@@ -168,13 +176,13 @@ export function createEventHandlers<C extends PluginContext>(
     rejectionhandled: (event: PromiseRejectionEvent) => void;
 } {
     const handlers = {
-        install: [] as InstallHandler<C>[],
-        activate: [] as ActivateHandler<C>[],
-        fetch: [] as FetchHandler<C>[],
-        message: [] as MessageHandler<C>[],
-        sync: [] as SyncHandler<C>[],
-        periodicsync: [] as PeriodicsyncHandler<C>[],
-        push: [] as PushHandler<C>[],
+        install: [] as InstallHandler[],
+        activate: [] as ActivateHandler[],
+        fetch: [] as FetchHandler[],
+        message: [] as MessageHandler[],
+        sync: [] as SyncHandler[],
+        periodicsync: [] as PeriodicsyncHandler[],
+        push: [] as PushHandler[],
     };
 
     const logger = options.logger ?? console;
@@ -191,18 +199,18 @@ export function createEventHandlers<C extends PluginContext>(
 
     sortedPlugins.forEach((plugin) => {
         if (plugin.install)
-            handlers.install.push(plugin.install as InstallHandler<C>);
+            handlers.install.push(plugin.install as InstallHandler);
         if (plugin.activate)
-            handlers.activate.push(plugin.activate as ActivateHandler<C>);
-        if (plugin.fetch) handlers.fetch.push(plugin.fetch as FetchHandler<C>);
+            handlers.activate.push(plugin.activate as ActivateHandler);
+        if (plugin.fetch) handlers.fetch.push(plugin.fetch as FetchHandler);
         if (plugin.message)
-            handlers.message.push(plugin.message as MessageHandler<C>);
-        if (plugin.sync) handlers.sync.push(plugin.sync as SyncHandler<C>);
+            handlers.message.push(plugin.message as MessageHandler);
+        if (plugin.sync) handlers.sync.push(plugin.sync as SyncHandler);
         if (plugin.periodicsync)
             handlers.periodicsync.push(
-                plugin.periodicsync as PeriodicsyncHandler<C>
+                plugin.periodicsync as PeriodicsyncHandler
             );
-        if (plugin.push) handlers.push.push(plugin.push as PushHandler<C>);
+        if (plugin.push) handlers.push.push(plugin.push as PushHandler);
     });
 
     return {
@@ -211,7 +219,7 @@ export function createEventHandlers<C extends PluginContext>(
                 Promise.all(
                     handlers.install.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, options))
+                            .then(() => handler(event, logger))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -229,7 +237,7 @@ export function createEventHandlers<C extends PluginContext>(
                 Promise.all(
                     handlers.activate.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, options))
+                            .then(() => handler(event, logger))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -247,7 +255,7 @@ export function createEventHandlers<C extends PluginContext>(
                 (async (): Promise<Response> => {
                     for (const handler of handlers.fetch) {
                         try {
-                            const result = await handler(event, options);
+                            const result = await handler(event, logger);
                             if (result !== undefined) {
                                 return result;
                             }
@@ -280,7 +288,7 @@ export function createEventHandlers<C extends PluginContext>(
         message: (event: SwMessageEvent): void => {
             handlers.message.forEach((handler) => {
                 try {
-                    handler(event, options);
+                    handler(event, logger);
                 } catch (error) {
                     options.onError?.(
                         error as Error,
@@ -296,7 +304,7 @@ export function createEventHandlers<C extends PluginContext>(
                 Promise.all(
                     handlers.sync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, options))
+                            .then(() => handler(event, logger))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -314,7 +322,7 @@ export function createEventHandlers<C extends PluginContext>(
                 Promise.all(
                     handlers.periodicsync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, options))
+                            .then(() => handler(event, logger))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -339,7 +347,7 @@ export function createEventHandlers<C extends PluginContext>(
                     for (const handler of handlers.push) {
                         try {
                             const result = await Promise.resolve(
-                                handler(event, options)
+                                handler(event, logger)
                             );
                             returns.push(
                                 result as

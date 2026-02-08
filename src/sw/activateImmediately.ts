@@ -1,24 +1,25 @@
-import {
-    initServiceWorker,
-    type RequiredOptions,
-    type ServiceWorkerInitOptions,
-} from '../index.js';
+import type { ServiceWorkerInitOptions } from '../index.js';
+import { initServiceWorker } from '../index.js';
 
-import { offlineFirst } from '../presets/offlineFirst.js';
+import {
+    offlineFirst,
+    type OfflineFirstConfig,
+} from '../presets/offlineFirst.js';
 import { skipWaiting } from '../plugins/skipWaiting.js';
 import { claim } from '../plugins/claim.js';
 
-const plugins: readonly [
-    ...typeof offlineFirst,
-    typeof skipWaiting,
-    typeof claim,
-] = [...offlineFirst, skipWaiting, claim];
+export interface ActivateImmediatelyOptions
+    extends ServiceWorkerInitOptions,
+        OfflineFirstConfig {}
 
 /**
  * Типовой сервис-воркер: кеширование offline-first, активируется сразу (skipWaiting + claim).
  */
 export function activateImmediatelyServiceWorker(
-    options: ServiceWorkerInitOptions & RequiredOptions<typeof plugins>
+    options: ActivateImmediatelyOptions
 ): void {
-    initServiceWorker(plugins, options);
+    initServiceWorker(
+        [...offlineFirst(options), skipWaiting, claim],
+        options
+    );
 }

@@ -18,7 +18,7 @@ cd demo && pnpm start
 
 - Регистрация SW из приложения (`/sw.js`).
 - Пресет `offlineFirst`: precache при `install`, отдача из кеша в `fetch`.
-- Плагин `claimOnMessage`: по сообщению с типом из пакета (`SW_MSG_SKIP_WAITING`, см. `@budarin/http-constants`) со страницы — `skipWaiting`; плагин `claim` в `activate` вызывает `clients.claim()`.
+- Плагин `skipWaitingOnMessage`: по сообщению с типом из пакета (`SW_MSG_SKIP_WAITING`, см. `@budarin/http-constants`) со страницы — `skipWaiting`; плагин `claim` в `activate` вызывает `clients.claim()`.
 - Кнопка «Применить» отправляет это сообщение **ожидающему** воркеру (`reg.waiting`), после чего он активируется и забирает клиентов.
 - Если после «Проверить обновление» кнопка «Применить» не появляется и новая версия сразу активна — в Chrome DevTools (Application → Service Workers) снимите галку **Update on reload**. Для отладки можно открыть консоль у воркера (кнопка «inspect» у SW) и убедиться, что при нажатии «Применить» воркер получает сообщение и активируется.
 - Индикатор онлайн/офлайн и статус SW.

@@ -7,7 +7,7 @@ export function claimClients(): Promise<void> {
 
 export const claim: ServiceWorkerPlugin = {
     name: 'claim',
-    activate: (event, _context) => {
+    activate: (event, _logger) => {
         event.waitUntil(claimClients());
     },
 };

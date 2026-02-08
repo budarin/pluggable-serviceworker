@@ -8,6 +8,6 @@ const assets = ['/', '/assets/main.js', '/assets/service-worker.js'];
 activateOnSignalServiceWorker({
     assets,
     cacheName,
-    claimMessageType: SW_MSG_SKIP_WAITING,
+    skipWaitingMessageType: SW_MSG_SKIP_WAITING,
     logger: typeof console !== 'undefined' ? console : undefined,
 });

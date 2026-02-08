@@ -1,39 +1,38 @@
 import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 import { isAssetRequest } from '../utils/isAssetRequest.js';
 
-interface RestoreAssetToCacheContext extends PluginContext {
-    assets: string[];
+export interface RestoreAssetToCacheConfig {
     cacheName: string;
+    assets: string[];
 }
 
 /**
- * Для запросов, чей URL входит в context.assets: сначала отдаёт из кеша, если есть.
+ * Для запросов, чей URL входит в config.assets: сначала отдаёт из кеша, если есть.
  * Если в кеше нет — запрашивает из сети, кладёт в кеш и возвращает ответ (восстановление в кеше).
  * Если запрос не из списка assets — возвращает undefined (передаёт следующему плагину).
  */
-export const restoreAssetToCache: ServiceWorkerPlugin<RestoreAssetToCacheContext> = {
-    name: 'restoreAssetToCache',
-    fetch: async (event, context) => {
-        if (!isAssetRequest(event.request.url, context.assets))
-            return undefined;
+export function restoreAssetToCache(
+    config: RestoreAssetToCacheConfig
+): ServiceWorkerPlugin<PluginContext> {
+    const { cacheName, assets } = config;
+    return {
+        name: 'restoreAssetToCache',
+        fetch: async (event) => {
+            if (!isAssetRequest(event.request.url, assets)) return undefined;
 
-        const cache = await caches.open(context.cacheName);
-        const cached = await cache.match(event.request);
+            const cache = await caches.open(cacheName);
+            const cached = await cache.match(event.request);
+            if (cached) return cached;
 
-        if (cached) {
-            return cached;
-        }
-
-        try {
-            const response = await fetch(event.request);
-
-            if (response.ok) {
-                await cache.put(event.request, response.clone());
+            try {
+                const response = await fetch(event.request);
+                if (response.ok) {
+                    await cache.put(event.request, response.clone());
+                }
+                return response;
+            } catch {
+                return undefined;
             }
-
-            return response;
-        } catch {
-            return undefined;
-        }
-    },
-};
+        },
+    };
+}

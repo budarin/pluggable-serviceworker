@@ -1,13 +1,18 @@
 import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 
-export interface ServeFromCacheContext extends PluginContext {
+export interface ServeFromCacheConfig {
     cacheName: string;
 }
 
-export const serveFromCache: ServiceWorkerPlugin<ServeFromCacheContext> = {
-    name: 'serveFromCache',
-    fetch: async (event, context) => {
-        const cache = await caches.open(context.cacheName);
-        return cache.match(event.request) ?? undefined;
-    },
-};
+export function serveFromCache(
+    config: ServeFromCacheConfig
+): ServiceWorkerPlugin<PluginContext> {
+    const { cacheName } = config;
+    return {
+        name: 'serveFromCache',
+        fetch: async (event) => {
+            const cache = await caches.open(cacheName);
+            return cache.match(event.request) ?? undefined;
+        },
+    };
+}

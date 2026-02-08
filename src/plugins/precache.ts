@@ -1,14 +1,17 @@
 import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 
-export interface PrecacheContext extends PluginContext {
-    assets: string[];
+export interface PrecacheConfig {
     cacheName: string;
+    assets: string[];
 }
 
-export const precache: ServiceWorkerPlugin<PrecacheContext> = {
-    name: 'precache',
-    install: async (_event, context) => {
-        const cache = await caches.open(context.cacheName);
-        await cache.addAll(context.assets);
-    },
-};
+export function precache(config: PrecacheConfig): ServiceWorkerPlugin<PluginContext> {
+    const { cacheName, assets } = config;
+    return {
+        name: 'precache',
+        install: async () => {
+            const cache = await caches.open(cacheName);
+            await cache.addAll(assets);
+        },
+    };
+}
