@@ -172,8 +172,8 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
                     </p>
                     <h2 style={styles.h2}>Проверка офлайна</h2>
                     <p style={styles.p}>
-                        Включите в DevTools (Network) режим «Offline» и обновите
-                        страницу — контент должен отдаваться из кеша.
+                        Остановите сервер и обновите страницу — контент должен
+                        отдаваться из кеша.
                     </p>
                 </section>
             )}
