@@ -18,6 +18,7 @@
     "scripts": {
         "build": "vite build",
         "preview": "vite preview",
+        "start": "pnpm run build && vite preview --port ${PORT:-4173} --host 0.0.0.0",
         "pnpm-install": "pnpm install"
     }
 }
