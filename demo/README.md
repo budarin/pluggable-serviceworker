@@ -7,8 +7,6 @@
 Из корня репозитория:
 
 ```bash
-pnpm install
-pnpm build
 cd demo && pnpm install && pnpm run build && pnpm run preview
 ```
 
@@ -23,15 +21,6 @@ pnpm run preview
 ```
 
 При каждом запросе `sw.js` сервер (в демо — `vite preview`) отдаёт его с заголовками `Cache-Control: no-store, no-cache`, поэтому браузер при проверке обновлений не использует кеш и получает актуальный скрипт. На своём проде настройте то же самое для пути к SW.
-
-## Песочницы (онлайн-демо)
-
-Демо можно открыть в публичных песочницах (предварительно соберите библиотеку в корне: `pnpm build`):
-
-- **StackBlitz:** [Open in StackBlitz](https://stackblitz.com/github/budarin/pluggable-serviceworker/tree/master/demo) — замените `budarin/pluggable-serviceworker` на ваш форк/репо при необходимости.
-- **CodeSandbox:** [Open in CodeSandbox](https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/master/demo); либо импортируйте репозиторий вручную и укажите корень приложения как папку `demo`.
-
-В песочнице сначала соберите: в корне репо выполните `pnpm install`, `pnpm build`; затем в папке `demo` — `pnpm install`, `pnpm run build`. После этого запустите `pnpm run start` (в CodeSandbox кнопка Start вызовет скрипт `start` и подставит нужный порт).
 
 ## Что демонстрируется
 

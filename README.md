@@ -112,9 +112,7 @@ initServiceWorker([precacheAndServePlugin], {
 
 ## Демо
 
-В папке [demo/](demo/) — приложение **React + Vite** с пресетом **offlineFirst** и типовым сервис-воркером **activateOnSignal**. Запуск из корня: `pnpm install && pnpm build`, затем `cd demo && pnpm install && pnpm run dev`. Подробности и ссылки на публичные песочницы (StackBlitz, CodeSandbox) — в [demo/README.md](demo/README.md).
-
-[Open in StackBlitz](https://stackblitz.com/github/budarin/pluggable-serviceworker/tree/master/demo) · [Open in CodeSandbox](https://codesandbox.io/s/github/budarin/pluggable-serviceworker/tree/master/demo)
+В папке [demo/](demo/) — приложение **React + Vite** с пресетом **offlineFirst** и типовым сервис-воркером **activateOnSignal**. Запуск из корня: `pnpm install && pnpm build`, затем `cd demo && pnpm install && pnpm run build && pnpm run preview`. Подробности — в [demo/README.md](demo/README.md).
 
 ## `initServiceWorker(plugins, options)`
 
