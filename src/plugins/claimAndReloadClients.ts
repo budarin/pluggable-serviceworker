@@ -1,19 +1,18 @@
 import type { ServiceWorkerPlugin } from '../index.js';
+import { claimClients } from './claim.js';
+import { reloadAllClients } from './reloadClients.js';
 
 /**
- * Примитив: в activate сначала clients.claim(), затем перезагрузка всех окон-клиентов
- * через client.navigate(client.url). Гарантирует порядок выполнения (claim, затем reload).
+ * Композиция примитивов claim + reloadClients: сначала clients.claim(), затем
+ * перезагрузка всех окон. Порядок гарантирован (один плагин, последовательный вызов).
  */
 export const claimAndReloadClients: ServiceWorkerPlugin = {
     name: 'claimAndReloadClients',
     activate: (event, _context) => {
         event.waitUntil(
             (async (): Promise<void> => {
-                await self.clients.claim();
-                const list = await self.clients.matchAll({ type: 'window' });
-                await Promise.all(
-                    list.map((client) => client.navigate(client.url))
-                );
+                await claimClients();
+                await reloadAllClients();
             })()
         );
     },
