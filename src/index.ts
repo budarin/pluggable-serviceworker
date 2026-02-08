@@ -104,7 +104,7 @@ interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
     push?: (
         event: PushEvent,
         context: C
-    ) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
+    ) => void | PushNotificationPayload | false | Promise<void | PushNotificationPayload | false>;
 }
 
 export interface ServiceWorkerPlugin<C extends PluginContext = PluginContext>
@@ -145,7 +145,7 @@ type PeriodicsyncHandler<C extends PluginContext> = (
 type PushHandler<C extends PluginContext> = (
     event: PushEvent,
     context: C
-) => void | PushNotificationPayload | Promise<void | PushNotificationPayload>;
+) => void | PushNotificationPayload | false | Promise<void | PushNotificationPayload | false>;
 
 export function createEventHandlers<C extends PluginContext>(
     plugins: readonly ServiceWorkerPlugin<C>[],
@@ -317,37 +317,39 @@ export function createEventHandlers<C extends PluginContext>(
         push: (event: PushEvent): void => {
             event.waitUntil(
                 (async (): Promise<void> => {
-                    const nonUndefinedReturns: (Record<string, unknown> & {
-                        title?: unknown;
-                    })[] = [];
+                    const returns: (PushNotificationPayload | false | undefined)[] =
+                        [];
                     for (const handler of handlers.push) {
                         try {
                             const result = await Promise.resolve(
                                 handler(event, options)
                             );
-                            if (
-                                result != null &&
-                                typeof result === 'object' &&
-                                !Array.isArray(result)
-                            ) {
-                                nonUndefinedReturns.push(result as Record<string, unknown> & { title?: unknown });
-                            }
+                            returns.push(
+                                result as
+                                    | PushNotificationPayload
+                                    | false
+                                    | undefined
+                            );
                         } catch (error) {
                             options.onError?.(
                                 error as Error,
                                 event,
                                 ServiceWorkerErrorType.PLUGIN_ERROR
                             );
+                            returns.push(undefined);
                         }
                     }
-                    const payloads = nonUndefinedReturns.filter(
-                        (r): r is { title: string } & Record<string, unknown> =>
+                    const payloads = returns.filter(
+                        (r): r is PushNotificationPayload =>
+                            r != null &&
+                            typeof r === 'object' &&
+                            !Array.isArray(r) &&
                             'title' in r &&
                             typeof r.title === 'string'
                     );
                     if (
-                        nonUndefinedReturns.length === 1 &&
-                        payloads.length === 0
+                        returns.length === handlers.push.length &&
+                        returns.every((r) => r === false)
                     )
                         return;
                     for (const payload of payloads) {
@@ -356,7 +358,7 @@ export function createEventHandlers<C extends PluginContext>(
                     }
                     if (payloads.length > 0) return;
 
-                    // Fallback: ни один плагин не вернул payload с title
+                    // Fallback: никто не вернул PushNotificationPayload
                     try {
                         const data = event.data;
                         if (!data) return;
