@@ -39,7 +39,7 @@
         "type-check": "tsc -b -noEmit",
         "test:watch": "vitest",
         "pnpm-install": "pnpm install",
-        "upgrade-deps": "pnpm upgrade -i",
+        "upgrade-deps": "sh scripts/upgrade-deps.sh",
         "publish-package": "pnpm build && pnpm publish --access=public"
     },
     "dependencies": {
