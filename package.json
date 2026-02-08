@@ -26,12 +26,15 @@
         "./sw": "./dist/sw/index.js"
     },
     "devDependencies": {
-        "@types/node": "^24.10.12",
-        "@types/serviceworker": "^0.0.153",
-        "@types/web": "^0.0.269",
+        "@types/node": "^25.2.2",
+        "@types/serviceworker": "^0.0.184",
+        "@types/web": "^0.0.328",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
-        "vitest": "^3.2.4"
+        "vitest": "^4.0.18"
+    },
+    "dependencies": {
+        "@budarin/http-constants": "^1.0.16"
     },
     "scripts": {
         "build": "tsc",
@@ -41,8 +44,5 @@
         "pnpm-install": "pnpm install",
         "upgrade-deps": "sh scripts/upgrade-deps.sh",
         "publish-package": "pnpm build && pnpm publish --access=public"
-    },
-    "dependencies": {
-        "@budarin/http-constants": "^1.0.16"
     }
 }
