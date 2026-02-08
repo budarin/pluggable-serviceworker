@@ -79,40 +79,40 @@ export type ContextOfPlugin<P> =
     P extends ServiceWorkerPlugin<infer C> ? C : PluginContext;
 
 /** Юнион типов контекстов превращается в пересечение (все поля обязательны). */
-export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
+export type UnionToIntersection<U> = (
+    U extends unknown ? (k: U) => void : never
+) extends (k: infer I) => void
+    ? I
+    : never;
 
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). P — кортеж плагинов, контекст выводится из каждого. */
-export type RequiredOptions<P extends readonly unknown[]> =
-    UnionToIntersection<ContextOfPlugin<P[number]>>;
+export type RequiredOptions<P extends readonly unknown[]> = UnionToIntersection<
+    ContextOfPlugin<P[number]>
+>;
 
 interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
-    install?: (
-        event: ExtendableEvent,
-        context: C
-    ) => void | Promise<void>;
-    activate?: (
-        event: ExtendableEvent,
-        context: C
-    ) => void | Promise<void>;
-    fetch?: (
-        event: FetchEvent,
-        context: C
-    ) => Promise<Response | undefined>;
+    install?: (event: ExtendableEvent, context: C) => void | Promise<void>;
+    activate?: (event: ExtendableEvent, context: C) => void | Promise<void>;
+    fetch?: (event: FetchEvent, context: C) => Promise<Response | undefined>;
     message?: (event: SwMessageEvent, context: C) => void;
     sync?: (event: SyncEvent, context: C) => Promise<void>;
     periodicsync?: (event: PeriodicSyncEvent, context: C) => Promise<void>;
     push?: (
         event: PushEvent,
         context: C
-    ) => void | PushNotificationPayload | false | Promise<void | PushNotificationPayload | false>;
+    ) =>
+        | void
+        | PushNotificationPayload
+        | false
+        | Promise<void | PushNotificationPayload | false>;
 }
 
-export interface ServiceWorkerPlugin<C extends PluginContext = PluginContext>
-    extends ServiceWorkerEventHandlers<C> {
+export interface ServiceWorkerPlugin<
+    C extends PluginContext = PluginContext,
+> extends ServiceWorkerEventHandlers<C> {
     name: string;
     order?: number;
 }
-
 
 /** @deprecated Используйте ServiceWorkerInitOptions. Оставлено для обратной совместимости. */
 export type ServiceWorkerConfig = ServiceWorkerInitOptions;
@@ -145,7 +145,11 @@ type PeriodicsyncHandler<C extends PluginContext> = (
 type PushHandler<C extends PluginContext> = (
     event: PushEvent,
     context: C
-) => void | PushNotificationPayload | false | Promise<void | PushNotificationPayload | false>;
+) =>
+    | void
+    | PushNotificationPayload
+    | false
+    | Promise<void | PushNotificationPayload | false>;
 
 export function createEventHandlers<C extends PluginContext>(
     plugins: readonly ServiceWorkerPlugin<C>[],
@@ -186,13 +190,18 @@ export function createEventHandlers<C extends PluginContext>(
     ];
 
     sortedPlugins.forEach((plugin) => {
-        if (plugin.install) handlers.install.push(plugin.install as InstallHandler<C>);
-        if (plugin.activate) handlers.activate.push(plugin.activate as ActivateHandler<C>);
+        if (plugin.install)
+            handlers.install.push(plugin.install as InstallHandler<C>);
+        if (plugin.activate)
+            handlers.activate.push(plugin.activate as ActivateHandler<C>);
         if (plugin.fetch) handlers.fetch.push(plugin.fetch as FetchHandler<C>);
-        if (plugin.message) handlers.message.push(plugin.message as MessageHandler<C>);
+        if (plugin.message)
+            handlers.message.push(plugin.message as MessageHandler<C>);
         if (plugin.sync) handlers.sync.push(plugin.sync as SyncHandler<C>);
         if (plugin.periodicsync)
-            handlers.periodicsync.push(plugin.periodicsync as PeriodicsyncHandler<C>);
+            handlers.periodicsync.push(
+                plugin.periodicsync as PeriodicsyncHandler<C>
+            );
         if (plugin.push) handlers.push.push(plugin.push as PushHandler<C>);
     });
 
@@ -254,7 +263,11 @@ export function createEventHandlers<C extends PluginContext>(
                         return await fetch(event.request);
                     } catch (error) {
                         // Офлайн или сетевая ошибка — не оставляем promise в respondWith rejected
-                        options.onError?.(error as Error, event, ServiceWorkerErrorType.PLUGIN_ERROR);
+                        options.onError?.(
+                            error as Error,
+                            event,
+                            ServiceWorkerErrorType.PLUGIN_ERROR
+                        );
                         return new Response('', {
                             status: 503,
                             statusText: 'Service Unavailable',
@@ -317,8 +330,12 @@ export function createEventHandlers<C extends PluginContext>(
         push: (event: PushEvent): void => {
             event.waitUntil(
                 (async (): Promise<void> => {
-                    const returns: (PushNotificationPayload | false | undefined)[] =
-                        [];
+                    const returns: (
+                        | PushNotificationPayload
+                        | false
+                        | undefined
+                    )[] = [];
+
                     for (const handler of handlers.push) {
                         try {
                             const result = await Promise.resolve(
@@ -339,6 +356,7 @@ export function createEventHandlers<C extends PluginContext>(
                             returns.push(undefined);
                         }
                     }
+
                     const payloads = returns.filter(
                         (r): r is PushNotificationPayload =>
                             r != null &&
@@ -347,31 +365,42 @@ export function createEventHandlers<C extends PluginContext>(
                             'title' in r &&
                             typeof r.title === 'string'
                     );
+
                     if (
                         returns.length === handlers.push.length &&
                         returns.every((r) => r === false)
-                    )
+                    ) {
                         return;
+                    }
+
                     for (const payload of payloads) {
                         const { title, ...opts } = payload;
                         await self.registration.showNotification(title, opts);
                     }
-                    if (payloads.length > 0) return;
+                    if (payloads.length > 0) {
+                        return;
+                    }
+                    if (!returns.every((r) => r === undefined)) return;
 
-                    // Fallback: никто не вернул PushNotificationPayload
+                    // Fallback: все плагины вернули undefined — показываем из event.data
                     try {
                         const data = event.data;
-                        if (!data) return;
+                        if (!data) {
+                            return;
+                        }
 
                         let payload: unknown;
                         try {
                             payload = await data.json();
                         } catch {
-                            const text = await data.text();
-                            payload =
-                                text.length > 0 ? { title: text } : null;
+                            const text = data.text();
+                            payload = text.length > 0 ? { title: text } : null;
                         }
-                        if (payload == null) return;
+
+                        if (payload == null) {
+                            return;
+                        }
+
                         const withTitle =
                             typeof payload === 'object' &&
                             payload !== null &&
@@ -382,7 +411,10 @@ export function createEventHandlers<C extends PluginContext>(
                                       title: string;
                                   } & Record<string, unknown>)
                                 : null;
-                        if (withTitle == null) return;
+                        if (withTitle == null) {
+                            return;
+                        }
+
                         const { title, ...opts } = withTitle;
                         await self.registration.showNotification(title, opts);
                     } catch (error) {
