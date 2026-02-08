@@ -1,11 +1,16 @@
-import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
+import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+
+interface PrecacheMissingContext extends PluginContext {
+    assets: string[];
+    cacheName: string;
+}
 
 /**
  * При install: по списку assets и ключам кэша определяет отсутствующие в кэше URL
  * и добавляет только их через cache.addAll.
  */
-export const precacheMissing: ServiceWorkerPlugin<OfflineFirstContext> = {
+export const precacheMissing: ServiceWorkerPlugin<PrecacheMissingContext> = {
     name: 'precacheMissing',
     install: async (_event, context) => {
         const cache = await caches.open(context.cacheName);

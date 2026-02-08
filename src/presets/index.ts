@@ -1,1 +1,1 @@
-export { offlineFirst } from './offlineFirst.js';
+export { offlineFirst, type OfflineFirstContext } from './offlineFirst.js';

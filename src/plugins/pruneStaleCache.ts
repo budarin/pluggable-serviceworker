@@ -1,10 +1,15 @@
-import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
+import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+
+interface PruneStaleCacheContext extends PluginContext {
+    assets: string[];
+    cacheName: string;
+}
 
 /**
  * При activate: обходит ключи кэша и удаляет записи, чей URL не входит в context.assets.
  */
-export const pruneStaleCache: ServiceWorkerPlugin<OfflineFirstContext> = {
+export const pruneStaleCache: ServiceWorkerPlugin<PruneStaleCacheContext> = {
     name: 'pruneStaleCache',
     activate: async (_event, context) => {
         const cache = await caches.open(context.cacheName);

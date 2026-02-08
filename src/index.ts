@@ -67,16 +67,6 @@ export interface ServiceWorkerInitOptions extends PluginContext {
 /** Объект для показа push-уведомления: то, что принимает Notification API. Возвращается из обработчика push; библиотека вызывает showNotification. */
 export type PushNotificationPayload = { title: string } & NotificationOptions;
 
-/** Контекст для встроенных примитивов/пресетов: assets, cacheName, опционально тип сообщения для активации. */
-export interface OfflineFirstContext extends PluginContext {
-    assets: string[];
-    cacheName: string;
-    /** Тип сообщения со страницы, по которому вызывать skipWaiting/claim (для claimOnMessage). По умолчанию `'SW_ACTIVATE'`. */
-    claimMessageType?: string;
-    /** При true serveFromCache ищет в кеше с ignoreSearch (для dev, когда URL с query меняются). */
-    cacheMatchIgnoreSearch?: boolean;
-}
-
 let serviceWorkerInitialized = false;
 
 /** Сбрасывает состояние инициализации (только для тестов). */
@@ -91,13 +81,8 @@ export type ContextOfPlugin<P> =
 /** Юнион типов контекстов превращается в пересечение (все поля обязательны). */
 export type UnionToIntersection<U> = (U extends unknown ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
 
-/** Плагины с любым контекстом, расширяющим PluginContext (для типизации initServiceWorker). */
-export type AnyServiceWorkerPlugin =
-    | ServiceWorkerPlugin<PluginContext>
-    | ServiceWorkerPlugin<OfflineFirstContext>;
-
-/** Требуемый тип options по массиву плагинов (пересечение контекстов). */
-export type RequiredOptions<P extends readonly AnyServiceWorkerPlugin[]> =
+/** Требуемый тип options по массиву плагинов (пересечение контекстов). P — кортеж плагинов, контекст выводится из каждого. */
+export type RequiredOptions<P extends readonly unknown[]> =
     UnionToIntersection<ContextOfPlugin<P[number]>>;
 
 interface ServiceWorkerEventHandlers<C extends PluginContext = PluginContext> {
@@ -412,9 +397,10 @@ export function createEventHandlers<C extends PluginContext>(
     };
 }
 
-export function initServiceWorker<
-    P extends readonly AnyServiceWorkerPlugin[],
->(plugins: P, options: RequiredOptions<P> & ServiceWorkerInitOptions): void {
+export function initServiceWorker<P extends readonly unknown[]>(
+    plugins: P,
+    options: RequiredOptions<P> & ServiceWorkerInitOptions
+): void {
     if (serviceWorkerInitialized) {
         return;
     }
@@ -423,7 +409,7 @@ export function initServiceWorker<
     const opts = { ...options, logger: options.logger ?? console };
 
     const names = new Set<string>();
-    for (const plugin of plugins) {
+    for (const plugin of plugins as readonly ServiceWorkerPlugin<PluginContext>[]) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
@@ -432,7 +418,7 @@ export function initServiceWorker<
 
     const handlers = createEventHandlers(
         plugins as readonly ServiceWorkerPlugin<PluginContext>[],
-        opts
+        opts as PluginContext
     );
 
     // Регистрируем глобальные обработчики ошибок

@@ -1,6 +1,10 @@
-import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
+import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 
-export const networkFirst: ServiceWorkerPlugin<OfflineFirstContext> = {
+interface NetworkFirstContext extends PluginContext {
+    cacheName: string;
+}
+
+export const networkFirst: ServiceWorkerPlugin<NetworkFirstContext> = {
     name: 'networkFirst',
     fetch: async (event, context) => {
         const cache = await caches.open(context.cacheName);

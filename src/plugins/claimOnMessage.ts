@@ -1,12 +1,16 @@
 import type {
     SwMessageEvent,
+    PluginContext,
     ServiceWorkerPlugin,
-    OfflineFirstContext,
 } from '../index.js';
 
 import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants';
 
-export const claimOnMessage: ServiceWorkerPlugin<OfflineFirstContext> = {
+export interface ClaimOnMessageContext extends PluginContext {
+    claimMessageType?: string;
+}
+
+export const claimOnMessage: ServiceWorkerPlugin<ClaimOnMessageContext> = {
     name: 'claimOnMessage',
     message: (event: SwMessageEvent, context) => {
         const type = context.claimMessageType ?? SW_MSG_SKIP_WAITING;

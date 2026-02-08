@@ -1,8 +1,9 @@
 import {
     initServiceWorker,
-    type OfflineFirstContext,
+    type RequiredOptions,
     type ServiceWorkerInitOptions,
 } from '../index.js';
+
 import { offlineFirst } from '../presets/offlineFirst.js';
 
 /**
@@ -10,7 +11,7 @@ import { offlineFirst } from '../presets/offlineFirst.js';
  * Вызови с options (assets, cacheName, logger, onError и т.д.) из своего SW-файла.
  */
 export function activateOnNextVisitServiceWorker(
-    options: OfflineFirstContext & ServiceWorkerInitOptions
+    options: ServiceWorkerInitOptions & RequiredOptions<typeof offlineFirst>
 ): void {
     initServiceWorker(offlineFirst, options);
 }

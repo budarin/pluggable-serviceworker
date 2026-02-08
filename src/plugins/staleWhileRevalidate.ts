@@ -1,6 +1,10 @@
-import type { ServiceWorkerPlugin, OfflineFirstContext } from '../index.js';
+import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
 
-export const staleWhileRevalidate: ServiceWorkerPlugin<OfflineFirstContext> = {
+interface StaleWhileRevalidateContext extends PluginContext {
+    cacheName: string;
+}
+
+export const staleWhileRevalidate: ServiceWorkerPlugin<StaleWhileRevalidateContext> = {
     name: 'staleWhileRevalidate',
     fetch: async (event, context) => {
         const cache = await caches.open(context.cacheName);

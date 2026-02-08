@@ -1,11 +1,18 @@
 import {
     initServiceWorker,
-    type OfflineFirstContext,
+    type RequiredOptions,
     type ServiceWorkerInitOptions,
 } from '../index.js';
+
 import { offlineFirst } from '../presets/offlineFirst.js';
 import { claim } from '../plugins/claim.js';
 import { claimOnMessage } from '../plugins/claimOnMessage.js';
+
+const plugins: readonly [
+    ...typeof offlineFirst,
+    typeof claimOnMessage,
+    typeof claim,
+] = [...offlineFirst, claimOnMessage, claim];
 
 /**
  * Типовой сервис-воркер: кеширование offline-first, активируется по сигналу со страницы
@@ -13,7 +20,7 @@ import { claimOnMessage } from '../plugins/claimOnMessage.js';
  * После активации вызывает clients.claim() через плагин claim.
  */
 export function activateOnSignalServiceWorker(
-    options: OfflineFirstContext & ServiceWorkerInitOptions
+    options: ServiceWorkerInitOptions & RequiredOptions<typeof plugins>
 ): void {
-    initServiceWorker([...offlineFirst, claimOnMessage, claim], options);
+    initServiceWorker(plugins, options);
 }
