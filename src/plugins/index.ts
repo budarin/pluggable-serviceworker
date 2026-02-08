@@ -3,6 +3,7 @@ export { precacheMissing } from './precacheMissing.js';
 export { pruneStaleCache } from './pruneStaleCache.js';
 export { skipWaiting } from './skipWaiting.js';
 export { claim } from './claim.js';
+export { claimAndReloadClients } from './claimAndReloadClients.js';
 export { claimOnMessage } from './claimOnMessage.js';
 export { serveFromCache } from './serveFromCache.js';
 export { restoreAssetToCache } from './restoreAssetToCache.js';
