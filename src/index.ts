@@ -381,7 +381,8 @@ export function createEventHandlers<C extends PluginContext>(
                                 ? (payload as {
                                       title: string;
                                   } & Record<string, unknown>)
-                                : { title: 'Уведомление' };
+                                : null;
+                        if (withTitle == null) return;
                         const { title, ...opts } = withTitle;
                         await self.registration.showNotification(title, opts);
                     } catch (error) {
