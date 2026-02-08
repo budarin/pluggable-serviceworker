@@ -325,14 +325,22 @@ export function createEventHandlers<C extends PluginContext>(
                             if (
                                 result != null &&
                                 typeof result === 'object' &&
-                                'title' in result &&
-                                typeof result.title === 'string'
+                                !Array.isArray(result)
                             ) {
-                                const { title, ...opts } = result;
-                                await self.registration.showNotification(
-                                    title,
-                                    opts
-                                );
+                                if (
+                                    'title' in result &&
+                                    typeof (result as { title: unknown }).title ===
+                                        'string'
+                                ) {
+                                    const { title, ...opts } = result as {
+                                        title: string;
+                                    } & Record<string, unknown>;
+                                    await self.registration.showNotification(
+                                        title,
+                                        opts
+                                    );
+                                    return;
+                                }
                                 return;
                             }
                         } catch (error) {
@@ -342,6 +350,40 @@ export function createEventHandlers<C extends PluginContext>(
                                 ServiceWorkerErrorType.PLUGIN_ERROR
                             );
                         }
+                    }
+
+                    // Fallback: ни один плагин не вернул payload — показать из event.data или по умолчанию
+                    try {
+                        const data = event.data;
+                        if (!data) return;
+
+                        let payload: unknown;
+                        try {
+                            payload = await data.json();
+                        } catch {
+                            const text = await data.text();
+                            payload =
+                                text.length > 0 ? { title: text } : null;
+                        }
+                        if (payload == null) return;
+                        const withTitle =
+                            typeof payload === 'object' &&
+                            payload !== null &&
+                            'title' in payload &&
+                            typeof (payload as { title: unknown }).title ===
+                                'string'
+                                ? (payload as {
+                                      title: string;
+                                  } & Record<string, unknown>)
+                                : { title: 'Уведомление' };
+                        const { title, ...opts } = withTitle;
+                        await self.registration.showNotification(title, opts);
+                    } catch (error) {
+                        options.onError?.(
+                            error as Error,
+                            event,
+                            ServiceWorkerErrorType.PLUGIN_ERROR
+                        );
                     }
                 })()
             );
