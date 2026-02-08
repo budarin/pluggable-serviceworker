@@ -1,16 +1,13 @@
 import type { ServiceWorkerInitOptions } from '../index.js';
-import { initServiceWorker } from '../index.js';
+import type { OfflineFirstConfig } from '../presets/offlineFirst.js';
 
-import {
-    offlineFirst,
-    type OfflineFirstConfig,
-} from '../presets/offlineFirst.js';
 import { claim } from '../plugins/claim.js';
+import { initServiceWorker } from '../index.js';
+import { offlineFirst } from '../presets/offlineFirst.js';
 import { skipWaitingOnMessage } from '../plugins/skipWaitingOnMessage.js';
 
 export interface ActivateOnSignalOptions
-    extends ServiceWorkerInitOptions,
-        OfflineFirstConfig {
+    extends ServiceWorkerInitOptions, OfflineFirstConfig {
     skipWaitingMessageType?: string;
 }
 
@@ -27,7 +24,11 @@ export function activateOnSignalServiceWorker(
             ? { messageType: options.skipWaitingMessageType }
             : {};
     initServiceWorker(
-        [...offlineFirst(options), skipWaitingOnMessage(skipWaitingConfig), claim],
+        [
+            ...offlineFirst(options),
+            skipWaitingOnMessage(skipWaitingConfig),
+            claim,
+        ],
         options
     );
 }

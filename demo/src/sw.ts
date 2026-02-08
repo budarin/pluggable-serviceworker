@@ -9,5 +9,4 @@ activateOnSignalServiceWorker({
     assets,
     cacheName,
     skipWaitingMessageType: SW_MSG_SKIP_WAITING,
-    logger: typeof console !== 'undefined' ? console : undefined,
 });
