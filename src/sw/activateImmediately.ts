@@ -6,14 +6,14 @@ import { initServiceWorker } from '../index.js';
 import { skipWaiting } from '../plugins/skipWaiting.js';
 import { offlineFirst } from '../presets/offlineFirst.js';
 
-export interface ActivateImmediatelyOptions
+export interface ImmediatelyActivateAndUpdateSWOptions
     extends ServiceWorkerInitOptions, OfflineFirstConfig {}
 
 /**
- * Типовой сервис-воркер: кеширование offline-first, активируется сразу (skipWaiting + claim).
+ * Типовой сервис-воркер: кеширование offline-first, активируется и обновляется сразу (skipWaiting + claim).
  */
-export function activateImmediatelyServiceWorker(
-    options: ActivateImmediatelyOptions
+export function immediatelyActivateAndUpdateSW(
+    options: ImmediatelyActivateAndUpdateSWOptions
 ): void {
     initServiceWorker([...offlineFirst(options), skipWaiting, claim], options);
 }

@@ -1,3 +1,3 @@
-export { activateOnNextVisitServiceWorker } from './activateOnNextVisit.js';
-export { activateImmediatelyServiceWorker } from './activateImmediately.js';
-export { activateOnSignalServiceWorker } from './activateOnSignal.js';
+export { activateAndUpdateOnNextVisitSW } from './activateOnNextVisit.js';
+export { immediatelyActivateAndUpdateSW } from './activateImmediately.js';
+export { immediatelyActivateUpdateOnSignalSW } from './activateOnSignal.js';

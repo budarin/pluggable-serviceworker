@@ -595,20 +595,20 @@ initServiceWorker(
 
 Готовые точки входа по **моменту активации** (все с кешированием offline-first). Импорт: `@budarin/pluggable-serviceworker/sw`.
 
-| Название                           | Описание                                                                                                                                                        |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `activateOnNextVisitServiceWorker` | Кеширующий SW, активируется и обновляется при следующем визите на страницу (перезагрузке) после загрузки нового сервисворкера.                                  |
-| `activateImmediatelyServiceWorker` | Кеширующий SW, всегда активируется и вступает в действие сразу при загрузке и при обновлении.                                                                   |
-| `activateOnSignalServiceWorker`    | Кеширующий SW, устанавливается сразу, но новая версия активируется при обновлении только по сигналу со страницы (сообщение `SW_MSG_SKIP_WAITING` по-умолчанию). |
+| Название                              | Описание                                                                                                                                                        |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activateAndUpdateOnNextVisitSW`      | Кеширующий SW, активируется и обновляется при следующем визите на страницу (перезагрузке) после загрузки нового сервисворкера.                                  |
+| `immediatelyActivateAndUpdateSW`      | Кеширующий SW, всегда активируется и вступает в действие сразу при загрузке и при обновлении.                                                                   |
+| `immediatelyActivateUpdateOnSignalSW` | Кеширующий SW: первая установка сразу, при обновлении новая версия активируется по сигналу со страницы (сообщение `SW_MSG_SKIP_WAITING` по умолчанию).            |
 
 <br />
 Пример использования типового SW:
 
 ```typescript
 // sw.js — точка входа вашего сервис-воркера
-import { activateOnNextVisitServiceWorker } from '@budarin/pluggable-serviceworker/sw';
+import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
-activateOnNextVisitServiceWorker({
+activateAndUpdateOnNextVisitSW({
     cacheName: 'my-cache-v1',
     assets: ['/', '/styles.css', '/script.js'],
     onError: (err, event, type) => console.error(type, err),
