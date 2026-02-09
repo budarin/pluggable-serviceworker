@@ -78,10 +78,7 @@ pnpm add @budarin/pluggable-serviceworker
 
 ```typescript
 // precacheAndServePlugin.js
-import {
-    type Plugin,
-    initServiceWorker,
-} from '@budarin/pluggable-serviceworker';
+import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 export function precacheAndServePlugin(config: {
     cacheName: string;
@@ -120,6 +117,7 @@ export function precacheAndServePlugin(config: {
 ```typescript
 // sw.ts
 import { precacheAndServePlugin } from './precacheAndServePlugin';
+import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 initServiceWorker([
     precacheAndServePlugin({
