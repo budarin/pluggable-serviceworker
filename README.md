@@ -462,54 +462,47 @@ function authPlugin(config: {
 
 Примитивы с конфигом — **фабрики плагинов** (см. раздел «Фабрика плагинов»): конфиг передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают только `logger?` и `onError?`. Примитивы без конфига (`skipWaiting`, `claim`, …) — готовые объекты плагинов.
 
-| Название                          | Событие  | Описание                                                                                                                                 |
-| --------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| **precache**(config)              | install  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                    |
-| **precacheMissing**(config)       | install  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                            |
-| **pruneStaleCache**(config)       | activate | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                             |
-| **skipWaiting**                   | install  | Вызывает `skipWaiting()`.                                                                                                                |
-| **claim**                         | activate | Вызывает `clients.claim()`. Предоставляет хелпер `claimClients()` для переиспользования.                                                 |
-| **reloadClients**                 | activate | Перезагружает все окна-клиенты. Предоставляет хелпер `reloadAllClients()` для переиспользования.                                         |
-| **claimAndReloadClients**         | activate | Композиция **claim** + **reloadClients**. Предоставляет хелпер `runClaimAndReloadClients()` для переиспользования.                       |
-| **skipWaitingOnMessage**(config?) | message  | При сообщении с `event.data.type === 'SKIP_WAITING'` вызывает `skipWaiting()`.                                                           |
-| **serveFromCache**(config)        | fetch    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                         |
-| **restoreAssetToCache**(config)   | fetch    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                   |
-| **cacheFirst**(config)            | fetch    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                |
-| **networkFirst**(config)          | fetch    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                                |
-| **staleWhileRevalidate**(config)  | fetch    | Отдаёv ресурс из кэша, и в фоне обновляем кэш. Предоставляет хелпер `staleWhileRevalidateFetch(event, cacheName)` для переиспользования. |
+| Название                          | Событие  | Описание                                                                                                                                                           |
+| --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **precache**(config)              | install  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                              |
+| **precacheAndNotify**(config)     | install  | Как **precache**, затем отправляет активным клиентам сообщение `{ type: config.messageType }` (по умолчанию `SW_INSTALLED`). Хелпер `notifyClients(messageType?)`. |
+| **precacheMissing**(config)       | install  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                      |
+| **pruneStaleCache**(config)       | activate | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                       |
+| **skipWaiting**                   | install  | Вызывает `skipWaiting()`.                                                                                                                                          |
+| **claim**                         | activate | Вызывает `clients.claim()`.                                                                                                                                        |
+| **reloadClients**                 | activate | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                |
+| **claimAndReloadClients**         | activate | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                  |
+| **skipWaitingOnMessage**(config?) | message  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                                                                     |
+| **serveFromCache**(config)        | fetch    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                   |
+| **restoreAssetToCache**(config)   | fetch    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                             |
+| **cacheFirst**(config)            | fetch    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                          |
+| **networkFirst**(config)          | fetch    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                                                          |
+| **staleWhileRevalidate**(config)  | fetch    | Отдаёv ресурс из кэша, и в фоне обновляем кэш. Предоставляет хелпер `staleWhileRevalidateFetch(event, cacheName)` для переиспользования.                           |
 
 #### Композиция примитивов
 
 Обработчики одного типа (`install`, `activate` и т.д.) у разных плагинов выполняются **параллельно**. Если нужна строгая последовательность (например «сначала claim, потом перезагрузка клиентов»), соберите один плагин, который по очереди вызывает логику примитивов — для гарантии порядка.
 
-Хелперы можно вызывать из своего плагина и оборачивать своей логикой (уведомления, замер времени и т.д.).
-
 **Пример: claimAndReloadClients как композиция двух примитивов**
 
-Плагин вызывает хелпер в `event.waitUntil`:
+Плагин **claimAndReloadClients** из коробки выполняет в `activate` последовательно: `clients.claim()`, затем перезагрузка всех окон.
 
 ```typescript
-import type { ServiceWorkerPlugin } from '@budarin/pluggable-serviceworker';
-
-import { runClaimAndReloadClients } from '@budarin/pluggable-serviceworker/plugins';
-
-export const claimAndReloadClients: ServiceWorkerPlugin = {
-    name: 'claimAndReloadClients',
-    activate: (event, _logger) => {
-        event.waitUntil(runClaimAndReloadClients());
-    },
-};
+// Реализация плагина claimAndReloadClients (из @budarin/pluggable-serviceworker/plugins)
+activate: () =>
+    self.clients.claim().then(() =>
+        self.clients
+            .matchAll({ type: 'window' })
+            .then((list) =>
+                Promise.all(list.map((client) => client.navigate(client.url)))
+            )
+    ),
 ```
 
-Порядок «сначала claim, потом reload» задаётся в коде хелпера:
+Два плагина **claim** и **reloadClients** в стеке выполняют `activate` **параллельно** (см. «Логика выполнения обработчиков»), порядок завершения операций не гарантирован. Для строгой последовательности «сначала claim, потом reload» используйте один плагин **claimAndReloadClients**.
 
 ```typescript
-import { claimClients } from '@budarin/pluggable-serviceworker/plugins';
-import { reloadAllClients } from '@budarin/pluggable-serviceworker/plugins';
-
-function runClaimAndReloadClients(): Promise<void> {
-    return claimClients().then(() => reloadAllClients());
-}
+initServiceWorker([claim, reloadClients], options); // оба activate — параллельно
 ```
 
 **Пример: кастомный кэш и переиспользование примитивов**
@@ -573,16 +566,17 @@ initServiceWorker(
 
 Готовые точки входа по **моменту активации** (все с кешированием offline-first). Импорт: `@budarin/pluggable-serviceworker/sw`.
 
-| Название                             | Описание                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------ |
-| **activateOnNextVisitServiceWorker** | Кеширующий SW, активируется при следующем визите страницы.                     |
-| **activateImmediatelyServiceWorker** | Кеширующий SW, активируется и вступает в действие сразу .                      |
-| **activateOnSignalServiceWorker**    | Кеширующий SW, активируется по сигналу со страницы (сообщение `SKIP_WAITING`). |
+| Название                             | Описание                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **activateOnNextVisitServiceWorker** | Кеширующий SW, активируется и обновляется при следующем визите после загрузки нового сервисворкера страницы.                          |
+| **activateImmediatelyServiceWorker** | Кеширующий SW, активируется и вступает в действие сразу при 1-й загрузке и при обновлении.                                            |
+| **activateOnSignalServiceWorker**    | Кеширующий SW, устанавливается сразу, но активируется при обновлении только по сигналу со страницы (сообщение `SW_MSG_SKIP_WAITING`). |
 
 Пример использования типового SW:
 
 ```typescript
 // sw.js — точка входа вашего сервис-воркера
+import { customLogger } from './customLogger';
 import { activateOnNextVisitServiceWorker } from '@budarin/pluggable-serviceworker/sw';
 
 activateOnNextVisitServiceWorker({

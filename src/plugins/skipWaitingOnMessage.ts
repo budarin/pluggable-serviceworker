@@ -13,11 +13,12 @@ export interface SkipWaitingOnMessageConfig {
 export function skipWaitingOnMessage(
     config: SkipWaitingOnMessageConfig = {}
 ): ServiceWorkerPlugin<PluginContext> {
-    const type = config.messageType ?? SW_MSG_SKIP_WAITING;
+    const { messageType = SW_MSG_SKIP_WAITING } = config;
+
     return {
         name: 'skipWaitingOnMessage',
         message: (event: SwMessageEvent) => {
-            if (event.data?.type !== type) return;
+            if (event.data?.type !== messageType) return;
             self.skipWaiting();
         },
     };

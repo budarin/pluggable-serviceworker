@@ -1,8 +1,10 @@
 import type { ServiceWorkerPlugin } from '../index.js';
 
-export const skipWaiting: ServiceWorkerPlugin = {
-    name: 'skipWaiting',
-    install: (_event, _logger) => {
-        self.skipWaiting();
-    },
-};
+export function skipWaiting(): ServiceWorkerPlugin {
+    return {
+        name: 'skipWaiting',
+        install: (_event, _logger) => {
+            self.skipWaiting();
+        },
+    };
+}

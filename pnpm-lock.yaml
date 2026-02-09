@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@budarin/http-constants':
-        specifier: ^1.0.17
-        version: 1.0.19
+        specifier: ^1.0.20
+        version: 1.0.20
     devDependencies:
       '@types/node':
         specifier: ^25.2.2
@@ -34,8 +34,8 @@ importers:
   demo:
     dependencies:
       '@budarin/http-constants':
-        specifier: ^1.0.19
-        version: 1.0.19
+        specifier: ^1.0.20
+        version: 1.0.20
       '@budarin/pluggable-serviceworker':
         specifier: workspace:*
         version: link:..
@@ -147,8 +147,8 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
-  '@budarin/http-constants@1.0.19':
-    resolution: {integrity: sha512-YFZjDhwALioLXf0gOntXxi8J6cVl89xlpkFzK0rjoq2bdd/36c9f/VpprSR9ixqHTMeBgkrIB8Zfe4h0PIwD4A==}
+  '@budarin/http-constants@1.0.20':
+    resolution: {integrity: sha512-wylgRcSz8AIKJMVhrlBG/NOIZvYZOwG8uP2VhLjQQLEBX1/F+7jTMPd1tB/sjaY1hQ+aexbBUX0qOCILKzXM0A==}
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -929,7 +929,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@budarin/http-constants@1.0.19': {}
+  '@budarin/http-constants@1.0.20': {}
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true

@@ -34,13 +34,14 @@
         "vitest": "^4.0.18"
     },
     "dependencies": {
-        "@budarin/http-constants": "^1.0.17"
+        "@budarin/http-constants": "^1.0.20"
     },
     "scripts": {
         "build": "tsc",
         "test": "vitest run",
         "type-check": "tsc -b -noEmit",
         "test:watch": "vitest",
+        "clear-caches": "sh scripts/clear-caches.sh",
         "pnpm-install": "pnpm install",
         "upgrade-deps": "sh scripts/upgrade-deps.sh",
         "publish-package": "pnpm build && pnpm publish --access=public"
