@@ -1,11 +1,13 @@
 import type { Plugin } from '../index.js';
 import type { PrecacheConfig } from './precache.js';
 
-import { notifyClients } from '../utils/notifyClients.js';
 import {
     SW_MSG_INSTALLED,
     SW_MSG_START_INSTALLING,
 } from '@budarin/http-constants/service-worker';
+
+import { precache } from './precache.js';
+import { notifyClients } from '../utils/notifyClients.js';
 
 export interface PrecacheAndNotifyConfig extends PrecacheConfig {
     startInstallingMessage?: string;
@@ -23,15 +25,18 @@ export function precacheAndNotify(config: PrecacheAndNotifyConfig): Plugin {
         startInstallingMessage = SW_MSG_START_INSTALLING,
         installedMessage = SW_MSG_INSTALLED,
     } = config;
+
+    const preCachePlugin = precache({
+        assets,
+        cacheName,
+    });
+
     return {
         name: 'precacheAndNotify',
 
-        install: async () => {
+        install: async (event, logger) => {
             await notifyClients(startInstallingMessage);
-
-            const cache = await caches.open(cacheName);
-            await cache.addAll(assets);
-
+            await preCachePlugin.install?.(event, logger);
             await notifyClients(installedMessage);
         },
     };
