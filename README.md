@@ -440,6 +440,7 @@ function authPlugin(config: {
             if (protectedPaths.some((p) => path.startsWith(p))) {
                 if (needsAuth(event.request)) {
                     logger.warn('auth: unauthorized', event.request.url);
+
                     return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
                 }
             }
@@ -454,7 +455,7 @@ function authPlugin(config: {
 **Почему последовательно:**
 
 - **fetch**: Нужен только один ответ на текущий запрос браузера, первый успешный прерывает цепочку. Если никто не вернул ответ — выполняется `fetch(event.request)`
-- **push**: Плагин может вернуть `PushNotificationPayload`, `false` (не показывать) или `undefined` (решение отдаётся библиотеке). Библиотека вызывает `showNotification` для каждого payload. Не показываем, если все вернули `false` или смесь без payload. Библиотека показывает одно только когда **все** вернули `undefined`.
+- **push**: Плагин может вернуть `PushNotificationPayload`, `false` (не показывать) или `undefined` (решение отдаётся библиотеке). Библиотека вызывает `showNotification` для каждого payload. Не показываем, если все вернули `false` или смесь без payload. Библиотека показывает нотификацию и в случае когда **все** плагины вернули `undefined`.
 
 ### 📋 Сводная таблица
 
@@ -479,19 +480,19 @@ function authPlugin(config: {
 | Название                        | Событие    | Описание                                                                                                                     |
 | ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `precache*(config)`             | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                        |
-| `precacheAndNotify(config)`     | install    | Как **precache**, затем отправляет активным клиентам сообщение `{ type: config.messageType }` (по умолчанию `SW_INSTALLED`). |
+| `precacheAndNotify(config)`     | `install`  | Как **precache**, затем отправляет активным клиентам сообщение `{ type: config.messageType }` (по умолчанию `SW_INSTALLED`). |
 | `precacheMissing(config)`       | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                |
 | `pruneStaleCache(config)`       | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                 |
-| `skipWaiting                    | `install`  | Вызывает `skipWaiting()`.                                                                                                    |
+| `skipWaiting`                   | `install`  | Вызывает `skipWaiting()`.                                                                                                    |
 | `claim`                         | `activate` | Вызывает `clients.claim()`.                                                                                                  |
 | `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                          |
 | `claimAndReloadClients`         | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).            |
 | `skipWaitingOnMessage(config?)` | `message`  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                        |
 | `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                             |
 | `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.       |
-| cacheFirst(config)`             | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.    |
+| `cacheFirst(config)`            | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.    |
 | `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                    |
-| `staleWhileRevalidate(config)`  | fetch      | Отдаёт из кэша, в фоне обновляет кэш.                                                                                        |
+| `staleWhileRevalidate(config)`  | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                        |
 
 #### Композиция примитивов
 
@@ -519,6 +520,7 @@ activate: (event, logger) =>
 Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет `stale-while-revalidate`(SWR) только к запросам, подходящим под `pathPattern`.
 
 ```typescript
+// postsSwrPlugin.ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 import {
@@ -536,27 +538,35 @@ function postsSwrPlugin(config: {
     return {
         name: 'postsSwr',
         order: 0,
+
         fetch: async (event) => {
             if (!pathPattern.test(new URL(event.request.url).pathname)) {
                 return undefined;
             }
+
             const cache = await caches.open(cacheName);
             const cached = await cache.match(event.request);
             const revalidate = fetch(event.request).then(async (response) => {
                 if (response.ok) {
                     await cache.put(event.request, response.clone());
                 }
+
                 return response;
             });
+
             if (cached) {
                 void revalidate;
                 return cached;
             }
+
             return revalidate;
         },
     };
 }
+```
 
+```typescript
+// sw.ts
 const staticCache = 'static-v1';
 const assets = ['/', '/main.js'];
 
@@ -579,7 +589,6 @@ initServiceWorker(
 | `offlineFirst(config)` | `precache(config) + serveFromCache(config)` | Статика из кеша, при отсутствии ресурса в кэше — делаем запрос к серверу. |
 
 Конфиг пресета: `OfflineFirstConfig` (cacheName, assets). Импорт из `@budarin/pluggable-serviceworker/presets`.
-
 Стратегии **networkFirst**, **staleWhileRevalidate** и др. доступны как примитивы — собирайте свой кастомный сервис-воркер из примитивов и пресетов.
 
 ### Типовые сервис-воркеры (из коробки)
@@ -613,10 +622,10 @@ activateOnNextVisitServiceWorker({
 
 Утилиты, доступные для использования в своих плагинах. Импорт: `@budarin/pluggable-serviceworker/utils`.
 
-| Название                              | Описание                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| `normalizeUrl(url)`                   | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
-| `notifyClients(messageType)`          | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
+| Название                     | Описание                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `normalizeUrl(url)`          | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
+| `notifyClients(messageType)` | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
 
 ## Разработка пакета плагина
 
