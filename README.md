@@ -220,7 +220,6 @@ initServiceWorker([cachePlugin]);
 
 // С onError - ошибки будут обработаны
 initServiceWorker([cachePlugin], {
-    logger: console,
     onError: (error, event, errorType) => {
         console.error('Service Worker error:', error, errorType);
     },
@@ -250,6 +249,9 @@ const options = {
                 logger.error('JavaScript error:', error);
                 break;
 
+            // ... ошибки любых обработчиков: install, activate, fetch, message, push, sync и periodicsync
+
+            // к примеру - ошибки обработчика message
             case ServiceWorkerErrorType.MESSAGE_ERROR:
                 // Ошибки сообщений
                 logger.error('Message error:', error);
