@@ -74,7 +74,7 @@ function precacheAndServePlugin(config: {
         name: 'precache-and-serve',
 
         install: async (_event, logger) => {
-            logger?.debug?.('precache-and-serve: cache assets');
+            logger.debug('precache-and-serve: cache assets');
             const cache = await caches.open(cacheName);
             await cache.addAll(assets);
         },
@@ -83,7 +83,7 @@ function precacheAndServePlugin(config: {
             const cache = await caches.open(cacheName);
             const asset = await cache.match(event.request);
             if (!asset && import.meta.env.DEV) {
-                logger?.debug?.(
+                logger.debug(
                     `precache-and-serve: asset ${event.request.url} not found in cache!`
                 );
             }
@@ -597,6 +597,62 @@ activateOnNextVisitServiceWorker({
 ```
 
 На странице регистрируйте этот файл: `navigator.serviceWorker.register('/sw.js')` (или путь, по которому сборка отдаёт ваш sw.js).
+
+## Разработка пакета плагина
+
+Типы для описания плагина экспортируются из этого пакета. Отдельный пакет с плагином не публикует свои типы — он объявляет зависимость от `@budarin/pluggable-serviceworker` и импортирует типы оттуда.
+
+**1. Зависимости в пакете плагина**
+
+В `package.json` своего пакета добавьте:
+
+```json
+{
+    "peerDependencies": {
+        "@budarin/pluggable-serviceworker": "^1.0.0"
+    },
+    "devDependencies": {
+        "@budarin/pluggable-serviceworker": "^1.5.0"
+    }
+}
+```
+
+`peerDependencies` — чтобы плагин работал с той версией библиотеки, которую установил пользователь; в `devDependencies` — для сборки и типов.
+
+**2. Импорт типов в коде плагина**
+
+Достаточно импортировать `ServiceWorkerPlugin` и `PluginContext`; при необходимости — `Logger`, `SwMessageEvent`, `PushNotificationPayload` и др.
+
+```typescript
+import type {
+    ServiceWorkerPlugin,
+    PluginContext,
+} from '@budarin/pluggable-serviceworker';
+
+export interface MyPluginConfig {
+    cacheName: string;
+}
+
+export function myPlugin(
+    config: MyPluginConfig
+): ServiceWorkerPlugin<PluginContext> {
+    const { cacheName } = config;
+    return {
+        name: 'my-plugin',
+        install: async (_event, logger) => {
+            logger.info('my-plugin: install');
+            const cache = await caches.open(cacheName);
+            await cache.add('/offline.html');
+        },
+        fetch: async (event, _logger) => {
+            const cached = await caches.match(event.request);
+            return cached ?? undefined;
+        },
+    };
+}
+```
+
+Пользователь подключает плагин так: `initServiceWorker([..., myPlugin({ cacheName: 'my-v1' })], options)`.
 
 ## Режим разработки
 
