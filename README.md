@@ -79,15 +79,14 @@ pnpm add @budarin/pluggable-serviceworker
 ```typescript
 // sw.js
 import {
-    type PluginContext,
-    type ServiceWorkerPlugin,
+    type Plugin,
     initServiceWorker,
 } from '@budarin/pluggable-serviceworker';
 
 function precacheAndServePlugin(config: {
     cacheName: string;
     assets: string[];
-}): ServiceWorkerPlugin<PluginContext> {
+}): Plugin {
     const { cacheName, assets } = config;
 
     return {
@@ -441,14 +440,9 @@ initServiceWorker(
 Пример фабрики, которая прерывает цепочку при неавторизованном доступе к защищённым путям:
 
 ```typescript
-import type {
-    PluginContext,
-    ServiceWorkerPlugin,
-} from '@budarin/pluggable-serviceworker';
+import type { Plugin } from '@budarin/pluggable-serviceworker';
 
-function authPlugin(config: {
-    protectedPaths: string[];
-}): ServiceWorkerPlugin<PluginContext> {
+function authPlugin(config: { protectedPaths: string[] }): Plugin {
     const { protectedPaths } = config;
 
     return {
