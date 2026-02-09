@@ -77,13 +77,13 @@ pnpm add @budarin/pluggable-serviceworker
 ### Базовое использование
 
 ```typescript
-// sw.js
+// precacheAndServePlugin.js
 import {
     type Plugin,
     initServiceWorker,
 } from '@budarin/pluggable-serviceworker';
 
-function precacheAndServePlugin(config: {
+export function precacheAndServePlugin(config: {
     cacheName: string;
     assets: string[];
 }): Plugin {
@@ -115,6 +115,11 @@ function precacheAndServePlugin(config: {
         },
     };
 }
+```
+
+```typescript
+// sw.ts
+import { precacheAndServePlugin } from './precacheAndServePlugin';
 
 initServiceWorker([
     precacheAndServePlugin({
@@ -124,22 +129,11 @@ initServiceWorker([
 ]);
 ```
 
-**Важно:**
-
-- для `fetch` плагину не нужно самому вызывать `fetch(event.request)` — если все плагины вернули `undefined`, фреймворк сам идёт в сеть.
-- конфиг плагина задаётся по месту вызова фабрики; в `options` только `logger?` и `onError?`.
-
-### Фабрика плагинов
-
-**Плагин** — это объект с полем `name` и опциональными обработчиками (`install`, `fetch`, `activate` и т.д.). В массив `initServiceWorker(plugins, options)` передаются именно такие объекты.
-
-**Фабрика плагина** — функция, которая принимает конфиг и возвращает плагин (объект). Например: `precache(config)`, `serveFromCache(config)` или собственная `precacheAndServePlugin(config)` из примера выше. Конфиг задаётся по месту вызова фабрики; в общий `options` попадают только `logger?` и `onError?`.
-
 ## Демо
 
 В папке [demo/](demo/) — приложение **React + Vite** с пресетом **offlineFirst** и типовым сервис-воркером **activateOnSignal**. Запуск из корня: `pnpm start`. Подробности — в [demo/README.md](demo/README.md).
 
-## `initServiceWorker(plugins, options)`
+## initServiceWorker(plugins, options)
 
 `initServiceWorker` — точка входа: регистрирует обработчики событий Service Worker (`install`, `activate`, `fetch`, …) и прогоняет их через список плагинов.
 
@@ -304,7 +298,13 @@ initServiceWorker(
 );
 ```
 
-## 🔌 Интерфейс плагина
+## Плагины
+
+**Плагин** — это объект с полем `name` и опциональными обработчиками (`install`, `fetch`, `activate` и т.д.). В массив `initServiceWorker(plugins, options)` передаются именно такие объекты.
+
+**Фабрика плагина** — функция, которая принимает конфиг и возвращает плагин (объект). Например: `precache(config)`, `serveFromCache(config)` или собственная `precacheAndServePlugin(config)` из примера выше. Конфиг задаётся по месту вызова фабрики; в общий `options` попадают только `logger?` и `onError?`.
+
+### 🔌 Интерфейс плагина
 
 Плагин — объект, реализующий интерфейс `ServiceWorkerPlugin`. Во все обработчики вторым аргументом передаётся **logger** (всегда определён: из `options` или `console`). Специфичный для плагина конфиг задаётся при вызове **фабрики** плагина; в `options` только `logger?` и `onError?`. Параметр типа `_C` (например `PluginContext`) используется для типизации; по умолчанию контекст содержит только `logger`.
 
@@ -488,7 +488,6 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 ### Примитивы (плагины)
 
 Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
-
 Примитивы с конфигом — **фабрики плагинов** (см. раздел «Фабрика плагинов»): конфиг передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают только `logger?` и `onError?`. Примитивы без конфига (`skipWaiting`, `claim`, …) — готовые объекты плагинов.
 
 | Название                        | Событие    | Описание                                                                                                                     |
@@ -512,9 +511,7 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 
 Обработчики одного типа (`install`, `activate` и т.д.) у разных плагинов выполняются **параллельно**. Если нужна строгая последовательность (например «сначала claim, потом перезагрузка клиентов»), соберите один плагин, который по очереди вызывает логику примитивов — для гарантии порядка.
 
-**Пример: claimAndReloadClients как композиция двух примитивов**
-
-Плагин **claimAndReloadClients** вызывает существующие примитивы **claim** и **reloadClients** по очереди:
+Пример: claimAndReloadClients как композиция двух примитивов. Плагин вызывает существующие примитивы **claim** и **reloadClients** по очереди:
 
 ```typescript
 import { claim } from '@budarin/pluggable-serviceworker/plugins';
@@ -537,43 +534,24 @@ activate: (event, logger) =>
 // postsSwrPlugin.ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
-import {
-    precache,
-    serveFromCache,
-} from '@budarin/pluggable-serviceworker/plugins';
-import { initServiceWorker } from '@budarin/pluggable-serviceworker';
+import { staleWhileRevalidate } from '@budarin/pluggable-serviceworker/plugins';
 
 function postsSwrPlugin(config: {
     cacheName: string;
     pathPattern?: RegExp;
 }): Plugin {
     const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
+    const swrPlugin = staleWhileRevalidate({ cacheName });
 
     return {
         name: 'postsSwr',
         order: 0,
 
-        fetch: async (event) => {
+        fetch: async (event, logger) => {
             if (!pathPattern.test(new URL(event.request.url).pathname)) {
                 return undefined;
             }
-
-            const cache = await caches.open(cacheName);
-            const cached = await cache.match(event.request);
-            const revalidate = fetch(event.request).then(async (response) => {
-                if (response.ok) {
-                    await cache.put(event.request, response.clone());
-                }
-
-                return response;
-            });
-
-            if (cached) {
-                void revalidate;
-                return cached;
-            }
-
-            return revalidate;
+            return swrPlugin.fetch!(event, logger);
         },
     };
 }
@@ -619,14 +597,12 @@ initServiceWorker(
 
 ```typescript
 // sw.js — точка входа вашего сервис-воркера
-import { customLogger } from './customLogger';
 import { activateOnNextVisitServiceWorker } from '@budarin/pluggable-serviceworker/sw';
 
 activateOnNextVisitServiceWorker({
-    assets: ['/', '/styles.css', '/script.js'],
     cacheName: 'my-cache-v1',
-    logger: customLogger,
-    onError: (err, event, type) => customLogger.error(type, err),
+    assets: ['/', '/styles.css', '/script.js'],
+    onError: (err, event, type) => console.error(type, err),
 });
 ```
 
@@ -655,7 +631,7 @@ activateOnNextVisitServiceWorker({
         "@budarin/pluggable-serviceworker": "^1.0.0"
     },
     "devDependencies": {
-        "@budarin/pluggable-serviceworker": "^1.5.0"
+        "@budarin/pluggable-serviceworker": "^1.5.5"
     }
 }
 ```
