@@ -244,36 +244,45 @@ const options = {
         logger.info(`Ошибка типа "${errorType}":`, error);
 
         switch (errorType) {
+            // Ошибки в плагинах при обработке соответствующего события
+            case ServiceWorkerErrorType.INSTALL_ERROR:
+            case ServiceWorkerErrorType.ACTIVATE_ERROR:
+            case ServiceWorkerErrorType.FETCH_ERROR:
+            case ServiceWorkerErrorType.MESSAGE_ERROR:
+            case ServiceWorkerErrorType.SYNC_ERROR:
+            case ServiceWorkerErrorType.PERIODICSYNC_ERROR:
+            case ServiceWorkerErrorType.PUSH_ERROR:
+                logger.error(`Plugin error (${errorType}):`, error);
+
+                // если нужно - мы можем получить конкретную точку в коде того плагина в котором произошла ошибка
+                if (error instanceof Error && error.stack) {
+                    logger.error('Plugin error Stack:', error.stack);
+                }
+
+                break;
+
+            // Глобальные JavaScript ошибки
             case ServiceWorkerErrorType.ERROR:
-                // JavaScript ошибки
                 logger.error('JavaScript error:', error);
                 break;
 
-            // ... ошибки любых обработчиков: install, activate, fetch, message, push, sync и periodicsync
-
-            // к примеру - ошибки обработчика message
-            case ServiceWorkerErrorType.MESSAGE_ERROR:
-                // Ошибки сообщений
+            // Глобальное событие messageerror (например, ошибка structured clone)
+            case ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER:
                 logger.error('Message error:', error);
                 break;
 
+            // Необработанные Promise rejection
             case ServiceWorkerErrorType.UNHANDLED_REJECTION:
-                // Необработанные Promise rejection
                 logger.error('Unhandled promise rejection:', error);
                 break;
 
+            // Обработанные Promise rejection
             case ServiceWorkerErrorType.REJECTION_HANDLED:
-                // Обработанные Promise rejection
                 logger.info('Promise rejection handled:', error);
                 break;
 
-            case ServiceWorkerErrorType.PLUGIN_ERROR:
-                // Ошибки в плагинах
-                logger.error('Plugin error:', error);
-                break;
-
+            // Неизвестные типы ошибок
             default:
-                // Неизвестные типы ошибок
                 logger.error('Unknown error type:', error);
 
                 // можно даже так - отправка ошибки в аналитику

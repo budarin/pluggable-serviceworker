@@ -51,7 +51,7 @@ describe('createEventHandlers', () => {
     });
 
     describe('install error handling', () => {
-        it('calls onError with PLUGIN_ERROR when a plugin throws', async () => {
+        it('calls onError with INSTALL_ERROR when a plugin throws', async () => {
             const onError = vi.fn();
             const plugins: ServiceWorkerPlugin[] = [
                 {
@@ -71,7 +71,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.PLUGIN_ERROR
+                ServiceWorkerErrorType.INSTALL_ERROR
             );
             expect((onError.mock.calls[0]?.[0] as Error).message).toBe(
                 'plugin failed'
@@ -95,7 +95,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.PLUGIN_ERROR
+                ServiceWorkerErrorType.INSTALL_ERROR
             );
         });
     });
@@ -174,7 +174,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.PLUGIN_ERROR
+                ServiceWorkerErrorType.FETCH_ERROR
             );
         });
     });
@@ -218,7 +218,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.PLUGIN_ERROR
+                ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
             );
         });
     });

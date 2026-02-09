@@ -14,8 +14,22 @@ import {
 
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
-    PLUGIN_ERROR = 'plugin_error',
+    /** Ошибка в плагине при обработке события install */
+    INSTALL_ERROR = 'install_error',
+    /** Ошибка в плагине при обработке события activate */
+    ACTIVATE_ERROR = 'activate_error',
+    /** Ошибка в плагине при обработке fetch или при сетевом запросе (офлайн) */
+    FETCH_ERROR = 'fetch_error',
+    /** Глобальное событие messageerror (например, ошибка structured clone) */
     MESSAGE_ERROR = 'messageerror',
+    /** Ошибка в плагине при обработке события message */
+    MESSAGE_ERROR_HANDLER = 'message_error_handler',
+    /** Ошибка в плагине при обработке события sync */
+    SYNC_ERROR = 'sync_error',
+    /** Ошибка в плагине при обработке события periodicsync */
+    PERIODICSYNC_ERROR = 'periodicsync_error',
+    /** Ошибка в плагине при обработке события push или при показе уведомления */
+    PUSH_ERROR = 'push_error',
     REJECTION_HANDLED = 'rejectionhandled',
     UNHANDLED_REJECTION = 'unhandledrejection',
 }
@@ -91,24 +105,15 @@ export type RequiredOptions<P extends readonly unknown[]> = UnionToIntersection<
 >;
 
 interface ServiceWorkerEventHandlers {
-    install?: (
-        event: ExtendableEvent,
-        logger: Logger
-    ) => void | Promise<void>;
-    activate?: (
-        event: ExtendableEvent,
-        logger: Logger
-    ) => void | Promise<void>;
+    install?: (event: ExtendableEvent, logger: Logger) => void | Promise<void>;
+    activate?: (event: ExtendableEvent, logger: Logger) => void | Promise<void>;
     fetch?: (
         event: FetchEvent,
         logger: Logger
     ) => Promise<Response | undefined>;
     message?: (event: SwMessageEvent, logger: Logger) => void;
     sync?: (event: SyncEvent, logger: Logger) => Promise<void>;
-    periodicsync?: (
-        event: PeriodicSyncEvent,
-        logger: Logger
-    ) => Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent, logger: Logger) => Promise<void>;
     push?: (
         event: PushEvent,
         logger: Logger
@@ -141,10 +146,7 @@ type ActivateHandler = (
     event: ExtendableEvent,
     logger: Logger
 ) => void | Promise<void>;
-type FetchHandler = (
-    event: FetchEvent,
-    logger: Logger
-) => FetchResponse;
+type FetchHandler = (event: FetchEvent, logger: Logger) => FetchResponse;
 type MessageHandler = (event: SwMessageEvent, logger: Logger) => void;
 type SyncHandler = (event: SyncEvent, logger: Logger) => Promise<void>;
 type PeriodicsyncHandler = (
@@ -160,9 +162,7 @@ type PushHandler = (
     | false
     | Promise<void | PushNotificationPayload | false>;
 
-export function createEventHandlers<
-    _C extends PluginContext = PluginContext,
->(
+export function createEventHandlers<_C extends PluginContext = PluginContext>(
     plugins: readonly ServiceWorkerPlugin<_C>[],
     options: _C & ServiceWorkerInitOptions
 ): {
@@ -227,7 +227,7 @@ export function createEventHandlers<
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                    ServiceWorkerErrorType.INSTALL_ERROR
                                 )
                             )
                     )
@@ -245,7 +245,7 @@ export function createEventHandlers<
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                    ServiceWorkerErrorType.ACTIVATE_ERROR
                                 )
                             )
                     )
@@ -266,7 +266,7 @@ export function createEventHandlers<
                             options.onError?.(
                                 error as Error,
                                 event,
-                                ServiceWorkerErrorType.PLUGIN_ERROR
+                                ServiceWorkerErrorType.FETCH_ERROR
                             );
                         }
                     }
@@ -277,7 +277,7 @@ export function createEventHandlers<
                         options.onError?.(
                             error as Error,
                             event,
-                            ServiceWorkerErrorType.PLUGIN_ERROR
+                            ServiceWorkerErrorType.FETCH_ERROR
                         );
                         return new Response('', {
                             status: 503,
@@ -296,7 +296,7 @@ export function createEventHandlers<
                     options.onError?.(
                         error as Error,
                         event,
-                        ServiceWorkerErrorType.PLUGIN_ERROR
+                        ServiceWorkerErrorType.MESSAGE_ERROR
                     );
                 }
             });
@@ -312,7 +312,7 @@ export function createEventHandlers<
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                    ServiceWorkerErrorType.SYNC_ERROR
                                 )
                             )
                     )
@@ -330,7 +330,7 @@ export function createEventHandlers<
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.PLUGIN_ERROR
+                                    ServiceWorkerErrorType.PERIODICSYNC_ERROR
                                 )
                             )
                     )
@@ -362,7 +362,7 @@ export function createEventHandlers<
                             options.onError?.(
                                 error as Error,
                                 event,
-                                ServiceWorkerErrorType.PLUGIN_ERROR
+                                ServiceWorkerErrorType.PUSH_ERROR
                             );
                             returns.push(undefined);
                         }
@@ -432,7 +432,7 @@ export function createEventHandlers<
                         options.onError?.(
                             error as Error,
                             event,
-                            ServiceWorkerErrorType.PLUGIN_ERROR
+                            ServiceWorkerErrorType.PUSH_ERROR
                         );
                     }
                 })()
@@ -456,7 +456,7 @@ export function createEventHandlers<
                 options.onError?.(
                     event.data,
                     event,
-                    ServiceWorkerErrorType.MESSAGE_ERROR
+                    ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
                 );
             } catch (error) {
                 logger.error('Error in messageerror handler:', error);
