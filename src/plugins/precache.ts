@@ -12,7 +12,6 @@ export function precache(config: PrecacheConfig): Plugin {
 
         install: async () => {
             const cache = await caches.open(cacheName);
-
             await cache.addAll(assets);
         },
     };
