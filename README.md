@@ -637,13 +637,16 @@ export function myPlugin(
     config: MyPluginConfig
 ): ServiceWorkerPlugin<PluginContext> {
     const { cacheName } = config;
+
     return {
         name: 'my-plugin',
+
         install: async (_event, logger) => {
             logger.info('my-plugin: install');
             const cache = await caches.open(cacheName);
             await cache.add('/offline.html');
         },
+
         fetch: async (event, _logger) => {
             const cached = await caches.match(event.request);
             return cached ?? undefined;
@@ -656,7 +659,7 @@ export function myPlugin(
 
 ## Режим разработки
 
-Если нужно, чтобы в режиме разработки ни один из плагинов ничего не кэшировал и не пытался что-либо отдавать из кэша - в плагине и сервисворкере можно использовть `import.meta.env.DEV` для Vite для условного использования кэширования.
+В режиме разработки - используйте `import.meta.env.DEV` для Vite для условного использования кода.
 
 ## 📄 Лицензия
 
