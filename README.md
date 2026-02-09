@@ -619,18 +619,20 @@ activateOnNextVisitServiceWorker({
 
 ### Публикуемые утилиты
 
-| Название                                     | Где использовать | Описание                                                                                                                                                                                                 |
-| -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `registerServiceWorker(scriptURL, options?)` | клиент           | Регистрация SW; при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)). Импорт: `@budarin/pluggable-serviceworker/client`. |
-| `normalizeUrl(url)`                          | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                               |
-| `notifyClients(messageType)`                 | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                                      |
+| Название                                                        | Где использовать | Описание                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | клиент           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)). Импорт: `@budarin/pluggable-serviceworker/client`. |
+| `normalizeUrl(url)`                                             | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                                                                               |
+| `notifyClients(messageType)`                                    | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                                                                                      |
 
-На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке если сервисворкер использует `claim()` для того чтобы сразу же установить контроль над страницей (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
+На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке если сервисворкер использует `claim()` для того, чтобы сразу же установить контроль над страницей (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
 
 ```typescript
-import { registerServiceWorker } from '@budarin/pluggable-serviceworker/client';
+import { registerServiceWorkerWithClaimWorkaround } from '@budarin/pluggable-serviceworker/client';
 
-const reg = await registerServiceWorker('/sw.js');
+const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js', {
+    type: 'module',
+});
 ```
 
 Без этого API на первом визите страница может остаться без контроллера до перезагрузки.

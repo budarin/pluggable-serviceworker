@@ -1,9 +1,10 @@
 /**
  * Регистрирует Service Worker. После ready, если страница ещё не под контролем
- * (navigator.serviceWorker.controller === null), один раз перезагружает страницу,
- * чтобы обойти баг браузера (см. https://issues.chromium.org/issues/482903583).
+ * (navigator.serviceWorker.controller === null), один раз перезагружает страницу.
+ * Можно использовать с любым SW; особенно важно, когда в SW в activate вызывается
+ * clients.claim() — в этом случае обходится баг браузера (https://issues.chromium.org/issues/482903583).
  */
-export async function registerServiceWorker(
+export async function registerServiceWorkerWithClaimWorkaround(
     scriptURL: string,
     options?: RegistrationOptions
 ): Promise<ServiceWorkerRegistration | undefined> {

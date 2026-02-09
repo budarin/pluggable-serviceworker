@@ -1,1 +1,1 @@
-export { registerServiceWorker } from './register.js';
+export { registerServiceWorkerWithClaimWorkaround } from './register.js';
