@@ -1,4 +1,4 @@
-import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
+import type { Plugin } from '../index.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 export interface PruneStaleCacheConfig {
@@ -9,9 +9,7 @@ export interface PruneStaleCacheConfig {
 /**
  * При activate: обходит ключи кэша и удаляет записи, чей URL не входит в config.assets.
  */
-export function pruneStaleCache(
-    config: PruneStaleCacheConfig
-): ServiceWorkerPlugin<PluginContext> {
+export function pruneStaleCache(config: PruneStaleCacheConfig): Plugin {
     const { cacheName, assets } = config;
     const assetHrefs = new Set(assets.map((url) => normalizeUrl(url)));
     return {

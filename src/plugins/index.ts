@@ -1,9 +1,3 @@
-export { claimAndReloadClients } from './claimAndReloadClients.js';
-export {
-    staleWhileRevalidate,
-    staleWhileRevalidateFetch,
-} from './staleWhileRevalidate.js';
-
 export { claim } from './claim.js';
 export { precache } from './precache.js';
 export { cacheFirst } from './cacheFirst.js';
@@ -13,6 +7,8 @@ export { reloadClients } from './reloadClients.js';
 export { serveFromCache } from './serveFromCache.js';
 export { precacheMissing } from './precacheMissing.js';
 export { pruneStaleCache } from './pruneStaleCache.js';
+export { precacheAndNotify } from './precacheAndNotify.js';
 export { restoreAssetToCache } from './restoreAssetToCache.js';
 export { skipWaitingOnMessage } from './skipWaitingOnMessage.js';
-export { precacheAndNotify, notifyClients } from './precacheAndNotify.js';
+export { staleWhileRevalidate } from './staleWhileRevalidate.js';
+export { claimAndReloadClients } from './claimAndReloadClients.js';

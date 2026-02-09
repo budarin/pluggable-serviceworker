@@ -1,6 +1,6 @@
-import type { ServiceWorkerPlugin } from '../index.js';
+import type { Plugin } from '../index.js';
 
-export function reloadClients(): ServiceWorkerPlugin {
+export function reloadClients(): Plugin {
     return {
         name: 'reloadClients',
         activate: async () => {

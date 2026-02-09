@@ -1,12 +1,10 @@
-import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
+import type { Plugin } from '../index.js';
 
 export interface NetworkFirstConfig {
     cacheName: string;
 }
 
-export function networkFirst(
-    config: NetworkFirstConfig
-): ServiceWorkerPlugin<PluginContext> {
+export function networkFirst(config: NetworkFirstConfig): Plugin {
     const { cacheName } = config;
     return {
         name: 'networkFirst',

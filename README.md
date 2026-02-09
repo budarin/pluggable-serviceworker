@@ -476,22 +476,22 @@ function authPlugin(config: {
 
 Примитивы с конфигом — **фабрики плагинов** (см. раздел «Фабрика плагинов»): конфиг передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают только `logger?` и `onError?`. Примитивы без конфига (`skipWaiting`, `claim`, …) — готовые объекты плагинов.
 
-| Название                        | Событие    | Описание                                                                                                                                                           |
-| ------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `precache*(config)`             | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                              |
-| `precacheAndNotify(config)`     | `install`  | Как **precache**, затем отправляет активным клиентам сообщение `{ type: config.messageType }` (по умолчанию `SW_INSTALLED`). Хелпер `notifyClients(messageType?)`. |
-| `precacheMissing(config)`       | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                      |
-| `pruneStaleCache(config)`       | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                       |
-| `skipWaiting                    | `install`  | Вызывает `skipWaiting()`.                                                                                                                                          |
-| `claim`                         | `activate` | Вызывает `clients.claim()`.                                                                                                                                        |
-| `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                |
-| `claimAndReloadClients`         | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                  |
-| `skipWaitingOnMessage(config?)` | `message`  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                                                              |
-| `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                   |
-| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                             |
-| cacheFirst(config)`             | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                          |
-| `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                                                          |
-| `staleWhileRevalidate(config)`  | `fetch`    | Отдаёv ресурс из кэша, и в фоне обновляем кэш. Предоставляет хелпер `staleWhileRevalidateFetch(event, cacheName)` для переиспользования.                           |
+| Название                        | Событие    | Описание                                                                                                                     |
+| ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `precache*(config)`             | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                        |
+| `precacheAndNotify(config)`     | install    | Как **precache**, затем отправляет активным клиентам сообщение `{ type: config.messageType }` (по умолчанию `SW_INSTALLED`). |
+| `precacheMissing(config)`       | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                |
+| `pruneStaleCache(config)`       | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                 |
+| `skipWaiting                    | `install`  | Вызывает `skipWaiting()`.                                                                                                    |
+| `claim`                         | `activate` | Вызывает `clients.claim()`.                                                                                                  |
+| `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                          |
+| `claimAndReloadClients`         | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).            |
+| `skipWaitingOnMessage(config?)` | `message`  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                        |
+| `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                             |
+| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.       |
+| cacheFirst(config)`             | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.    |
+| `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                    |
+| `staleWhileRevalidate(config)`  | fetch      | Отдаёт из кэша, в фоне обновляет кэш.                                                                                        |
 
 #### Композиция примитивов
 
@@ -519,49 +519,56 @@ activate: () =>
 initServiceWorker([claim, reloadClients], options); // оба activate — параллельно
 ```
 
-**Пример: кастомный кэш и переиспользование примитивов**
+**Пример: кастомный кэш и логика по URL**
 
-Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет stale-while-revalidate только к запросам, подходящим под `pathPattern`, и кладёт ответы в кэш `config.cacheName`. Внутри используется хелпер `staleWhileRevalidateFetch(event, cacheName)`.
+Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет stale-while-revalidate только к запросам, подходящим под `pathPattern`. Логика SWR инлайнована в обработчик `fetch`.
 
 ```typescript
-import type {
-    PluginContext,
-    ServiceWorkerPlugin,
-} from '@budarin/pluggable-serviceworker';
-
+import type { Plugin } from '@budarin/pluggable-serviceworker';
 import {
     precache,
     serveFromCache,
-    staleWhileRevalidateFetch,
 } from '@budarin/pluggable-serviceworker/plugins';
-
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 function postsSwrPlugin(config: {
     cacheName: string;
     pathPattern?: RegExp;
-}): ServiceWorkerPlugin<PluginContext> {
+}): Plugin {
     const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
-
     return {
         name: 'postsSwr',
         order: 0,
-
-        fetch: async (event, _logger) =>
-            pathPattern.test(new URL(event.request.url).pathname)
-                ? staleWhileRevalidateFetch(event, cacheName)
-                : undefined,
+        fetch: async (event) => {
+            if (!pathPattern.test(new URL(event.request.url).pathname))
+                return undefined;
+            const cache = await caches.open(cacheName);
+            const cached = await cache.match(event.request);
+            const revalidate = fetch(event.request).then(async (response) => {
+                if (response.ok)
+                    await cache.put(event.request, response.clone());
+                return response;
+            });
+            if (cached) {
+                void revalidate;
+                return cached;
+            }
+            return revalidate;
+        },
     };
 }
 
 const staticCache = 'static-v1';
 const assets = ['/', '/main.js'];
 
-initServiceWorker([
-    precache({ cacheName: staticCache, assets }),
-    serveFromCache({ cacheName: staticCache }),
-    postsSwrPlugin({ cacheName: 'posts' }),
-]);
+initServiceWorker(
+    [
+        precache({ cacheName: staticCache, assets }),
+        serveFromCache({ cacheName: staticCache }),
+        postsSwrPlugin({ cacheName: 'posts' }),
+    ],
+    { logger: console }
+);
 ```
 
 ### Пресеты
@@ -603,6 +610,15 @@ activateOnNextVisitServiceWorker({
 
 На странице регистрируйте этот файл: `navigator.serviceWorker.register('/sw.js')` (или путь, по которому сборка отдаёт ваш sw.js).
 
+### Публикуемые утилиты
+
+Утилиты, доступные для использования в своих плагинах. Импорт: `@budarin/pluggable-serviceworker/utils`.
+
+| Название                     | Описание                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `normalizeUrl(url)`          | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
+| `notifyClients(messageType)` | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
+
 ## Разработка пакета плагина
 
 Типы для описания плагина экспортируются из этого пакета. Отдельный пакет с плагином не публикует свои типы — он объявляет зависимость от `@budarin/pluggable-serviceworker` и импортирует типы оттуда.
@@ -626,21 +642,16 @@ activateOnNextVisitServiceWorker({
 
 **2. Импорт типов в коде плагина**
 
-Достаточно импортировать `ServiceWorkerPlugin` и `PluginContext`; при необходимости — `Logger`, `SwMessageEvent`, `PushNotificationPayload` и др.
+Импортируйте тип **`Plugin`** (алиас для `ServiceWorkerPlugin<PluginContext>`); при необходимости — `Logger`, `SwMessageEvent`, `PushNotificationPayload` и др.
 
 ```typescript
-import type {
-    ServiceWorkerPlugin,
-    PluginContext,
-} from '@budarin/pluggable-serviceworker';
+import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 export interface MyPluginConfig {
     cacheName: string;
 }
 
-export function myPlugin(
-    config: MyPluginConfig
-): ServiceWorkerPlugin<PluginContext> {
+export function myPlugin(config: MyPluginConfig): Plugin {
     const { cacheName } = config;
 
     return {

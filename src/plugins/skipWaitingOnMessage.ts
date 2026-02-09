@@ -1,8 +1,4 @@
-import type {
-    PluginContext,
-    SwMessageEvent,
-    ServiceWorkerPlugin,
-} from '../index.js';
+import type { Plugin, SwMessageEvent } from '../index.js';
 
 import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants/service-worker';
 
@@ -12,7 +8,7 @@ export interface SkipWaitingOnMessageConfig {
 
 export function skipWaitingOnMessage(
     config: SkipWaitingOnMessageConfig = {}
-): ServiceWorkerPlugin<PluginContext> {
+): Plugin {
     const { messageType = SW_MSG_SKIP_WAITING } = config;
 
     return {

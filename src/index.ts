@@ -126,6 +126,9 @@ export interface ServiceWorkerPlugin<
     order?: number;
 }
 
+/** Плагин с контекстом по умолчанию (logger). Алиас для ServiceWorkerPlugin<PluginContext>. */
+export type Plugin = ServiceWorkerPlugin<PluginContext>;
+
 /** @deprecated Используйте ServiceWorkerInitOptions. Оставлено для обратной совместимости. */
 export type ServiceWorkerConfig = ServiceWorkerInitOptions;
 export type FetchResponse = Promise<Response | undefined>;
@@ -498,7 +501,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
     const opts = { ...options, logger: options.logger ?? console };
 
     const names = new Set<string>();
-    for (const plugin of plugins as readonly ServiceWorkerPlugin<PluginContext>[]) {
+    for (const plugin of plugins as readonly Plugin[]) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
@@ -506,7 +509,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
     }
 
     const handlers = createEventHandlers(
-        plugins as readonly ServiceWorkerPlugin<PluginContext>[],
+        plugins as readonly Plugin[],
         opts as PluginContext
     );
 

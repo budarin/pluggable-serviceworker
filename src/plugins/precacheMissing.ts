@@ -1,4 +1,4 @@
-import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
+import type { Plugin } from '../index.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 export interface PrecacheMissingConfig {
@@ -10,9 +10,7 @@ export interface PrecacheMissingConfig {
  * При install: по списку assets и ключам кэша определяет отсутствующие в кэше URL
  * и добавляет только их через cache.addAll.
  */
-export function precacheMissing(
-    config: PrecacheMissingConfig
-): ServiceWorkerPlugin<PluginContext> {
+export function precacheMissing(config: PrecacheMissingConfig): Plugin {
     const { cacheName, assets } = config;
     return {
         name: 'precacheMissing',

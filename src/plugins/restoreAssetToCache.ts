@@ -1,5 +1,6 @@
-import type { PluginContext, ServiceWorkerPlugin } from '../index.js';
-import { isAssetRequest } from '../utils/isAssetRequest.js';
+import type { Plugin } from '../index.js';
+
+import { isRequestUrlInAssets } from '../utils/isRequestUrlInAssets.js';
 
 export interface RestoreAssetToCacheConfig {
     cacheName: string;
@@ -11,18 +12,23 @@ export interface RestoreAssetToCacheConfig {
  * Если в кеше нет — запрашивает из сети, кладёт в кеш и возвращает ответ (восстановление в кеше).
  * Если запрос не из списка assets — возвращает undefined (передаёт следующему плагину).
  */
-export function restoreAssetToCache(
-    config: RestoreAssetToCacheConfig
-): ServiceWorkerPlugin<PluginContext> {
+export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
     const { cacheName, assets } = config;
+
     return {
         name: 'restoreAssetToCache',
+
         fetch: async (event) => {
-            if (!isAssetRequest(event.request.url, assets)) return undefined;
+            if (!isRequestUrlInAssets(event.request.url, assets)) {
+                return undefined;
+            }
 
             const cache = await caches.open(cacheName);
             const cached = await cache.match(event.request);
-            if (cached) return cached;
+
+            if (cached) {
+                return cached;
+            }
 
             try {
                 const response = await fetch(event.request);

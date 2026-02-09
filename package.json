@@ -23,7 +23,8 @@
         ".": "./dist/index.js",
         "./plugins": "./dist/plugins/index.js",
         "./presets": "./dist/presets/index.js",
-        "./sw": "./dist/sw/index.js"
+        "./sw": "./dist/sw/index.js",
+        "./utils": "./dist/utils/index.js"
     },
     "devDependencies": {
         "@types/node": "^25.2.2",
