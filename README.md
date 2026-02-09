@@ -625,7 +625,7 @@ activateOnNextVisitServiceWorker({
 | `normalizeUrl(url)`                          | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                               |
 | `notifyClients(messageType)`                 | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам. Импорт: `@budarin/pluggable-serviceworker/utils`.                                                                                      |
 
-На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
+На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке если сервисворкер использует `claim()` для того чтобы сразу же установить контроль над страницей (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
 
 ```typescript
 import { registerServiceWorker } from '@budarin/pluggable-serviceworker/client';
