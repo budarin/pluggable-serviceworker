@@ -72,11 +72,13 @@ function precacheAndServePlugin(config: {
     const { cacheName, assets } = config;
     return {
         name: 'precache-and-serve',
+
         install: async (_event, logger) => {
             logger?.debug?.('precache-and-serve: cache assets');
             const cache = await caches.open(cacheName);
             await cache.addAll(assets);
         },
+
         fetch: async (event, logger) => {
             const cache = await caches.open(cacheName);
             const asset = await cache.match(event.request);
@@ -90,15 +92,12 @@ function precacheAndServePlugin(config: {
     };
 }
 
-initServiceWorker(
-    [
-        precacheAndServePlugin({
-            cacheName: 'my-cache-v1',
-            assets: ['/', '/styles.css', '/script.js'],
-        }),
-    ],
-    { logger: customLogger }
-);
+initServiceWorker([
+    precacheAndServePlugin({
+        cacheName: 'my-cache-v1',
+        assets: ['/', '/styles.css', '/script.js'],
+    }),
+]);
 ```
 
 **Важно:**
@@ -170,17 +169,15 @@ interface Logger {
 **Пример:**
 
 ```typescript
-const logger = myLogger; // Использование кастомного логгера
-
 const options = {
-    logger,
+    logger: customLogger, // Использование кастомного логгера
     // или
     logger: {
-        trace: (...data) => customLog('TRACE', ...data),
-        debug: (...data) => customLog('DEBUG', ...data),
-        info: (...data) => customLog('INFO', ...data),
-        warn: (...data) => customLog('WARN', ...data),
-        error: (...data) => customLog('ERROR', ...data),
+        trace: (...data) => customLogger('TRACE', ...data),
+        debug: (...data) => customLogger('DEBUG', ...data),
+        info: (...data) => customLogger('INFO', ...data),
+        warn: (...data) => customLogger('WARN', ...data),
+        error: (...data) => customLogger('ERROR', ...data),
     },
 };
 ```
@@ -201,7 +198,7 @@ const options = {
 
 ```typescript
 // Без onError - ошибки будут проигнорированы
-initServiceWorker([cachePlugin], {});
+initServiceWorker([cachePlugin]);
 
 // С onError - ошибки будут обработаны
 initServiceWorker([cachePlugin], {
@@ -290,16 +287,22 @@ initServiceWorker(
 ```typescript
 interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
     name: string;
+
     order?: number;
 
     install?: (event: ExtendableEvent, logger: Logger) => Promise<void> | void;
+
     activate?: (event: ExtendableEvent, logger: Logger) => Promise<void> | void;
+
     fetch?: (
         event: FetchEvent,
         logger: Logger
     ) => Promise<Response | undefined> | Response | undefined;
+
     message?: (event: SwMessageEvent, logger: Logger) => void;
+
     sync?: (event: SyncEvent, logger: Logger) => Promise<void> | void;
+
     push?: (
         event: PushEvent,
         logger: Logger
@@ -307,6 +310,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
         | Promise<PushNotificationPayload | void>
         | PushNotificationPayload
         | void;
+
     periodicsync?: (
         event: PeriodicSyncEvent,
         logger: Logger
@@ -346,13 +350,13 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 ```typescript
 const plugins = [
     { name: 'first' }, // без order - выполняется первым
-    { name: 'fourth', order: 2 },
+    { name: 'fifth', order: 4 },
+    { name: 'fourth', order: 3 },
     { name: 'second' }, // без order - выполняется вторым
-    { name: 'third', order: 1 },
-    { name: 'fifth' }, // без order - выполняется третьим
+    { name: 'third', order: 2 },
 ];
 
-// Порядок выполнения: first → second → fifth → third → fourth
+// Порядок выполнения: first → second → third → fourth → fifth
 ```
 
 **Преимущества системы:**
@@ -372,12 +376,14 @@ const plugins = [
 Все обработчики выполняются **одновременно** с помощью `Promise.all()`:
 
 ```typescript
-import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 import {
     precache,
-    precacheMissing,
     skipWaiting,
+    precacheMissing,
 } from '@budarin/pluggable-serviceworker/plugins';
+
+import { customLogger } from '../customLogger';
+import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 // Все install-обработчики (precache, precacheMissing, skipWaiting) выполнятся параллельно
 initServiceWorker(
@@ -386,7 +392,7 @@ initServiceWorker(
         precacheMissing({ cacheName: 'ext-v1', assets: ['/worker.js'] }),
         skipWaiting,
     ],
-    { logger: console }
+    { logger: customLogger }
 );
 ```
 
@@ -411,21 +417,24 @@ initServiceWorker(
 
 ```typescript
 import type {
-    ServiceWorkerPlugin,
     PluginContext,
+    ServiceWorkerPlugin,
 } from '@budarin/pluggable-serviceworker';
 
 function authPlugin(config: {
     protectedPaths: string[];
 }): ServiceWorkerPlugin<PluginContext> {
     const { protectedPaths } = config;
+
     return {
         name: 'auth',
+
         fetch: async (event, logger) => {
             const path = new URL(event.request.url).pathname;
+
             if (protectedPaths.some((p) => path.startsWith(p))) {
                 if (needsAuth(event.request)) {
-                    logger?.warn?.('auth: unauthorized', event.request.url);
+                    logger.warn('auth: unauthorized', event.request.url);
                     return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
                 }
             }
@@ -472,7 +481,7 @@ function authPlugin(config: {
 | **claim**                         | activate | Вызывает `clients.claim()`.                                                                                                                                        |
 | **reloadClients**                 | activate | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                |
 | **claimAndReloadClients**         | activate | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                  |
-| **skipWaitingOnMessage**(config?) | message  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                                                                     |
+| **skipWaitingOnMessage**(config?) | message  | При сообщении с `event.data.type === 'SW_MSG_SKIP_WAITING'` вызывает `skipWaiting()`.                                                                              |
 | **serveFromCache**(config)        | fetch    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                   |
 | **restoreAssetToCache**(config)   | fetch    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                             |
 | **cacheFirst**(config)            | fetch    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                          |
@@ -511,8 +520,8 @@ initServiceWorker([claim, reloadClients], options); // оба activate — па�
 
 ```typescript
 import type {
-    ServiceWorkerPlugin,
     PluginContext,
+    ServiceWorkerPlugin,
 } from '@budarin/pluggable-serviceworker';
 
 import {
@@ -520,6 +529,7 @@ import {
     serveFromCache,
     staleWhileRevalidateFetch,
 } from '@budarin/pluggable-serviceworker/plugins';
+
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
 function postsSwrPlugin(config: {
@@ -527,9 +537,11 @@ function postsSwrPlugin(config: {
     pathPattern?: RegExp;
 }): ServiceWorkerPlugin<PluginContext> {
     const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
+
     return {
         name: 'postsSwr',
         order: 0,
+
         fetch: async (event, _logger) =>
             pathPattern.test(new URL(event.request.url).pathname)
                 ? staleWhileRevalidateFetch(event, cacheName)
@@ -540,14 +552,11 @@ function postsSwrPlugin(config: {
 const staticCache = 'static-v1';
 const assets = ['/', '/main.js'];
 
-initServiceWorker(
-    [
-        precache({ cacheName: staticCache, assets }),
-        serveFromCache({ cacheName: staticCache }),
-        postsSwrPlugin({ cacheName: 'posts' }),
-    ],
-    { logger: console }
-);
+initServiceWorker([
+    precache({ cacheName: staticCache, assets }),
+    serveFromCache({ cacheName: staticCache }),
+    postsSwrPlugin({ cacheName: 'posts' }),
+]);
 ```
 
 ### Пресеты
