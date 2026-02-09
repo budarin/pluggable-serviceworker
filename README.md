@@ -630,9 +630,7 @@ activateOnNextVisitServiceWorker({
 ```typescript
 import { registerServiceWorkerWithClaimWorkaround } from '@budarin/pluggable-serviceworker/client';
 
-const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js', {
-    type: 'module',
-});
+const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
 ```
 
 Без этого API на первом визите страница может остаться без контроллера до перезагрузки.
