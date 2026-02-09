@@ -296,7 +296,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     options.onError?.(
                         error as Error,
                         event,
-                        ServiceWorkerErrorType.MESSAGE_ERROR
+                        ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
                     );
                 }
             });
@@ -456,7 +456,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.data,
                     event,
-                    ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
+                    ServiceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
                 logger.error('Error in messageerror handler:', error);
