@@ -617,16 +617,24 @@ activateOnNextVisitServiceWorker({
 });
 ```
 
-На странице регистрируйте этот файл: `navigator.serviceWorker.register('/sw.js')` (или путь, по которому сборка отдаёт ваш sw.js).
+На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
+
+```typescript
+import { registerServiceWorker } from '@budarin/pluggable-serviceworker/client';
+
+// Регистрация: при первой загрузке при необходимости делается один автоматический reload
+const reg = await registerServiceWorker('/sw.js', { type: 'module' });
+```
+
+Без этого API на первом визите страница может остаться без контроллера до перезагрузки.
 
 ### Публикуемые утилиты
 
-Утилиты, доступные для использования в своих плагинах. Импорт: `@budarin/pluggable-serviceworker/utils`.
-
-| Название                     | Описание                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `normalizeUrl(url)`          | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
-| `notifyClients(messageType)` | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
+| Название                     | Где использовать | Описание                                                                 |
+| ---------------------------- | ---------------- | ------------------------------------------------------------------------ |
+| `registerServiceWorker(scriptURL, options?)` | клиент | Регистрация SW; при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)). Импорт: `@budarin/pluggable-serviceworker/client`. |
+| `normalizeUrl(url)`          | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. Импорт: `@budarin/pluggable-serviceworker/utils`. |
+| `notifyClients(messageType)` | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам. Импорт: `@budarin/pluggable-serviceworker/utils`. |
 
 ## Разработка пакета плагина
 

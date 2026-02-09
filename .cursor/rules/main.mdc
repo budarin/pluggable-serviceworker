@@ -1,10 +1,12 @@
 ---
-description: Main project rules
+description: Main project rules. NO edits without "Делать?" and user reply "делай"/"ок"/"да" in the NEXT message.
 globs: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.css']
 alwaysApply: true
 ---
 
 # Main Rules
+
+**Before every search_replace / write / delete_file:** Did I ask "Делать?" (or equivalent) in this chat? Did the user's **very next** message say "делай" / "ок" / "да" / "приступай" / "согласен" / "добавь"? If either is no — do not call the tool. Propose or ask instead. If unsure — do not edit.
 
 ## 0. Role (главное)
 

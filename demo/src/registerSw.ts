@@ -1,15 +1,11 @@
 import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants/service-worker';
+import { registerServiceWorker } from '@budarin/pluggable-serviceworker/client';
 
 export async function registerSw(): Promise<
     ServiceWorkerRegistration | undefined
 > {
-    if (!('serviceWorker' in navigator)) return Promise.resolve(undefined);
-
     try {
-        const reg = await navigator.serviceWorker.register('/sw.js', {
-            type: 'module',
-        });
-        return reg;
+        return await registerServiceWorker('/sw.js', { type: 'module' });
     } catch (err) {
         console.error('Ошибка регистрации SW:', err);
         return undefined;

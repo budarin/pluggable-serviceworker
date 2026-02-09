@@ -39,7 +39,14 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
             }
         });
 
-        const onControllerChange = () => updatePhase(regRef.current);
+        const onControllerChange = () => {
+            const c = navigator.serviceWorker.controller;
+            console.log('[SW debug] controllerchange', {
+                controllerId: c?.id,
+                controllerScript: c?.scriptURL?.slice(-20),
+            });
+            updatePhase(regRef.current);
+        };
         navigator.serviceWorker.addEventListener(
             'controllerchange',
             onControllerChange
@@ -57,6 +64,47 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
             clearInterval(interval);
         };
     }, [registrationPromise]);
+
+    // Диагностика SW: появление контроллера, waiting, updatefound
+    useEffect(() => {
+        if (!reg || !('serviceWorker' in navigator)) return;
+        const c = navigator.serviceWorker.controller;
+        console.log('[SW debug] registration ready', {
+            hasController: !!c,
+            controllerId: c?.id,
+            activeId: reg.active?.id,
+            waitingId: reg.waiting?.id,
+            installingId: reg.installing?.id,
+        });
+        const onUpdateFound = () => {
+            const w = reg.installing ?? reg.waiting;
+            console.log('[SW debug] updatefound', {
+                workerId: w?.id,
+                state: w?.state,
+            });
+        };
+        const onWaitingState = () => {
+            if (reg.waiting) {
+                console.log('[SW debug] waiting worker appeared', {
+                    waitingId: reg.waiting.id,
+                    hasController: !!navigator.serviceWorker.controller,
+                    controllerId: navigator.serviceWorker.controller?.id,
+                });
+            }
+        };
+        reg.addEventListener('updatefound', onUpdateFound);
+        const checkWaiting = setInterval(() => {
+            if (reg.waiting) {
+                onWaitingState();
+                clearInterval(checkWaiting);
+            }
+        }, 100);
+        setTimeout(() => clearInterval(checkWaiting), 10000);
+        return () => {
+            reg.removeEventListener('updatefound', onUpdateFound);
+            clearInterval(checkWaiting);
+        };
+    }, [reg]);
 
     function updatePhase(r: ServiceWorkerRegistration | undefined): void {
         if (!r) return;

@@ -5,7 +5,7 @@
     "type": "module",
     "dependencies": {
         "@budarin/http-constants": "^1.0.20",
-        "@budarin/pluggable-serviceworker": "^1.5.5",
+        "@budarin/pluggable-serviceworker": "workspace:*",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
     },
