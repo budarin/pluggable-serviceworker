@@ -16,8 +16,10 @@ export function precacheAndNotify(config: PrecacheAndNotifyConfig): Plugin {
     const { cacheName, assets, messageType = SW_MSG_INSTALLED } = config;
     return {
         name: 'precacheAndNotify',
+
         install: async () => {
             const cache = await caches.open(cacheName);
+
             await cache.addAll(assets);
             await notifyClients(messageType);
         },

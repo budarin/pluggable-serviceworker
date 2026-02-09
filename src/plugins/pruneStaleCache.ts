@@ -14,9 +14,11 @@ export function pruneStaleCache(config: PruneStaleCacheConfig): Plugin {
     const assetHrefs = new Set(assets.map((url) => normalizeUrl(url)));
     return {
         name: 'pruneStaleCache',
+
         activate: async () => {
             const cache = await caches.open(cacheName);
             const keys = await cache.keys();
+
             await Promise.all(
                 keys.map(async (request) => {
                     if (!assetHrefs.has(normalizeUrl(request.url))) {

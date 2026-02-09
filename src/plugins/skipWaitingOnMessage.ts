@@ -13,8 +13,12 @@ export function skipWaitingOnMessage(
 
     return {
         name: 'skipWaitingOnMessage',
+
         message: (event: SwMessageEvent) => {
-            if (event.data?.type !== messageType) return;
+            if (event.data?.type !== messageType) {
+                return;
+            }
+
             self.skipWaiting();
         },
     };

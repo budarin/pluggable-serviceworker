@@ -14,6 +14,7 @@ export function precacheMissing(config: PrecacheMissingConfig): Plugin {
     const { cacheName, assets } = config;
     return {
         name: 'precacheMissing',
+
         install: async () => {
             const cache = await caches.open(cacheName);
             const keys = await cache.keys();
@@ -21,6 +22,7 @@ export function precacheMissing(config: PrecacheMissingConfig): Plugin {
             const missing = assets.filter(
                 (url) => !cachedHrefs.has(normalizeUrl(url))
             );
+
             if (missing.length > 0) {
                 await cache.addAll(missing);
             }

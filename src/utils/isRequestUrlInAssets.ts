@@ -10,6 +10,7 @@ export function isRequestUrlInAssets(
 ): boolean {
     try {
         const requestHref = normalizeUrl(requestUrl);
+
         return assets.some((asset) => normalizeUrl(asset) === requestHref);
     } catch {
         return false;

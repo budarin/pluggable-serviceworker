@@ -6,6 +6,7 @@ export interface CacheFirstConfig {
 
 export function cacheFirst(config: CacheFirstConfig): Plugin {
     const { cacheName } = config;
+
     return {
         name: 'cacheFirst',
 

@@ -499,32 +499,28 @@ function authPlugin(config: {
 
 **Пример: claimAndReloadClients как композиция двух примитивов**
 
-Плагин **claimAndReloadClients** из коробки выполняет в `activate` последовательно: `clients.claim()`, затем перезагрузка всех окон.
+Плагин **claimAndReloadClients** вызывает существующие примитивы **claim** и **reloadClients** по очереди:
 
 ```typescript
-// Реализация плагина claimAndReloadClients (из @budarin/pluggable-serviceworker/plugins)
-activate: () =>
-    self.clients.claim().then(() =>
-        self.clients
-            .matchAll({ type: 'window' })
-            .then((list) =>
-                Promise.all(list.map((client) => client.navigate(client.url)))
-            )
+import { claim } from '@budarin/pluggable-serviceworker/plugins';
+import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
+
+const claimPlugin = claim();
+const reloadPlugin = reloadClients();
+
+activate: (event, logger) =>
+    Promise.resolve(claimPlugin.activate(event, logger)).then(() =>
+        reloadPlugin.activate(event, logger)
     ),
-```
-
-Два плагина **claim** и **reloadClients** в стеке выполняют `activate` **параллельно** (см. «Логика выполнения обработчиков»), порядок завершения операций не гарантирован. Для строгой последовательности «сначала claim, потом reload» используйте один плагин **claimAndReloadClients**.
-
-```typescript
-initServiceWorker([claim, reloadClients], options); // оба activate — параллельно
 ```
 
 **Пример: кастомный кэш и логика по URL**
 
-Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет stale-while-revalidate только к запросам, подходящим под `pathPattern`. Логика SWR инлайнована в обработчик `fetch`.
+Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет `stale-while-revalidate`(SWR) только к запросам, подходящим под `pathPattern`.
 
 ```typescript
 import type { Plugin } from '@budarin/pluggable-serviceworker';
+
 import {
     precache,
     serveFromCache,
@@ -536,17 +532,20 @@ function postsSwrPlugin(config: {
     pathPattern?: RegExp;
 }): Plugin {
     const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
+
     return {
         name: 'postsSwr',
         order: 0,
         fetch: async (event) => {
-            if (!pathPattern.test(new URL(event.request.url).pathname))
+            if (!pathPattern.test(new URL(event.request.url).pathname)) {
                 return undefined;
+            }
             const cache = await caches.open(cacheName);
             const cached = await cache.match(event.request);
             const revalidate = fetch(event.request).then(async (response) => {
-                if (response.ok)
+                if (response.ok) {
                     await cache.put(event.request, response.clone());
+                }
                 return response;
             });
             if (cached) {
@@ -614,10 +613,10 @@ activateOnNextVisitServiceWorker({
 
 Утилиты, доступные для использования в своих плагинах. Импорт: `@budarin/pluggable-serviceworker/utils`.
 
-| Название                     | Описание                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `normalizeUrl(url)`          | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
-| `notifyClients(messageType)` | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
+| Название                              | Описание                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| `normalizeUrl(url)`                   | Нормализует URL (относительный → абсолютный по origin SW) для сравнения. |
+| `notifyClients(messageType)`          | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам (SW).   |
 
 ## Разработка пакета плагина
 

@@ -12,6 +12,7 @@ export function serveFromCache(config: ServeFromCacheConfig): Plugin {
 
         fetch: async (event) => {
             const cache = await caches.open(cacheName);
+
             return cache.match(event.request) ?? undefined;
         },
     };

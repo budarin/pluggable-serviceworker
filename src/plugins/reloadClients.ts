@@ -3,8 +3,10 @@ import type { Plugin } from '../index.js';
 export function reloadClients(): Plugin {
     return {
         name: 'reloadClients',
+
         activate: async () => {
             const list = await self.clients.matchAll({ type: 'window' });
+
             await Promise.all(
                 list.map((client) => client.navigate(client.url))
             );
