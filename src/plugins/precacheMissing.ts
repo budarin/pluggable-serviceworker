@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 export interface PrecacheMissingConfig {
