@@ -46,43 +46,6 @@ Workbox отлично подходит, когда вы окей с его мо
 
 Дальше покажу, как библиотека выглядит вживую — на двух примерах: с нуля и из готовых блоков.
 
-### Что делает данный пакет особенным
-
-**Коротко:**
-
-- **Плагинная архитектура**
-    - Обычные объекты с хуками `install` / `activate` / `fetch` / …
-    - Каждый плагин делает свою задачу (кеш, авторизация, нотификации, SWR для API и т.д.).
-
-- **Прозрачный порядок выполнения**
-    - сначала плагины без `order` в порядке перечисления;
-    - затем плагины с `order`, отсортированные по значению;
-    - `install` / `activate` / `message` / `sync` / `periodicsync` - обработчики выполняются параллельно;
-    - `fetch` — обработчики выполняются последовательно, с понятной логикой прерывания.
-    - `push` — все обработчики выполняются последовательно.
-
-- **Централизованный `onError` и нормальный логгер**
-  Один обработчик ошибок для всего SW и единый `logger` c `trace/debug/info/warn/error` во всех плагинах.
-
-- **Готовые примитивы, пресеты и типовые SW**
-  Можно:
-    - писать свои плагины с нуля;
-    - или собирать SW из готовых блоков:
-        - плагины: `precache`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `serveFromCache`, `restoreAssetToCache`, `skipWaiting`, `claim`, `reloadClients`, `claimAndReloadClients`, `precacheMissing`, `precacheAndNotify`
-        - пресет: `offlineFirst`
-        - готовые SW: `activateAndUpdateOnNextVisitSW`, `immediatelyActivateAndUpdateSW`, `immediatelyActivateUpdateOnSignalSW`
-
-- **Клиентские утилиты**
-  Регистрация SW с обходом бага `claim()`, подписка на новую версию, сообщения от SW, `ping` для «пробуждения» и прочее.
-
-### Установка
-
-```bash
-npm install @budarin/pluggable-serviceworker
-# или
-pnpm add @budarin/pluggable-serviceworker
-```
-
 ### Пример 1. Свой сервис‑воркер с нуля: один плагин на установку и fetch
 
 Напишем минималистичный, но полезный SW:
@@ -275,6 +238,43 @@ if (isServiceWorkerSupported()) {
 ```
 
 Во время разработки был обнаружен и зарегистрирован баг в Google Chrome - во время 1-й установки сервис-воркера с вызовом `claim()` сервис-воркер активируется, но страница остается без контроллера до перезагрузки. [issue-482903583](https://issues.chromium.org/issues/482903583#comment1)
+
+### Что делает данный пакет особенным
+
+**Коротко:**
+
+- **Плагинная архитектура**
+   - Обычные объекты с хуками `install` / `activate` / `fetch` / …
+   - Каждый плагин делает свою задачу (кеш, авторизация, нотификации, SWR для API и т.д.).
+
+- **Прозрачный порядок выполнения**
+    - сначала плагины без `order` в порядке перечисления;
+    - затем плагины с `order`, отсортированные по значению;
+    - `install` / `activate` / `message` / `sync` / `periodicsync` - обработчики выполняются параллельно;
+    - `fetch` — обработчики выполняются последовательно, с понятной логикой прерывания.
+    - `push` — все обработчики выполняются последовательно.
+
+- **Централизованный `onError` и нормальный логгер**
+  Один обработчик ошибок для всего SW и единый `logger` c `trace/debug/info/warn/error` во всех плагинах.
+
+- **Готовые примитивы, пресеты и типовые SW**
+  Можно:
+    - писать свои плагины с нуля;
+    - или собирать SW из готовых блоков:
+        - плагины: `precache`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `serveFromCache`, `restoreAssetToCache`, `skipWaiting`, `claim`, `reloadClients`, `claimAndReloadClients`, `precacheMissing`, `precacheAndNotify`
+        - пресет: `offlineFirst`
+        - готовые SW: `activateAndUpdateOnNextVisitSW`, `immediatelyActivateAndUpdateSW`, `immediatelyActivateUpdateOnSignalSW`
+
+- **Клиентские утилиты**
+  Регистрация SW с обходом бага `claim()`, подписка на новую версию, сообщения от SW, `ping` для «пробуждения» и прочее.
+
+### Установка
+
+```bash
+npm install @budarin/pluggable-serviceworker
+# или
+pnpm add @budarin/pluggable-serviceworker
+```
 
 ### Где посмотреть живьём
 
