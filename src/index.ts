@@ -11,6 +11,10 @@ import {
     SW_EVENT_REJECTIONHANDLED,
     SW_EVENT_UNHANDLEDREJECTION,
 } from '@budarin/http-constants/service-worker';
+import {
+    PLUGGABLE_SW_GET_VERSION,
+    PLUGGABLE_SW_VERSION,
+} from './constants/versionMessages.js';
 
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
@@ -69,8 +73,14 @@ export interface PluginContext {
     logger?: Logger;
 }
 
-/** Опции инициализации: контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
+/** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
 export interface ServiceWorkerInitOptions extends PluginContext {
+    /**
+     * Версия сервис-воркера / приложения.
+     * Используется для ответов на запрос версии и логирования.
+     */
+    version: string;
+
     onError?: (
         error: Error | unknown,
         event: Event,
@@ -500,8 +510,12 @@ export function initServiceWorker<P extends readonly unknown[]>(
 
     const opts = { ...options, logger: options.logger ?? console };
 
+    const internalPlugins: Plugin[] = [
+        createVersionPlugin(opts.version),
+    ];
+
     const names = new Set<string>();
-    for (const plugin of plugins as readonly Plugin[]) {
+    for (const plugin of [...internalPlugins, ...(plugins as readonly Plugin[])]) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
@@ -509,8 +523,8 @@ export function initServiceWorker<P extends readonly unknown[]>(
     }
 
     const handlers = createEventHandlers(
-        plugins as readonly Plugin[],
-        opts as PluginContext
+        [...internalPlugins, ...(plugins as readonly Plugin[])] as readonly Plugin[],
+        opts
     );
 
     // Регистрируем глобальные обработчики ошибок
@@ -530,4 +544,28 @@ export function initServiceWorker<P extends readonly unknown[]>(
     self.addEventListener(SW_EVENT_SYNC, handlers.sync);
     self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
     self.addEventListener(SW_EVENT_PUSH, handlers.push);
+}
+
+function createVersionPlugin(version: string): Plugin {
+    return {
+        name: 'version',
+
+        message: (event: SwMessageEvent): void => {
+            const data = event.data;
+
+            if (
+                data == null ||
+                typeof data !== 'object' ||
+                !('type' in data) ||
+                (data as { type: unknown }).type !== PLUGGABLE_SW_GET_VERSION
+            ) {
+                return;
+            }
+
+            event.source?.postMessage({
+                type: PLUGGABLE_SW_VERSION,
+                version,
+            });
+        },
+    };
 }

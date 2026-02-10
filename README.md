@@ -117,12 +117,17 @@ export function precacheAndServePlugin(config: {
 import { precacheAndServePlugin } from './precacheAndServePlugin';
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
-initServiceWorker([
-    precacheAndServePlugin({
-        cacheName: 'my-cache-v1',
-        assets: ['/', '/styles.css', '/script.js'],
-    }),
-]);
+initServiceWorker(
+    [
+        precacheAndServePlugin({
+            cacheName: 'my-cache-v1',
+            assets: ['/', '/styles.css', '/script.js'],
+        }),
+    ],
+    {
+        version: '1.6.0',
+    }
+);
 ```
 
 ## Демо
@@ -148,9 +153,9 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ Опции initServiceWorker (logger, onError)
+## ⚙️ Опции initServiceWorker (version, logger, onError)
 
-Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём только `logger?` и `onError?`. В обработчики плагинов передаётся только **logger** (второй аргумент); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
+Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `logger?` и `onError?`. В обработчики плагинов передаётся только **logger** (второй аргумент); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
 
 Тип `PluginContext` в API используется для типизации (содержит `logger?`); «богатого контекста» плагинам не передаётся.
 
@@ -160,11 +165,31 @@ interface PluginContext {
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
+    /** Версия сервис-воркера / приложения (строка, например '1.6.0'). */
+    version: string;
+
     onError?: (error, event, errorType?) => void; // только для библиотеки, в плагины не передаётся
 }
 ```
 
 ### Поля options
+
+#### `version: string` (обязательное)
+
+Строка с версией сервис-воркера / приложения. Используется:
+
+- во внутреннем плагине библиотеки, который отвечает на запрос версии (`getServiceWorkerVersion()` на клиенте);
+- для логирования и отладки (вы можете логировать её в своём `onError` / логгере).
+
+Рекомендуется использовать ту же строку, что и версию фронтенд-приложения (например, из `package.json`).
+
+**Пример:**
+
+```typescript
+initServiceWorker(plugins, {
+    version: '1.6.0',
+});
+```
 
 #### `logger?: Logger` (опциональное)
 
@@ -208,14 +233,17 @@ const options = {
 
 **Важно:** Если `onError` не указан, ошибки в плагинах и глобальные ошибки будут проигнорированы. Для production-окружения рекомендуется всегда указывать `onError` для логирования и мониторинга ошибок.
 
-**Пример минимальной конфигурации:**
+**Примеры конфигурации:**
 
 ```typescript
-// Без onError - ошибки будут проигнорированы
-initServiceWorker([cachePlugin]);
+// Минимальная конфигурация: только версия
+initServiceWorker([cachePlugin], {
+    version: '1.6.0',
+});
 
 // С onError - ошибки будут обработаны
 initServiceWorker([cachePlugin], {
+    version: '1.6.0',
     onError: (error, event, errorType) => {
         console.error('Service Worker error:', error, errorType);
     },
@@ -423,7 +451,10 @@ initServiceWorker(
         precacheMissing({ cacheName: 'ext-v1', assets: ['/worker.js'] }),
         skipWaiting,
     ],
-    { logger: customLogger }
+    {
+        version: '1.6.0',
+        logger: customLogger,
+    }
 );
 ```
 
@@ -575,7 +606,10 @@ initServiceWorker(
         serveFromCache({ cacheName: staticCache }),
         postsSwrPlugin({ cacheName: 'posts' }),
     ],
-    { logger: console }
+    {
+        version: '1.6.0',
+        logger: console,
+    }
 );
 ```
 
@@ -617,22 +651,53 @@ activateAndUpdateOnNextVisitSW({
 
 ### Публикуемые утилиты
 
-| Название                                                        | Где использовать | Описание                                                                                                                                                                                              |
-| --------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)). |
-| `normalizeUrl(url)`                                             | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения.                                                                                                                              |
-| `notifyClients(messageType)`                                    | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам.                                                                                                                                     |
+| Название                                                                       | Где использовать | Описание                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)`                | client           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)).                                      |
+| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`                           | client           | Подписка на появление новой версии SW. Колбэк вызывается, когда новая версия установлена (`installed`) и есть активный контроллер (обновление уже существующего SW, а не первый install).                                                   |
+| `onServiceWorkerMessage(messageType, handler)`                                 | client           | Подписка на сообщения от SW c указанным `data.type`. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                                                                        |
+| `isServiceWorkerSupported()`                                                   | client           | Простая проверка поддержки Service Worker в текущем окружении. Полезно для кода, который может выполняться в SSR / тестах или старых браузерах, чтобы условно включать регистрацию SW и связанные утилиты.                                 |
+| `postMessageToServiceWorker(message, options?)`                                | client           | Отправляет сообщение в активный Service Worker. Возвращает `Promise<boolean>`: `true`, если сообщение было отправлено (есть `controller` или `active`), `false` — если SW не поддерживается или активного воркера нет.                     |
+| `getServiceWorkerVersion(options?)`                                            | client           | Запрашивает у активного SW его версию (поле `version` из `ServiceWorkerInitOptions`). Возвращает `Promise<string \| null>`. Работает через внутренний протокол библиотеки и не требует ручной настройки сообщений.                          |
+| `normalizeUrl(url)`                                                            | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения.                                                                                                                                                                     |
+| `notifyClients(messageType)`                                                   | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам.                                                                                                                                                                            |
 
 <br />
 На странице используйте **клиентский API** библиотеки, чтобы SW корректно взял контроль уже на первой загрузке (если сервисворкер использует `claim()` в сервисворкере) (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
 
 ```typescript
-import { registerServiceWorkerWithClaimWorkaround } from '@budarin/pluggable-serviceworker/client';
+import {
+    isServiceWorkerSupported,
+    registerServiceWorkerWithClaimWorkaround,
+    onNewServiceWorkerVersion,
+    onServiceWorkerMessage,
+    postMessageToServiceWorker,
+    getServiceWorkerVersion,
+} from '@budarin/pluggable-serviceworker/client';
 
-const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
+if (isServiceWorkerSupported()) {
+    const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
+
+    // Предложить пользователю обновиться, когда браузер скачал новую версию SW
+    onNewServiceWorkerVersion(reg, () => {
+        // показать баннер "Доступна новая версия приложения"
+    });
+
+    // Реакция на пользовательское сообщение от SW (например, после обновления кэша)
+    onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
+        // показать баннер "Новая версия установлена, перезагрузите страницу"
+    });
+
+    // Пример прямой отправки сообщения в SW (если нужен свой протокол)
+    await postMessageToServiceWorker({ type: 'MY_MSG_PING' });
+
+    // Получить текущую версию активного SW (для логирования/отображения в UI)
+    const swVersion = await getServiceWorkerVersion();
+    console.log('Service Worker version:', swVersion);
+}
 ```
 
-Без этого API на первом визите страница может остаться без контроллера до перезагрузки.
+Без `registerServiceWorkerWithClaimWorkaround` на первом визите страница может остаться без контроллера до перезагрузки.
 
 ## Разработка пакета плагина
 

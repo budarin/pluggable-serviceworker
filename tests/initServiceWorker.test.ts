@@ -21,7 +21,7 @@ describe('initServiceWorker', () => {
 
     it('registers error handlers first, then standard event handlers', () => {
         const plugins: ServiceWorkerPlugin[] = [{ name: 'test' }];
-        initServiceWorker(plugins, {});
+        initServiceWorker(plugins, { version: 'test-version' });
 
         const calls = addEventListener.mock.calls.map((c) => c[0]);
         const errorEvents = [
@@ -55,7 +55,14 @@ describe('initServiceWorker', () => {
             { name: 'unique' },
         ];
         initServiceWorker(plugins, {
-            logger: { info: vi.fn(), warn, error: vi.fn(), debug: vi.fn() },
+            version: 'test-version',
+            logger: {
+                info: vi.fn(),
+                warn,
+                error: vi.fn(),
+                debug: vi.fn(),
+                trace: vi.fn(),
+            },
         });
 
         expect(warn).toHaveBeenCalledWith('Duplicate plugin name: "duplicate"');
@@ -64,10 +71,10 @@ describe('initServiceWorker', () => {
 
     it('does not register listeners again on second call', () => {
         const plugins: ServiceWorkerPlugin[] = [{ name: 'once' }];
-        initServiceWorker(plugins, {});
+        initServiceWorker(plugins, { version: 'test-version' });
         const firstCallCount = addEventListener.mock.calls.length;
 
-        initServiceWorker(plugins, {});
+        initServiceWorker(plugins, { version: 'test-version' });
         const secondCallCount = addEventListener.mock.calls.length;
 
         expect(secondCallCount).toBe(firstCallCount);
