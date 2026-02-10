@@ -110,7 +110,7 @@ export function precacheAndServePlugin(config: {
     return {
         name: 'precache-and-serve',
 
-        install: async (_event, logger) => {
+        install: async () => {
             const cache = await caches.open(cacheName);
             await cache.addAll(assets);
         },
@@ -174,7 +174,7 @@ initServiceWorker(
 
 ```typescript
 // sw.ts
-import { initServiceWorker } from '@budarin/pluggable-serviceworker';
+import { initServiceWorker, Plugin } from '@budarin/pluggable-serviceworker';
 import {
     precache,
     serveFromCache,
@@ -196,7 +196,10 @@ const options = {
 };
 
 // код нашего плагина
-function postsSwrPlugin(config: { cacheName: string; pathPattern?: RegExp }) {
+function postsSwrPlugin(config: {
+    cacheName: string;
+    pathPattern?: RegExp;
+}): Plugin {
     const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
     const swr = staleWhileRevalidate({ cacheName });
 
@@ -204,7 +207,7 @@ function postsSwrPlugin(config: { cacheName: string; pathPattern?: RegExp }) {
         name: 'posts-swr',
         order: 0, // хотим отработать одним из первых среди fetch плагинов
 
-        async fetch(event: FetchEvent, logger: any) {
+        async fetch(event, logger) {
             const url = new URL(event.request.url);
 
             if (!pathPattern.test(url.pathname)) {
