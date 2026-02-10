@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, JSX } from 'react';
+import { getServiceWorkerVersion } from '@budarin/pluggable-serviceworker/client';
 import { sendActivateSignal } from './registerSw';
 
 type SwPhase =
@@ -18,6 +19,7 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
     const [online, setOnline] = useState(navigator.onLine);
     const [phase, setPhase] = useState<SwPhase>('registering');
     const [reg, setReg] = useState<ServiceWorkerRegistration | undefined>();
+    const [swVersion, setSwVersion] = useState<string | null>(null);
     const regRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
 
     useEffect(() => {
@@ -42,8 +44,7 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
         const onControllerChange = () => {
             const c = navigator.serviceWorker.controller;
             console.log('[SW debug] controllerchange', {
-                controllerId: c?.id,
-                controllerScript: c?.scriptURL?.slice(-20),
+                controllerScript: c?.scriptURL?.slice(-40),
             });
             updatePhase(regRef.current);
         };
@@ -65,30 +66,52 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
         };
     }, [registrationPromise]);
 
+    // Показ версии активного сервис-воркера (использует внутренний version-плагин библиотеки)
+    useEffect(() => {
+        let cancelled = false;
+
+        if (!('serviceWorker' in navigator)) return;
+
+        registrationPromise.then(async (r) => {
+            if (!r || cancelled) return;
+            const version = await getServiceWorkerVersion();
+            if (!cancelled) {
+                setSwVersion(version);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [registrationPromise]);
+
     // Диагностика SW: появление контроллера, waiting, updatefound
     useEffect(() => {
         if (!reg || !('serviceWorker' in navigator)) return;
         const c = navigator.serviceWorker.controller;
         console.log('[SW debug] registration ready', {
             hasController: !!c,
-            controllerId: c?.id,
-            activeId: reg.active?.id,
-            waitingId: reg.waiting?.id,
-            installingId: reg.installing?.id,
+            controllerScript: c?.scriptURL?.slice(-40),
+            activeScript: reg.active?.scriptURL?.slice(-40),
+            waitingScript: reg.waiting?.scriptURL?.slice(-40),
+            installingScript: reg.installing?.scriptURL?.slice(-40),
         });
         const onUpdateFound = () => {
             const w = reg.installing ?? reg.waiting;
             console.log('[SW debug] updatefound', {
-                workerId: w?.id,
+                workerScript: w?.scriptURL?.slice(-40),
                 state: w?.state,
             });
         };
         const onWaitingState = () => {
             if (reg.waiting) {
                 console.log('[SW debug] waiting worker appeared', {
-                    waitingId: reg.waiting.id,
+                    waitingScript: reg.waiting.scriptURL?.slice(-40),
                     hasController: !!navigator.serviceWorker.controller,
-                    controllerId: navigator.serviceWorker.controller?.id,
+                    controllerScript:
+                        navigator.serviceWorker.controller?.scriptURL?.slice(
+                            -40
+                        ),
                 });
             }
         };
@@ -176,6 +199,10 @@ export function App({ registrationPromise }: AppProps): JSX.Element {
                             phase={phase}
                             isDev={import.meta.env.DEV}
                         />
+                    </li>
+                    <li>
+                        <strong>Версия SW:</strong>{' '}
+                        <span>{swVersion ?? '—'}</span>
                     </li>
                 </ul>
             </section>

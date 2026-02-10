@@ -9,4 +9,5 @@ immediatelyActivateUpdateOnSignalSW({
     assets,
     cacheName,
     skipWaitingMessageType: SW_MSG_SKIP_WAITING,
+    version: 'offline-demo-v1',
 });
