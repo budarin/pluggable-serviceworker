@@ -15,6 +15,7 @@ import {
     PLUGGABLE_SW_GET_VERSION,
     PLUGGABLE_SW_VERSION,
 } from './constants/versionMessages.js';
+import { SW_PING_PATH } from './constants/paths.js';
 
 export enum ServiceWorkerErrorType {
     ERROR = 'error',
@@ -80,6 +81,12 @@ export interface ServiceWorkerInitOptions extends PluginContext {
      * Используется для ответов на запрос версии и логирования.
      */
     version: string;
+
+    /**
+     * Путь для ping-запроса (по умолчанию SW_PING_PATH, т.е. '/sw-ping').
+     * Используется внутренним ping-плагином библиотеки.
+     */
+    pingPath?: string;
 
     onError?: (
         error: Error | unknown,
@@ -512,6 +519,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
 
     const internalPlugins: Plugin[] = [
         createVersionPlugin(opts.version),
+        createPingPlugin(opts.pingPath ?? SW_PING_PATH),
     ];
 
     const names = new Set<string>();
@@ -566,6 +574,25 @@ function createVersionPlugin(version: string): Plugin {
                 type: PLUGGABLE_SW_VERSION,
                 version,
             });
+        },
+    };
+}
+
+function createPingPlugin(path: string): Plugin {
+    return {
+        name: 'ping',
+
+        fetch: async (event): Promise<Response | undefined> => {
+            if (event.request.method !== 'GET') {
+                return undefined;
+            }
+
+            const url = new URL(event.request.url);
+            if (url.pathname !== path) {
+                return undefined;
+            }
+
+            return new Response('', { status: 204 });
         },
     };
 }

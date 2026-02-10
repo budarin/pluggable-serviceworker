@@ -10,3 +10,8 @@ export {
     getServiceWorkerVersion,
     type GetServiceWorkerVersionOptions,
 } from './getServiceWorkerVersion.js';
+export {
+    pingServiceWorker,
+    type PingServiceWorkerResult,
+    type PingServiceWorkerOptions,
+} from './pingServiceWorker.js';
