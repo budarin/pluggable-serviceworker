@@ -4,4 +4,8 @@ const version = '1.0.0';
 const cacheName = 'offline-demo-v1';
 const assets = ['/', '/assets/main.js', '/assets/service-worker.js'];
 
-immediatelyActivateUpdateOnSignalSW({ assets, cacheName, version });
+immediatelyActivateUpdateOnSignalSW({
+    version,
+    assets,
+    cacheName,
+});

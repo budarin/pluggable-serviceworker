@@ -669,6 +669,7 @@ Example:
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
 activateAndUpdateOnNextVisitSW({
+    version: '1.6.0',
     cacheName: 'my-cache-v1',
     assets: ['/', '/styles.css', '/script.js'],
     onError: (err, event, type) => console.error(type, err),
