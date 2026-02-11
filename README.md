@@ -19,7 +19,7 @@ Building Service Workers (SW) is traditionally hard: manual event handlers, erro
 
 ### 🎯 **Predictable execution order**
 
-- Plugins without `order` run first (in array order), then plugins with `order` (by value)
+- Execution order: plugins with negative `order` (ascending), then without `order` (registration order), then with non‑negative `order` (ascending)
 - Control initialization order explicitly
 - **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`
 - **Sequential** for `fetch` (first non-undefined response wins); for `push` all handlers run
@@ -403,7 +403,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 How the package works:
 
 - Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push
-- Plugins are sorted: all without `order` first (in registration order), then with `order` (ascending)
+- Plugins are sorted: those with `order` &lt; 0 (ascending), then without `order` (registration order), then with `order` ≥ 0 (ascending)
 - In that order, each plugin’s handlers are pushed into the corresponding arrays
 - When an event fires in the service worker, handlers from the matching array are run
 
@@ -419,28 +419,29 @@ How the package works:
 
 Plugins run in this order:
 
-1. **All plugins without `order`** — in the order they were added
-2. **Then plugins with `order`** — by ascending `order` value
+1. **Plugins with negative `order`** — sorted ascending (e.g. -10 → -1)
+2. **Plugins without `order`** — in the order they were added
+3. **Plugins with `order` ≥ 0** — sorted ascending (e.g. 0 → 5)
 
 ### Example:
 
 ```typescript
 const plugins = [
-    { name: 'first' }, // no order — runs first
     { name: 'fifth', order: 4 },
+    { name: 'second' }, // no order
+    { name: 'first', order: -1 }, // negative — runs first
     { name: 'fourth', order: 3 },
-    { name: 'second' }, // no order — runs second
-    { name: 'third', order: 2 },
+    { name: 'third', order: 0 },
 ];
 
-// Execution order: first → second → third → fourth → fifth
+// Execution order: first (order -1) → second (no order) → third (0) → fourth (3) → fifth (4)
 ```
 
 **Benefits:**
 
-- 🎯 **Predictable** — plugins without `order` always run first
-- 🔧 **Simple** — no need to know which numbers are taken
-- 📈 **Scalable** — easy to add plugins in the right order
+- 🎯 **Predictable** — negative → no order → non‑negative, each group sorted where applicable
+- 🔧 **Simple** — use negative for “early”, positive for “late”, omit for “middle”
+- 📈 **Scalable** — easy to slot plugins without renumbering
 
 ## ⚡ Handler execution behaviour
 

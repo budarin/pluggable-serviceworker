@@ -48,6 +48,23 @@ describe('createEventHandlers', () => {
 
             expect(order).toEqual(['first', 'fourth', 'second', 'third']);
         });
+
+        it('calls install handlers in order: negative order first, then no order, then non-negative order', async () => {
+            const order: string[] = [];
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'mid', install: () => order.push('mid') },
+                { name: 'late', order: 1, install: () => order.push('late') },
+                { name: 'early', order: -1, install: () => order.push('early') },
+                { name: 'last', order: 2, install: () => order.push('last') },
+            ];
+            const handlers = createEventHandlers(plugins, {});
+
+            const waitUntil = vi.fn((p: Promise<unknown>) => p);
+            handlers.install({ waitUntil } as unknown as ExtendableEvent);
+            await waitUntil.mock.results[0]?.value;
+
+            expect(order).toEqual(['early', 'mid', 'late', 'last']);
+        });
     });
 
     describe('install error handling', () => {

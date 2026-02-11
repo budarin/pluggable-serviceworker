@@ -208,13 +208,20 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     const logger = options.logger ?? console;
 
     // Сортировка плагинов по порядку выполнения:
-    // 1. Сначала выполняются ВСЕ плагины без order (undefined) в том порядке, в котором они были добавлены
-    // 2. Затем выполняются плагины с order в порядке возрастания значений order
+    // 1. Плагины с order < 0 — по возрастанию order
+    // 2. Плагины без order (undefined) — в порядке добавления
+    // 3. Плагины с order >= 0 — по возрастанию order
+    const withNegativeOrder = plugins
+        .filter((plugin) => plugin.order !== undefined && plugin.order < 0)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const withoutOrder = plugins.filter((plugin) => plugin.order === undefined);
+    const withNonNegativeOrder = plugins
+        .filter((plugin) => plugin.order !== undefined && plugin.order >= 0)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const sortedPlugins = [
-        ...plugins.filter((plugin) => plugin.order === undefined),
-        ...plugins
-            .filter((plugin) => plugin.order !== undefined)
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+        ...withNegativeOrder,
+        ...withoutOrder,
+        ...withNonNegativeOrder,
     ];
 
     sortedPlugins.forEach((plugin) => {
