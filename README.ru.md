@@ -149,7 +149,11 @@ initServiceWorker(
         precache({ cacheName: 'v1', assets: ['/'] }),
         serveFromCache({ cacheName: 'v1' }),
     ],
-    { logger: customLogger, onError: handleError }
+    {
+        version: '1.6.0',
+        logger: customLogger,
+        onError: handleError,
+    }
 );
 ```
 
@@ -285,6 +289,7 @@ import {
 const logger = console; // или свой объект с методами info, warn, error, debug
 
 const options = {
+    version: '1.0.0',
     logger,
     onError: (error, event, errorType) => {
         logger.info(`Ошибка типа "${errorType}":`, error);
@@ -568,7 +573,7 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 | `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                          |
 | `cacheFirst(config)`            | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                    |
 | `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кеш. При ошибке — отдаем из кеша. Иначе - `undefined`.                                                                                                                                                                    |
-| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                                                                                                                                         |
+| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                                                                                                                                       |
 | `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                             |
 | `staleWhileRevalidate(config)`  | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                        |
 | `precache(config)`              | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                        |
