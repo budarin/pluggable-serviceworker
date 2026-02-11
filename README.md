@@ -554,22 +554,21 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
 Primitives with config are **plugin factories** (see “Plugin factory”): config is passed at the call site; `initServiceWorker` options are only `version` (required), `pingPath?`, `logger?`, `onError?`. Primitives without config (`skipWaiting`, `claim`, …) are ready-made plugin objects.
 
-| Name                            | Event      | Description                                                                                                                                                                  |
-| ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claim`                         | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
-| `claimAndReloadClients`         | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
-| `pruneStaleCache(config)`       | `activate` | Removes cache entries whose URL is not in `config.assets`.                                                                                                                   |
-| `reloadClients`                 | `activate` | Reloads all client windows via `client.navigate(client.url)`.                                                                                                                |
-| `cacheFirst(config)`            | `fetch`    | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                                                               |
-| `networkFirst(config)`          | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
-| `restoreAssetToCache(config)`   | `fetch`    | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                                                |
-| `serveFromCache(config)`        | `fetch`    | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                                                         |
-| `staleWhileRevalidate(config)`  | `fetch`    | Serve from cache, revalidate in background.                                                                                                                                  |
-| `precache(config)`              | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
-| `precacheAndNotify(config)`     | `install`  | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
-| `precacheMissing(config)`       | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
-| `skipWaiting`                   | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
-| `skipWaitingOnMessage(config?)` | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
+| Name                              | Event      | Description                                                                                                                                                                  |
+| --------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claim`                           | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
+| `claimAndReloadClients`           | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
+| `pruneStaleCache(config)`         | `activate` | Removes cache entries whose URL is not in `config.assets`.                                                                                                                   |
+| `cacheFirst(config)`              | `fetch`    | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                                                               |
+| `networkFirst(config)`            | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
+| `restoreAssetToCache(config)`     | `fetch`    | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                                                |
+| `serveFromCache(config)`          | `fetch`    | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                                                         |
+| `staleWhileRevalidate(config)`    | `fetch`    | Serve from cache, revalidate in background.                                                                                                                                  |
+| `precache(config)`                | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
+| `precacheWithNotification(config)` | `install` | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
+| `precacheMissing(config)`         | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
+| `skipWaiting`                     | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
+| `skipWaitingOnMessage(config?)`   | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
 
 #### Composing primitives
 
@@ -582,10 +581,10 @@ import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
 const claimPlugin = claim();
 const reloadPlugin = reloadClients();
 
-activate: (event, logger) =>
-    Promise.resolve(claimPlugin.activate(event, logger)).then(() =>
-        reloadPlugin.activate(event, logger)
-    ),
+activate: async (event, logger) => {
+    await claimPlugin.activate?.(event, logger);
+    await reloadPlugin.activate?.(event, logger);
+},
 ```
 
 **Example: custom cache and URL logic**
@@ -682,7 +681,7 @@ activateAndUpdateOnNextVisitSW({
 | --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)). |
 | `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client | Subscribe to new SW version. Callback when new version is installed and there is an active controller (update, not first install).                            |
-| `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. E.g. “new version available” banners.                                                                   |
+| `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. “new version available” banners.                                 |
 | `isServiceWorkerSupported()`                                    | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                      |
 | `postMessageToServiceWorker(message, options?)`                 | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                            |
 | `getServiceWorkerVersion(options?)`                             | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                         |
@@ -714,9 +713,12 @@ if (isServiceWorkerSupported()) {
         // show "New version available" banner
     });
 
-    onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
-        // show "New version installed, reload" banner
-    });
+    const unsubscribeMsg = onServiceWorkerMessage(
+        'SW_MSG_NEW_VERSION_READY',
+        () => {
+            // show "New version installed, reload" banner
+        }
+    );
 
     await postMessageToServiceWorker({ type: 'MY_MSG_PING' });
 
@@ -725,6 +727,9 @@ if (isServiceWorkerSupported()) {
 
     const pingResult = await pingServiceWorker();
     console.log('Service Worker ping:', pingResult);
+
+    // later, when you no longer need the message subscription:
+    unsubscribeMsg();
 }
 ```
 

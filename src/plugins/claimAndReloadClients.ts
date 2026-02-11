@@ -14,9 +14,9 @@ export function claimAndReloadClients(): Plugin {
     return {
         name: 'claimAndReloadClients',
 
-        activate: (event, logger) =>
-            Promise.resolve(claimPlugin.activate!(event, logger)).then(() =>
-                reloadPlugin.activate!(event, logger)
-            ),
+        activate: async (event, logger) => {
+            await claimPlugin.activate?.(event, logger);
+            await reloadPlugin.activate?.(event, logger);
+        },
     };
 }

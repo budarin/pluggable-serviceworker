@@ -2,19 +2,22 @@
  * Подписка на сообщения от Service Worker по типу.
  *
  * Пример:
- * onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
+ * const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
  *     // Показать баннер "доступна новая версия"
  * });
+ *
+ * // Позже, когда подписка больше не нужна:
+ * unsubscribe();
  */
 export function onServiceWorkerMessage(
     messageType: string,
     handler: (event: MessageEvent) => void
-): void {
+): () => void {
     if (!('serviceWorker' in navigator)) {
-        return;
+        return () => {};
     }
 
-    navigator.serviceWorker.addEventListener('message', (event) => {
+    const listener = (event: MessageEvent): void => {
         const data = event.data as unknown;
 
         if (
@@ -27,6 +30,12 @@ export function onServiceWorkerMessage(
         }
 
         handler(event);
-    });
+    };
+
+    navigator.serviceWorker.addEventListener('message', listener);
+
+    return () => {
+        navigator.serviceWorker.removeEventListener('message', listener);
+    };
 }
 

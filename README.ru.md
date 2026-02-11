@@ -565,22 +565,22 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
 Примитивы с конфигом — **фабрики плагинов** (см. раздел «Фабрика плагинов»): конфиг передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают только `version` (обязательно), `pingPath?`, `logger?` и `onError?`. Примитивы без конфига (`skipWaiting`, `claim`, …) — готовые объекты плагинов.
 
-| Название                        | Событие    | Описание                                                                                                                                                                                                                                                                     |
-| ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claim`                         | `activate` | Вызывает `clients.claim()`.                                                                                                                                                                                                                                                  |
-| `claimAndReloadClients`         | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                                                                                                                            |
-| `pruneStaleCache(config)`       | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                                                                                                                                 |
-| `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                          |
-| `cacheFirst(config)`            | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                    |
-| `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кеш. При ошибке — отдаем из кеша. Иначе - `undefined`.                                                                                                                                                                    |
-| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                                                                                                                                       |
-| `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                             |
-| `staleWhileRevalidate(config)`  | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                        |
-| `precache(config)`              | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                        |
-| `precacheAndNotify(config)`     | `install`  | Выполняет ту же работу что и **precache** плагин, но сначала отправляет активным клиентам сообщение `startInstallingMessage (по-умолчанию SW_MSG_START_INSTALLING)`, затем кэширует ресурсы и после отправляет сообщение `installedMessage (по-умолчанию SW_MSG_INSTALLED)`. |
-| `precacheMissing(config)`       | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
-| `skipWaiting`                   | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
-| `skipWaitingOnMessage(config?)` | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                            |
+| Название                            | Событие    | Описание                                                                                                                                                                                                                                                                       |
+| ----------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `claim`                             | `activate` | Вызывает `clients.claim()`.                                                                                                                                                                                                                                                    |
+| `claimAndReloadClients`             | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                                                                                                                              |
+| `pruneStaleCache(config)`           | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                                                                                                                                   |
+| `reloadClients`                     | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                            |
+| `cacheFirst(config)`                | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                      |
+| `networkFirst(config)`              | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кеш. При ошибке — отдаем из кеша. Иначе - `undefined`.                                                                                                                                                                      |
+| `restoreAssetToCache(config)`       | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                                                                                                                                         |
+| `serveFromCache(config)`            | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                               |
+| `staleWhileRevalidate(config)`      | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                          |
+| `precache(config)`                  | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                          |
+| `precacheWithNotification(config)`  | `install` | Выполняет ту же работу что и **precache** плагин, но сначала отправляет активным клиентам сообщение `startInstallingMessage (по-умолчанию SW_MSG_START_INSTALLING)`, затем кэширует ресурсы и после отправляет сообщение `installedMessage (по-умолчанию SW_MSG_INSTALLED)`. |
+| `precacheMissing(config)`           | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                  |
+| `skipWaiting`                       | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                      |
+| `skipWaitingOnMessage(config?)`     | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                              |
 
 #### Композиция примитивов
 
@@ -595,10 +595,10 @@ import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
 const claimPlugin = claim();
 const reloadPlugin = reloadClients();
 
-activate: (event, logger) =>
-    Promise.resolve(claimPlugin.activate(event, logger)).then(() =>
-        reloadPlugin.activate(event, logger)
-    ),
+activate: async (event, logger) => {
+    await claimPlugin.activate?.(event, logger);
+    await reloadPlugin.activate?.(event, logger);
+},
 ```
 
 **Пример: кастомный кэш и логика по URL**
@@ -695,7 +695,7 @@ activateAndUpdateOnNextVisitSW({
 | --------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)).                  |
 | `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client           | Подписка на появление новой версии SW. Колбэк вызывается, когда новая версия установлена (`installed`) и есть активный контроллер (обновление уже существующего SW, а не первый install).                              |
-| `onServiceWorkerMessage(messageType, handler)`                  | client           | Подписка на сообщения от SW c указанным `data.type`. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                                                    |
+| `onServiceWorkerMessage(messageType, handler)`                  | client           | Подписка на сообщения от SW c указанным `data.type`. Возвращает функцию отписки. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                        |
 | `isServiceWorkerSupported()`                                    | client           | Простая проверка поддержки Service Worker в текущем окружении. Полезно для кода, который может выполняться в SSR / тестах или старых браузерах, чтобы условно включать регистрацию SW и связанные утилиты.             |
 | `postMessageToServiceWorker(message, options?)`                 | client           | Отправляет сообщение в активный Service Worker. Возвращает `Promise<boolean>`: `true`, если сообщение было отправлено (есть `controller` или `active`), `false` — если SW не поддерживается или активного воркера нет. |
 | `getServiceWorkerVersion(options?)`                             | client           | Запрашивает у активного SW его версию (поле `version` из `ServiceWorkerInitOptions`). Возвращает `Promise<string \| null>`. Работает через внутренний протокол библиотеки и не требует ручной настройки сообщений.     |
@@ -730,9 +730,12 @@ if (isServiceWorkerSupported()) {
     });
 
     // Реакция на пользовательское сообщение от SW (например, после обновления кэша)
-    onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
-        // показать баннер "Новая версия установлена, перезагрузите страницу"
-    });
+    const unsubscribeMsg = onServiceWorkerMessage(
+        'SW_MSG_NEW_VERSION_READY',
+        () => {
+            // показать баннер "Новая версия установлена, перезагрузите страницу"
+        }
+    );
 
     // Пример прямой отправки сообщения в SW (если нужен свой протокол)
     await postMessageToServiceWorker({ type: 'MY_MSG_PING' });
@@ -744,6 +747,9 @@ if (isServiceWorkerSupported()) {
     // "Разбудить" SW после долгой паузы (например, на мобильных после разблокировки)
     const pingResult = await pingServiceWorker();
     console.log('Service Worker ping:', pingResult);
+
+    // позже, когда подписка больше не нужна:
+    unsubscribeMsg();
 }
 ```
 

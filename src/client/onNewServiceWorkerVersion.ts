@@ -17,49 +17,58 @@
 export function onNewServiceWorkerVersion(
     registration: ServiceWorkerRegistration | undefined,
     onUpdate: (registration: ServiceWorkerRegistration) => void
-): void;
+): () => void;
 export function onNewServiceWorkerVersion(
     onUpdate: (registration: ServiceWorkerRegistration) => void
-): void;
+): () => void;
 export function onNewServiceWorkerVersion(
     registrationOrOnUpdate:
         | ServiceWorkerRegistration
         | undefined
         | ((registration: ServiceWorkerRegistration) => void),
     maybeOnUpdate?: (registration: ServiceWorkerRegistration) => void
-): void {
+): () => void {
     if (typeof registrationOrOnUpdate === 'function') {
         const onUpdate = registrationOrOnUpdate;
 
         if (!('serviceWorker' in navigator)) {
-            return;
+            return () => {};
         }
 
+        let cleanup: (() => void) | null = null;
+        let cancelled = false;
+
         void navigator.serviceWorker.ready.then((reg) => {
-            attachUpdateListener(reg, onUpdate);
+            if (cancelled) {
+                return;
+            }
+            cleanup = attachUpdateListener(reg, onUpdate);
         });
 
-        return;
+        return () => {
+            cancelled = true;
+            cleanup?.();
+        };
     }
 
     const registration = registrationOrOnUpdate;
     const onUpdate = maybeOnUpdate;
 
     if (!registration || !onUpdate) {
-        return;
+        return () => {};
     }
     if (!('serviceWorker' in navigator)) {
-        return;
+        return () => {};
     }
 
-    attachUpdateListener(registration, onUpdate);
+    return attachUpdateListener(registration, onUpdate);
 }
 
 function attachUpdateListener(
     registration: ServiceWorkerRegistration,
     onUpdate: (registration: ServiceWorkerRegistration) => void
-): void {
-    registration.addEventListener('updatefound', () => {
+): () => void {
+    const onUpdateFound = (): void => {
         const installing = registration.installing;
         if (!installing) {
             return;
@@ -73,6 +82,12 @@ function attachUpdateListener(
                 onUpdate(registration);
             }
         });
-    });
+    };
+
+    registration.addEventListener('updatefound', onUpdateFound);
+
+    return () => {
+        registration.removeEventListener('updatefound', onUpdateFound);
+    };
 }
 

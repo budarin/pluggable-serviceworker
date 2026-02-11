@@ -9,16 +9,22 @@ import {
 import { precache } from './precache.js';
 import { notifyClients } from '../utils/notifyClients.js';
 
-export interface PrecacheAndNotifyConfig extends PrecacheConfig {
+export interface PrecacheWithNotificationConfig extends PrecacheConfig {
     startInstallingMessage?: string;
     installedMessage?: string;
 }
 
+/** @deprecated Используйте PrecacheWithNotificationConfig. Оставлено для обратной совместимости. */
+export type PrecacheAndNotifyConfig = PrecacheWithNotificationConfig;
+
 /**
- * Кеширует список ассетов, затем отправляет активным клиентам сообщение с указанными сообщениями.
- * Порядок гарантирован: сообщение уходит только после успешного кэширования всех ассетов.
+ * Кеширует список ассетов, затем отправляет активным клиентам сообщения
+ * с указанными типами: сначала о начале установки, затем — после успешного
+ * кэширования всех ассетов.
  */
-export function precacheAndNotify(config: PrecacheAndNotifyConfig): Plugin {
+export function precacheWithNotification(
+    config: PrecacheWithNotificationConfig
+): Plugin {
     const {
         cacheName,
         assets,
@@ -32,7 +38,7 @@ export function precacheAndNotify(config: PrecacheAndNotifyConfig): Plugin {
     });
 
     return {
-        name: 'precacheAndNotify',
+        name: 'precacheWithNotification',
 
         install: async (event, logger) => {
             await notifyClients(startInstallingMessage);
@@ -40,4 +46,13 @@ export function precacheAndNotify(config: PrecacheAndNotifyConfig): Plugin {
             await notifyClients(installedMessage);
         },
     };
+}
+
+/**
+ * @deprecated Используйте precacheWithNotification. Оставлено для обратной совместимости.
+ */
+export function precacheAndNotify(
+    config: PrecacheAndNotifyConfig
+): Plugin {
+    return precacheWithNotification(config);
 }

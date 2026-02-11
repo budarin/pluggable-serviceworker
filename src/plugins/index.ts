@@ -7,7 +7,10 @@ export { reloadClients } from './reloadClients.js';
 export { serveFromCache } from './serveFromCache.js';
 export { precacheMissing } from './precacheMissing.js';
 export { pruneStaleCache } from './pruneStaleCache.js';
-export { precacheAndNotify } from './precacheAndNotify.js';
+export {
+    precacheAndNotify,
+    precacheWithNotification,
+} from './precacheAndNotify.js';
 export { restoreAssetToCache } from './restoreAssetToCache.js';
 export { skipWaitingOnMessage } from './skipWaitingOnMessage.js';
 export { staleWhileRevalidate } from './staleWhileRevalidate.js';

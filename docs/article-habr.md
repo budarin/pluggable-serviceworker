@@ -220,14 +220,20 @@ if (isServiceWorkerSupported()) {
             console.log('New Service Worker version is ready!');
         });
 
-        onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
-            // здесь – баннер "Новая версия установлена, перезагрузите страницу"
-            console.log('New assets cached, you can reload the page.');
-        });
+        const unsubscribeMsg = onServiceWorkerMessage(
+            'SW_MSG_NEW_VERSION_READY',
+            () => {
+                // здесь – баннер "Новая версия установлена, перезагрузите страницу"
+                console.log('New assets cached, you can reload the page.');
+            }
+        );
 
         window.addEventListener('focus', async () => {
             await pingServiceWorker();
         });
+
+        // позже, когда подписка больше не нужна:
+        unsubscribeMsg();
     })();
 }
 ```
@@ -256,7 +262,7 @@ if (isServiceWorkerSupported()) {
   Можно:
     - писать свои плагины с нуля;
     - или собирать SW из готовых блоков:
-        - плагины: `precache`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `serveFromCache`, `restoreAssetToCache`, `skipWaiting`, `claim`, `reloadClients`, `claimAndReloadClients`, `precacheMissing`, `precacheAndNotify`
+        - плагины: `precache`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `serveFromCache`, `restoreAssetToCache`, `skipWaiting`, `claim`, `reloadClients`, `claimAndReloadClients`, `precacheMissing`, `precacheWithNotification`
         - пресет: `offlineFirst`
         - готовые SW: `activateAndUpdateOnNextVisitSW`, `immediatelyActivateAndUpdateSW`, `immediatelyActivateUpdateOnSignalSW`
 
