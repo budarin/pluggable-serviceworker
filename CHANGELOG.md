@@ -1,22 +1,22 @@
 ## 1.6.3
 
-- Документация: ссылка на русскую версию README в английском README заменена на абсолютный URL репозитория, чтобы ссылка работала при просмотре пакета на npm (относительная ссылка давала 404) + некоторые уточнения в тексте.
+- Docs: link to Russian README in the English README now uses an absolute repo URL so it works when viewing the package on npm (relative link returned 404). Minor wording improvements.
 
 ## 1.6.1
 
-- Документация: основной README переведён на английский; русская версия вынесена в `README.ru.md`. В английском README добавлена ссылка на русскоязычный документ.
+- Docs: main README translated to English; Russian version moved to `README.ru.md`. English README now links to the Russian document.
 
 ## 1.6.0
 
-- Добавлен обязательный параметр `version` в `ServiceWorkerInitOptions` и пресеты типовых SW.
-- Внутренний плагин версии: SW отвечает на запрос версии (`getServiceWorkerVersion()` на клиенте).
-- Внутренний ping-плагин (`GET /sw-ping`), плюс клиентская утилита `pingServiceWorker()` для "пробуждения" SW (особенно полезно на мобильных после сна устройства).
-- Новый клиентский API:
-    - `onNewServiceWorkerVersion` — детект новой версии SW;
-    - `onServiceWorkerMessage` — подписка на сообщения от SW;
-    - `isServiceWorkerSupported` — проверка поддержки SW;
-    - `postMessageToServiceWorker` — отправка сообщений в SW с мягким fallback;
-    - `getServiceWorkerVersion` — запрос версии SW;
-    - `pingServiceWorker` — ping SW через `GET /sw-ping`.
+- Required `version` option added to `ServiceWorkerInitOptions` and to the ready-made SW presets.
+- Internal version plugin: the SW responds to version requests (use `getServiceWorkerVersion()` on the client).
+- Internal ping plugin (`GET /sw-ping`) and client utility `pingServiceWorker()` to “wake” the SW (especially useful on mobile after the device was idle).
+- New client API:
+  - `onNewServiceWorkerVersion` — detect when a new SW version is available;
+  - `onServiceWorkerMessage` — subscribe to messages from the SW;
+  - `isServiceWorkerSupported` — check if Service Worker is supported;
+  - `postMessageToServiceWorker` — send messages to the SW with a soft fallback;
+  - `getServiceWorkerVersion` — request the SW version;
+  - `pingServiceWorker` — ping the SW via `GET /sw-ping`.
 
-> Примечание: версии до 1.6.0 в changelog не описаны, т.к. пакет находился в фазе быстрого экспериментов и API мог меняться без явной фиксации.
+> Note: versions before 1.6.0 are not listed here because the package was in a fast iteration phase and the API could change without being documented.
