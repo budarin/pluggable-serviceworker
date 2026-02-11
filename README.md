@@ -1,6 +1,6 @@
 # @budarin/pluggable-serviceworker
 
-[Русская версия (Russian)](README.ru.md)
+[Русская версия (Russian)](https://github.com/budarin/pluggable-serviceworker/blob/master/README.ru.md)
 
 A library for building modular, pluggable Service Workers.
 
