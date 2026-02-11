@@ -551,20 +551,20 @@ Primitives with config are **plugin factories** (see “Plugin factory”): conf
 
 | Name                         | Event    | Description                                                                                                                                 |
 | ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claim`                      | `activate`| Calls `clients.claim()`.                                                                                                                    |
+| `claimAndReloadClients`      | `activate`| **claim** + **reloadClients** in one plugin (order guaranteed).                                                                            |
+| `pruneStaleCache(config)`    | `activate`| Removes cache entries whose URL is not in `config.assets`.                                                                                 |
+| `reloadClients`              | `activate`| Reloads all client windows via `client.navigate(client.url)`.                                                                              |
+| `cacheFirst(config)`         | `fetch`  | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                              |
+| `networkFirst(config)`       | `fetch`  | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                       |
+| `restoreAssetToCache(config)`| `fetch`  | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                |
+| `serveFromCache(config)`     | `fetch`  | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                       |
+| `staleWhileRevalidate(config)` | `fetch` | Serve from cache, revalidate in background.                                                                                                |
 | `precache(config)`           | `install`| Caches `config.assets` in cache `config.cacheName`.                                                                                          |
 | `precacheAndNotify(config)`  | `install`| Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
 | `precacheMissing(config)`    | `install`| Adds to cache only assets from `config.assets` that are not yet cached.                                                                     |
-| `pruneStaleCache(config)`    | `activate`| Removes cache entries whose URL is not in `config.assets`.                                                                                   |
 | `skipWaiting`                | `install`| Calls `skipWaiting()`.                                                                                                                      |
-| `claim`                      | `activate`| Calls `clients.claim()`.                                                                                                                    |
-| `reloadClients`              | `activate`| Reloads all client windows via `client.navigate(client.url)`.                                                                               |
-| `claimAndReloadClients`      | `activate`| **claim** + **reloadClients** in one plugin (order guaranteed).                                                                            |
 | `skipWaitingOnMessage(config?)` | `message` | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                   |
-| `serveFromCache(config)`     | `fetch`  | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                       |
-| `restoreAssetToCache(config)`| `fetch`  | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                |
-| `cacheFirst(config)`         | `fetch`  | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                              |
-| `networkFirst(config)`       | `fetch`  | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                       |
-| `staleWhileRevalidate(config)` | `fetch` | Serve from cache, revalidate in background.                                                                                                |
 
 #### Composing primitives
 
