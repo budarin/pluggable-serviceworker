@@ -423,6 +423,8 @@ Plugins run in this order:
 2. **Plugins without `order`** — in the order they were added
 3. **Plugins with `order` ≥ 0** — sorted ascending (e.g. 0 → 5)
 
+Built-in plugins (precache, claim, serveFromCache, etc.) do not set `order` and run in the “no order” group—in the order you list them in the array.
+
 ### Example:
 
 ```typescript

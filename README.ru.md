@@ -434,6 +434,8 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 2. **Плагины без `order`** — в порядке добавления
 3. **Плагины с `order` ≥ 0** — по возрастанию (например 0 → 5)
 
+Встроенные плагины пакета (precache, claim, serveFromCache и др.) не задают `order` и выполняются в группе «без order» — в том порядке, в котором вы их перечислили в массиве.
+
 ### Пример:
 
 ```typescript

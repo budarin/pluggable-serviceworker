@@ -1,3 +1,7 @@
+## 1.6.4
+
+- Docs: note that all built-in plugins from the package have no `order` and run in the “no order” group (added to README, README.ru.md, and the Habr article).
+
 ## 1.6.3
 
 - Docs: link to Russian README in the English README now uses an absolute repo URL so it works when viewing the package on npm (relative link returned 404). Minor wording improvements.
