@@ -1,4 +1,4 @@
-## 1.7.0
+## 1.7.1
 
 - `precacheAndNotify` has been renamed to `precacheWithNotification` for clearer semantics (notifications at the start and end of precache); the old factory and config type remain as deprecated aliases for backwards compatibility.
 - `onServiceWorkerMessage` now returns an unsubscribe function so you can remove the listener when it is no longer needed.

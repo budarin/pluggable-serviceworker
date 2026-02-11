@@ -680,7 +680,7 @@ activateAndUpdateOnNextVisitSW({
 | Name                                                            | Use in | Description                                                                                                                                                   |
 | --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)). |
-| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client | Subscribe to new SW version. Callback when new version is installed and there is an active controller (update, not first install).                            |
+| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client | Subscribe to new SW version. Returns an unsubscribe function. Callback when new version is installed and there is an active controller (update, not first install). |
 | `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. “new version available” banners.                                 |
 | `isServiceWorkerSupported()`                                    | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                      |
 | `postMessageToServiceWorker(message, options?)`                 | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                            |
@@ -709,7 +709,7 @@ import {
 if (isServiceWorkerSupported()) {
     const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
 
-    onNewServiceWorkerVersion(reg, () => {
+    const unsubscribeUpdate = onNewServiceWorkerVersion(reg, () => {
         // show "New version available" banner
     });
 
@@ -728,7 +728,8 @@ if (isServiceWorkerSupported()) {
     const pingResult = await pingServiceWorker();
     console.log('Service Worker ping:', pingResult);
 
-    // later, when you no longer need the message subscription:
+    // later, when you no longer need the subscriptions:
+    unsubscribeUpdate();
     unsubscribeMsg();
 }
 ```

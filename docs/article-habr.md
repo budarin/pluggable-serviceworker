@@ -215,7 +215,7 @@ if (isServiceWorkerSupported()) {
         // обходим баг Chrome
         const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
 
-        onNewServiceWorkerVersion(reg, () => {
+        const unsubscribeUpdate = onNewServiceWorkerVersion(reg, () => {
             // здесь можно показать баннер "Доступна новая версия приложения"
             console.log('New Service Worker version is ready!');
         });
@@ -232,7 +232,8 @@ if (isServiceWorkerSupported()) {
             await pingServiceWorker();
         });
 
-        // позже, когда подписка больше не нужна:
+        // позже, когда подписки больше не нужны:
+        unsubscribeUpdate();
         unsubscribeMsg();
     })();
 }

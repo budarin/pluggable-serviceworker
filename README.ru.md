@@ -694,7 +694,7 @@ activateAndUpdateOnNextVisitSW({
 | Название                                                        | Где использовать | Описание                                                                                                                                                                                                               |
 | --------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)).                  |
-| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client           | Подписка на появление новой версии SW. Колбэк вызывается, когда новая версия установлена (`installed`) и есть активный контроллер (обновление уже существующего SW, а не первый install).                              |
+| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client           | Подписка на появление новой версии SW. Возвращает функцию отписки. Колбэк вызывается, когда новая версия установлена (`installed`) и есть активный контроллер (обновление уже существующего SW, а не первый install).   |
 | `onServiceWorkerMessage(messageType, handler)`                  | client           | Подписка на сообщения от SW c указанным `data.type`. Возвращает функцию отписки. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                        |
 | `isServiceWorkerSupported()`                                    | client           | Простая проверка поддержки Service Worker в текущем окружении. Полезно для кода, который может выполняться в SSR / тестах или старых браузерах, чтобы условно включать регистрацию SW и связанные утилиты.             |
 | `postMessageToServiceWorker(message, options?)`                 | client           | Отправляет сообщение в активный Service Worker. Возвращает `Promise<boolean>`: `true`, если сообщение было отправлено (есть `controller` или `active`), `false` — если SW не поддерживается или активного воркера нет. |
@@ -725,7 +725,7 @@ if (isServiceWorkerSupported()) {
     const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
 
     // Предложить пользователю обновиться, когда браузер скачал новую версию SW
-    onNewServiceWorkerVersion(reg, () => {
+    const unsubscribeUpdate = onNewServiceWorkerVersion(reg, () => {
         // показать баннер "Доступна новая версия приложения"
     });
 
@@ -749,6 +749,7 @@ if (isServiceWorkerSupported()) {
     console.log('Service Worker ping:', pingResult);
 
     // позже, когда подписка больше не нужна:
+    unsubscribeUpdate();
     unsubscribeMsg();
 }
 ```
