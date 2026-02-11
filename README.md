@@ -1,82 +1,84 @@
 # @budarin/pluggable-serviceworker
 
-Библиотека для создания модульных и расширяемых Service Worker'ов с помощью системы плагинов.
+[Русская версия (Russian)](README.ru.md)
 
-> Библиотека рассчитана на продакшн-использование: типизированный API, предсказуемый порядок выполнения плагинов, централизованная обработка ошибок, встроенные version/ping-механизмы и готовые сценарии активации SW позволяют безопасно использовать её в серьёзных фронтенд-проектах.
+A library for building modular, pluggable Service Workers.
 
-## 🚀 Почему этот пакет облегчает разработку?
+> Production-oriented: typed API, predictable plugin execution order, centralized error handling, built-in version/ping mechanisms, and ready-made activation scenarios let you use it safely in real-world frontend projects.
 
-Разработка Service Worker'ов (SW) традиционно сложна из-за необходимости вручную управлять множественными обработчиками событий, обработкой ошибок и порядком выполнения или изучать сложные и большие библиотеки. Этот пакет решает эти проблемы:
+## 🚀 Why this package?
 
-### 🔌 **Модульная архитектура**
+Building Service Workers (SW) is traditionally hard: manual event handlers, error handling, execution order, or learning large frameworks. This package addresses that:
 
-- **Плагинная система** позволяет разбивать функциональность на независимые модули
-- Каждый плагин отвечает за свою задачу (кеширование, аутентификация, уведомления)
-- Легко добавлять/удалять функциональность без изменения основного кода
-- Не нужно думать об инфраструктурном коде в обработчиках событий — пишите простой код, **не задумываясь о сложностях самого сервис-воркера!**
+### 🔌 **Modular architecture**
 
-### 🎯 **Предсказуемый порядок выполнения**
+- **Plugin system** — split behaviour into independent modules
+- Each plugin handles one concern (caching, auth, notifications)
+- Add or remove behaviour without touching core SW code
+- No need to think about event wiring — write simple handlers and let the library run them
 
-- **Предсказуемый порядок** — плагины без `order` выполняются первыми, затем по возрастанию/убыванию `order`
-- **Гибкость** — можно контролировать последовательность инициализации
-- **Параллельно** для `install`, `activate`, `message`, `sync` — независимые задачи выполняются одновременно
-- **Последовательно** для `fetch` — первый вернувший ответ завершает цепочку; для `push` вызываются все плагины
-- Легко добавлять новые плагины в нужное место
+### 🎯 **Predictable execution order**
 
-### 📖 **Легко изучить и понять**
+- Plugins without `order` run first (in array order), then plugins with `order` (by value)
+- Control initialization order explicitly
+- **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`
+- **Sequential** for `fetch` (first non-undefined response wins); for `push` all handlers run
+- Easy to slot new plugins where you need them
 
-- Один контракт — плагин с опциональными хуками, без отдельной модели роутинга и стратегий
-- Мало сущностей: плагин, фабрика плагина, `initServiceWorker`, опции
-- Низкая когнитивная нагрузка: цепочка плагинов и возвращаемые значения задают всё поведение
-- Быстро войти в проект по примерам и типу `ServiceWorkerPlugin`
+### 📖 **Easy to learn**
 
-### 📦 **Маленький размер**
+- Single contract: a plugin with optional hooks, no separate routing/strategy model
+- Few concepts: plugin, plugin factory, `initServiceWorker`, options
+- Low cognitive load: plugin order and return values define behaviour
+- Quick onboarding via examples and the `ServiceWorkerPlugin` type
 
-- Минимум зависимостей, только рантайм плагинов
-- Нет встроенной сборки и тяжёлых модулей — в бандл попадает только то, что вы подключаете
-- Подходит для проектов, где важен размер бандла и простота зависимостей
+### 📦 **Small footprint**
 
-### 🎛 **Полный контроль над кодом**
+- Minimal dependencies, plugin runtime only
+- No built-in build step or heavy modules — only what you import is bundled
+- Fits projects where bundle size and dependency count matter
 
-- Список кешируемых ассетов и стратегии задаёте вы — в коде или конфиге
-- Порядок плагинов, обработка ошибок и логгер полностью в ваших руках
-- Любая кастомная логика в `fetch`, `push`, `sync` — через свои плагины, без обхода чужих абстракций
+### 🎛 **Full control**
 
-### 🛡️ **Централизованная обработка ошибок**
+- You define cached assets and strategies (in code or config)
+- Plugin order, error handling, and logger are under your control
+- Custom logic in `fetch`, `push`, `sync` via your own plugins, no framework workarounds
 
-- **Единый обработчик** `onError` для всех типов ошибок в сервис-воркере с определение места возникновения ошибки в коде
-- **Типизированные ошибки** — знаешь, что именно сломалось
-- **Изоляция** — ошибка в одном плагине не ломает остальные
-- **Автоматическая обработка** глобальных событий ошибок
+### 🛡️ **Centralized error handling**
 
-### 📝 **Удобное логирование**
+- **Single** `onError` for all error types in the service worker, with error location
+- **Typed errors** — you know what failed
+- **Isolation** — a failing plugin does not break others
+- **Automatic** handling of global error events
 
-- **Настраиваемый логгер** с разными уровнями (`trace`, `debug`, `info`, `warn`, `error`)
-- Во все обработчики плагинов передаётся один и тот же `logger` — контекстная отладка
-- При желании можно подставить любой объект с этим интерфейсом
+### 📝 **Logging**
 
-### ✅ **Готовые решения из коробки**
+- **Configurable logger** with levels (`trace`, `debug`, `info`, `warn`, `error`)
+- The same `logger` is passed into every plugin handler
+- You can supply any object that implements the logger interface
 
-- Набор готовых плагинов (precache, cacheFirst, networkFirst, staleWhileRevalidate, skipWaiting, claim и др.) для сборки своего кастомного SW без ручной работы с событиями `install`/`fetch`/`activate`.
-- Готовый пресет **offlineFirst** — основа для большинства сервисворкеров: precache при установке и отдача из кеша при запросах.
-- Готовые сервисворкеры: **activateOnSignal**, **activateImmediately**, **activateOnNextVisit** — рабочий типовой сервис-воркер в несколько строк без написания плагинов.
-- Клиентские утилиты для работы с SW: регистрация с обходом бага `claim()`, обнаружение новой версии, подписка на сообщения, запрос версии SW, отправка сообщений, ping для "пробуждения" SW и проверка поддержки.
+### ✅ **Ready-made building blocks**
 
-## 📦 Установка
+- Plugins: precache, cacheFirst, networkFirst, staleWhileRevalidate, skipWaiting, claim, and more
+- **offlineFirst** preset — precache on install, serve from cache on fetch
+- Ready-made SW entry points: **activateOnSignal**, **activateImmediately**, **activateOnNextVisit**
+- Client utilities: registration with claim() workaround, new-version detection, message subscription, version query, ping to wake SW, support check
+
+## 📦 Installation
 
 ```bash
 npm install @budarin/pluggable-serviceworker
 ```
 
-или
+or
 
 ```bash
 pnpm add @budarin/pluggable-serviceworker
 ```
 
-## 🚀 Быстрый старт
+## 🚀 Quick start
 
-### Базовое использование
+### Basic usage
 
 ```typescript
 // precacheAndServePlugin.js
@@ -130,18 +132,18 @@ initServiceWorker(
 );
 ```
 
-## Демо
+## Demo
 
-В папке [demo/](demo/) — приложение **React + Vite** с пресетом **offlineFirst** и типовым сервис-воркером **activateOnSignal**. Запуск из корня: `pnpm start`. Подробности — в [demo/README.md](demo/README.md).
+The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirst** preset and **activateOnSignal** SW. From repo root: `pnpm start`. See [demo/README.md](demo/README.md).
 
 ## initServiceWorker(plugins, options)
 
-`initServiceWorker` — точка входа: регистрирует обработчики событий Service Worker (`install`, `activate`, `fetch`, …) и прогоняет их через список плагинов.
+`initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list.
 
-- **`plugins`** — массив плагинов (объектов). Плагины с конфигом получаются вызовом **фабрик** по месту использования (см. раздел «Фабрика плагинов»).
-- **`options`** — минимум `version` (обязательный), а также опциональные `pingPath?`, `logger?`, `onError?`. В обработчики плагинов вторым аргументом передаётся **logger** (из `options` или `console`).
+- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see “Plugin factory”).
+- **`options`** — at least `version` (required), and optional `pingPath?`, `logger?`, `onError?`. The **logger** (from options or `console`) is passed as the second argument to plugin handlers.
 
-**Пример:**
+**Example:**
 
 ```typescript
 initServiceWorker(
@@ -153,40 +155,40 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ Опции initServiceWorker (version, pingPath, logger, onError)
+## ⚙️ initServiceWorker options (version, pingPath, logger, onError)
 
-Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `pingPath?`, `logger?` и `onError?`. В обработчики плагинов передаётся только **logger** (второй аргумент); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
+The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `logger?`, `onError?`. Only **logger** is passed into plugin handlers (second argument); if omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
 
-Тип `PluginContext` в API используется для типизации (содержит `logger?`); «богатого контекста» плагинам не передаётся.
+`PluginContext` in the API is for typing (it has `logger?`); plugins do not receive a richer context.
 
 ```typescript
 interface PluginContext {
-    logger?: Logger; // по умолчанию console
+    logger?: Logger; // default: console
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
-    /** Версия сервис-воркера / приложения (строка, например '1.6.0'). */
+    /** Service worker / app version string (e.g. '1.6.0'). */
     version: string;
 
-    /** Необязательный путь для ping-запроса (по умолчанию '/sw-ping'). */
+    /** Optional path for ping requests (default '/sw-ping'). */
     pingPath?: string;
 
-    onError?: (error, event, errorType?) => void; // только для библиотеки, в плагины не передаётся
+    onError?: (error, event, errorType?) => void; // library only, not passed to plugins
 }
 ```
 
-### Поля options
+### Option fields
 
-#### `version: string` (обязательное)
+#### `version: string` (required)
 
-Строка с версией сервис-воркера / приложения. Используется:
+Version string for the service worker / app. Used by:
 
-- во внутреннем плагине библиотеки, который отвечает на запрос версии (`getServiceWorkerVersion()` на клиенте);
-- для логирования и отладки (вы можете логировать её в своём `onError` / логгере).
+- the library’s internal plugin that answers version requests (`getServiceWorkerVersion()` on the client);
+- logging and debugging (you can log it in your `onError` or logger).
 
-Рекомендуется использовать ту же строку, что и версию фронтенд-приложения (например, из `package.json`).
+Recommend using the same string as your frontend app version (e.g. from `package.json`).
 
-**Пример:**
+**Example:**
 
 ```typescript
 initServiceWorker(plugins, {
@@ -194,28 +196,28 @@ initServiceWorker(plugins, {
 });
 ```
 
-#### `pingPath?: string` (опциональное)
+#### `pingPath?: string` (optional)
 
-Переопределяет путь ping-запроса, который обрабатывается внутренним ping-плагином библиотеки. По умолчанию используется `'/sw-ping'` (константа `SW_PING_PATH`). Этот путь должен совпадать с тем, что вы используете на клиенте при вызове `pingServiceWorker({ path: ... })`, если вы меняете его.
+Overrides the ping path handled by the library’s internal ping plugin. Default is `'/sw-ping'` (constant `SW_PING_PATH`). This must match what you use on the client in `pingServiceWorker({ path: ... })` if you change it.
 
-**Примеры:**
+**Examples:**
 
 ```typescript
-// По умолчанию — внутренний плагин обрабатывает GET /sw-ping
+// Default — internal plugin handles GET /sw-ping
 initServiceWorker(plugins, {
     version: '1.6.0',
 });
 
-// Кастомный путь для ping (например, чтобы не конфликтовать с бэкендом)
+// Custom ping path (e.g. to avoid clashing with backend)
 initServiceWorker(plugins, {
     version: '1.6.0',
     pingPath: '/internal/sw-ping',
 });
 ```
 
-#### `logger?: Logger` (опциональное)
+#### `logger?: Logger` (optional)
 
-Объект для логирования с методами `info`, `warn`, `error`, `debug`. По умолчанию используется `console`. Может быть передан любой объект, реализующий интерфейс `Logger`.
+Logger object with `info`, `warn`, `error`, `debug`. Default is `console`. Any object implementing the `Logger` interface is accepted.
 
 ```typescript
 interface Logger {
@@ -227,12 +229,12 @@ interface Logger {
 }
 ```
 
-**Пример:**
+**Example:**
 
 ```typescript
 const options = {
-    logger: customLogger, // Использование кастомного логгера
-    // или
+    logger: customLogger,
+    // or
     logger: {
         trace: (...data) => customLogger('TRACE', ...data),
         debug: (...data) => customLogger('DEBUG', ...data),
@@ -243,27 +245,27 @@ const options = {
 };
 ```
 
-#### `onError?: (error, event, errorType) => void` (опциональное)
+#### `onError?: (error, event, errorType) => void` (optional)
 
-Единый обработчик для всех типов ошибок в Service Worker. **Дефолтного обработчика ошибок нет** - если `onError` не передан, ошибки будут проигнорированы (не обработаны).
+Single handler for all error types in the Service Worker. **There is no default handler** — if `onError` is not provided, errors are not handled.
 
-**Параметры:**
+**Parameters:**
 
-- `error: Error | any` - объект ошибки
-- `event: Event` - событие, в контексте которого произошла ошибка
-- `errorType?: ServiceWorkerErrorType` - тип ошибки (см. раздел "Обработка ошибок")
+- `error: Error | any` — error object
+- `event: Event` — event where the error occurred
+- `errorType?: ServiceWorkerErrorType` — error type (see “Error handling”)
 
-**Важно:** Если `onError` не указан, ошибки в плагинах и глобальные ошибки будут проигнорированы. Для production-окружения рекомендуется всегда указывать `onError` для логирования и мониторинга ошибок.
+**Important:** If `onError` is not set, plugin and global errors are not handled. For production, always set `onError` for logging and monitoring.
 
-**Примеры конфигурации:**
+**Examples:**
 
 ```typescript
-// Минимальная конфигурация: только версия
+// Minimal: version only
 initServiceWorker([cachePlugin], {
     version: '1.6.0',
 });
 
-// С onError - ошибки будут обработаны
+// With onError
 initServiceWorker([cachePlugin], {
     version: '1.6.0',
     onError: (error, event, errorType) => {
@@ -272,9 +274,9 @@ initServiceWorker([cachePlugin], {
 });
 ```
 
-### Обработка ошибок
+### Error handling
 
-Библиотека позволяет описать единый обработчик для всех типов ошибок в Service Worker и выполнить обработку индивидуально каждого типа ошибки. Она сама подписывается на глобальные события `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`; ошибка в одном плагине не останавливает выполнение остальных. Если внутри `onError` произойдёт исключение, оно логируется через `options.logger`.
+The library lets you define one handler for all error types and handle each type as needed. It subscribes to global `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`; an error in one plugin does not stop others. If `onError` throws, the exception is logged via `options.logger`.
 
 ```typescript
 import {
@@ -282,15 +284,14 @@ import {
     ServiceWorkerErrorType,
 } from '@budarin/pluggable-serviceworker';
 
-const logger = console; // или свой объект с методами info, warn, error, debug
+const logger = console; // or your own logger
 
 const options = {
     logger,
     onError: (error, event, errorType) => {
-        logger.info(`Ошибка типа "${errorType}":`, error);
+        logger.info(`Error type "${errorType}":`, error);
 
         switch (errorType) {
-            // Ошибки в плагинах при обработке соответствующего события
             case ServiceWorkerErrorType.INSTALL_ERROR:
             case ServiceWorkerErrorType.ACTIVATE_ERROR:
             case ServiceWorkerErrorType.FETCH_ERROR:
@@ -299,39 +300,29 @@ const options = {
             case ServiceWorkerErrorType.PERIODICSYNC_ERROR:
             case ServiceWorkerErrorType.PUSH_ERROR:
                 logger.error(`Plugin error (${errorType}):`, error);
-
-                // если нужно - мы можем получить конкретную точку в коде того плагина в котором произошла ошибка
                 if (error instanceof Error && error.stack) {
                     logger.error('Plugin error Stack:', error.stack);
                 }
-
                 break;
 
-            // Глобальные JavaScript ошибки
             case ServiceWorkerErrorType.ERROR:
                 logger.error('JavaScript error:', error);
                 break;
 
-            // Глобальное событие messageerror (например, ошибка structured clone)
             case ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER:
                 logger.error('Message error:', error);
                 break;
 
-            // Необработанные Promise rejection
             case ServiceWorkerErrorType.UNHANDLED_REJECTION:
                 logger.error('Unhandled promise rejection:', error);
                 break;
 
-            // Обработанные Promise rejection
             case ServiceWorkerErrorType.REJECTION_HANDLED:
                 logger.info('Promise rejection handled:', error);
                 break;
 
-            // Неизвестные типы ошибок
             default:
                 logger.error('Unknown error type:', error);
-
-                // можно даже так - отправка ошибки в аналитику
                 fetch('/api/errors', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -340,30 +331,28 @@ const options = {
                         url: event.request?.url,
                         timestamp: Date.now(),
                     }),
-                }).catch(() => {
-                    // Игнорируем ошибки отправки логов
-                });
+                }).catch(() => {});
         }
     },
 };
 
 initServiceWorker(
     [
-        /* ваши плагины */
+        /* your plugins */
     ],
     options
 );
 ```
 
-## Плагины
+## Plugins
 
-**Плагин** — это объект с полем `name` и опциональными обработчиками (`install`, `fetch`, `activate` и т.д.). В массив `initServiceWorker(plugins, options)` передаются именно такие объекты.
+A **plugin** is an object with a `name` and optional handlers (`install`, `fetch`, `activate`, etc.). You pass such objects into `initServiceWorker(plugins, options)`.
 
-**Фабрика плагина** — функция, которая принимает конфиг и возвращает плагин (объект). Например: `precache(config)`, `serveFromCache(config)` или собственная `precacheAndServePlugin(config)` из примера выше. Конфиг задаётся по месту вызова фабрики.
+A **plugin factory** is a function that takes config and returns a plugin (e.g. `precache(config)`, `serveFromCache(config)`, or your own `precacheAndServePlugin(config)`). Config is set at the call site.
 
-### 🔌 Интерфейс плагина
+### 🔌 Plugin interface
 
-Плагин — объект, реализующий интерфейс `ServiceWorkerPlugin`. Специфичный для плагина конфиг задаётся при вызове **фабрики** плагина; Параметр типа `_C` (например `PluginContext`) используется для типизации; по умолчанию контекст содержит только `logger`.
+A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when calling the **factory**. The `_C` type parameter (e.g. `PluginContext`) is for typing; the default context only has `logger`.
 
 ```typescript
 interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
@@ -399,69 +388,69 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 }
 ```
 
-### 📝 Описание методов
+### 📝 Method summary
 
-| Метод          | Событие        | Возвращает                                      | Описание                                    |
-| -------------- | -------------- | ----------------------------------------------- | ------------------------------------------- |
-| `install`      | `install`      | `void`                                          | Инициализация плагина при установке SW      |
-| `activate`     | `activate`     | `void`                                          | Активация плагина при обновлении SW         |
-| `fetch`        | `fetch`        | `Response \| undefined`                         | Обработка сетевых запросов                  |
-| `message`      | `message`      | `void`                                          | Обработка сообщений от основного потока     |
-| `sync`         | `sync`         | `void`                                          | Синхронизация данных в фоне                 |
-| `push`         | `push`         | `PushNotificationPayload \| false \| undefined` | Обработка и отображение сетевой нотификации |
-| `periodicsync` | `periodicsync` | `void`                                          | Периодические фоновые задачи                |
+| Method         | Event        | Returns                                      | Description                          |
+| -------------- | ------------ | --------------------------------------------- | ------------------------------------ |
+| `install`     | `install`    | `void`                                        | Plugin init on SW install            |
+| `activate`    | `activate`   | `void`                                        | Plugin activation on SW update       |
+| `fetch`       | `fetch`      | `Response \| undefined`                       | Handle network requests              |
+| `message`     | `message`    | `void`                                        | Handle messages from main thread     |
+| `sync`        | `sync`       | `void`                                        | Background sync                       |
+| `push`        | `push`       | `PushNotificationPayload \| false \| undefined`| Handle and show push notification    |
+| `periodicsync`| `periodicsync`| `void`                                        | Periodic background tasks            |
 
-Логика работы пакета очень простая:
+How the package works:
 
-- создаются массивы под все типы событий: install, activate, fetch, message, sync, periodicsync, push
-- плагины сортируются: сначала все без `order` (в порядке добавления), затем с `order` — по возрастанию значения
-- в этом порядке по каждому плагину его обработчики добавляются в соответствующие массивы по типам
-- при наступлении события в сервис-воркере вызываются обработчики из соответствующего массива
+- Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push
+- Plugins are sorted: all without `order` first (in registration order), then with `order` (ascending)
+- In that order, each plugin’s handlers are pushed into the corresponding arrays
+- When an event fires in the service worker, handlers from the matching array are run
 
-### 🎯 Особенности обработчиков
+### 🎯 Handler behaviour
 
-- Во все методы первым аргументом передается объект `event` и вторым аргументом передаётся **logger**.
-- **`fetch`**: может вернуть `Response` для завершения цепочки или `undefined` для передачи следующему плагину. Если все плагины вернули `undefined`, фреймворк вызывает `fetch(event.request)`.
-- **`push`**: может вернуть `PushNotificationPayload` (объект для [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (не отображать уведомление) или `undefined` (решение об отображении отдаётся библиотеке). Вызываются все плагины с `push`. Для каждого результата типа `PushNotificationPayload` вызывается `showNotification`. Уведомление не показывается, если все вернули `false` или смесь `undefined` и `false` без payload. Библиотека отображает одно уведомление **только когда все** плагины вернули `undefined` (и в данных есть что показывать).
-- **Остальные обработчики** (`install`, `activate`, `message`, `sync`, `periodicsync`): возвращаемое значение не используется; фреймворк вызывает метод каждого плагина по очереди, цепочка не прерывается.
-- **Все обработчики опциональны** — реализуйте только нужные события.
+- Every method receives `event` as the first argument and **logger** as the second.
+- **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
+- **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called. No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
+- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`): return value is ignored; the framework calls each plugin’s method in order; the chain does not short-circuit.
+- **All handlers are optional** — implement only the events you need.
 
-## 🎯 Порядок выполнения плагинов
+## 🎯 Plugin execution order
 
-Плагины выполняются в следующем порядке:
+Plugins run in this order:
 
-1. **Сначала ВСЕ плагины без `order`** - в том порядке, в котором они были добавлены
-2. **Затем плагины с `order`** - в порядке возрастания/убывания значений `order`
+1. **All plugins without `order`** — in the order they were added
+2. **Then plugins with `order`** — by ascending `order` value
 
-### Пример:
+### Example:
 
 ```typescript
 const plugins = [
-    { name: 'first' }, // без order - выполняется первым
+    { name: 'first' }, // no order — runs first
     { name: 'fifth', order: 4 },
     { name: 'fourth', order: 3 },
-    { name: 'second' }, // без order - выполняется вторым
+    { name: 'second' }, // no order — runs second
     { name: 'third', order: 2 },
 ];
 
-// Порядок выполнения: first → second → third → fourth → fifth
+// Execution order: first → second → third → fourth → fifth
 ```
 
-**Преимущества системы:**
+**Benefits:**
 
-- 🎯 **Предсказуемость** - плагины без `order` всегда выполняются первыми
-- 🔧 **Простота** - не нужно знать, какие номера уже заняты
-- 📈 **Масштабируемость** - легко добавлять новые плагины в нужном порядке
+- 🎯 **Predictable** — plugins without `order` always run first
+- 🔧 **Simple** — no need to know which numbers are taken
+- 📈 **Scalable** — easy to add plugins in the right order
 
-## ⚡ Логика выполнения обработчиков
+## ⚡ Handler execution behaviour
 
-Разные типы событий Service Worker обрабатываются по-разному в зависимости от их специфики:
+Different Service Worker events are handled differently:
 
-### 🔄 Параллельное выполнение
+### 🔄 Parallel execution
 
-**События:** `install`, `activate`, `message`, `sync`, `periodicsync`
+**Events:** `install`, `activate`, `message`, `sync`, `periodicsync`
 
-Все обработчики выполняются **одновременно** с помощью `Promise.all()`:
+All handlers run **in parallel** via `Promise.all()`:
 
 ```typescript
 import {
@@ -473,7 +462,7 @@ import {
 import { customLogger } from '../customLogger';
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 
-// Все install-обработчики (precache, precacheMissing, skipWaiting) выполнятся параллельно
+// All install handlers run in parallel
 initServiceWorker(
     [
         precache({ cacheName: 'app-v1', assets: ['/', '/main.js'] }),
@@ -487,24 +476,24 @@ initServiceWorker(
 );
 ```
 
-**Почему параллельно:**
+**Why parallel:**
 
-- **install/activate**: Все плагины должны инициализироваться независимо
-- **message**: Все плагины должны получить сообщение одновременно
-- **sync**: Разные задачи синхронизации независимы (синхронизация данных + кеша)
-- **periodicsync**: Периодические задачи независимы друг от друга
+- **install/activate**: All plugins initialize independently
+- **message**: All plugins receive the message
+- **sync**: Independent sync tasks
+- **periodicsync**: Independent periodic tasks
 
-### ➡️ Последовательное выполнение
+### ➡️ Sequential execution
 
-**События:** `fetch`, `push`
+**Events:** `fetch`, `push`
 
-Обработчики выполняются **по очереди**:
+Handlers run **one after another**:
 
-#### Fetch — с прерыванием цепочки
+#### Fetch — chain can short-circuit
 
-Обработчики `fetch` вызываются **по очереди**. Плагин может вернуть `Response` — тогда цепочка прерывается и этот ответ уходит клиенту. Либо вернуть `undefined` — тогда запрос передаётся следующему плагину. Если **все** плагины вернули `undefined`, фреймворк сам выполняет `fetch(event.request)`.
+`fetch` handlers are called in order. A plugin can return `Response` — then the chain stops and that response is used. Or return `undefined` — then the next plugin is tried. If **all** return `undefined`, the framework calls `fetch(event.request)`.
 
-Пример фабрики, которая прерывает цепочку при неавторизованном доступе к защищённым путям:
+Example factory that short-circuits for unauthorized access to protected paths:
 
 ```typescript
 import type { Plugin } from '@budarin/pluggable-serviceworker';
@@ -522,63 +511,61 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
                 if (needsAuth(event.request)) {
                     logger.warn('auth: unauthorized', event.request.url);
 
-                    return new Response('Unauthorized', { status: 401 }); // Прерывает цепочку
+                    return new Response('Unauthorized', { status: 401 }); // Stops chain
                 }
             }
-            return undefined; // Передаёт следующему плагину
+            return undefined; // Pass to next plugin
         },
     };
 }
 
-// Использование: authPlugin({ protectedPaths: ['/api/'] })
+// Usage: authPlugin({ protectedPaths: ['/api/'] })
 ```
 
-**Почему последовательно:**
+**Why sequential:**
 
-- **fetch**: Нужен только один ответ на текущий запрос браузера, первый успешный прерывает цепочку. Если никто не вернул ответ — выполняется `fetch(event.request)`
-- **push**: Плагин может вернуть `PushNotificationPayload`, `false` (не показывать) или `undefined` (решение отдаётся библиотеке). Библиотека вызывает `showNotification` для каждого payload. Не показываем, если все вернули `false` или смесь без payload. Библиотека показывает нотификацию и в случае когда **все** плагины вернули `undefined`.
+- **fetch**: Only one response per request; first non-undefined stops the chain. If none returns a response, `fetch(event.request)` is used
+- **push**: Plugin can return `PushNotificationPayload`, `false`, or `undefined`. The library calls `showNotification` for each payload. It shows one notification when **all** plugins return `undefined`
 
-### 📋 Сводная таблица
+### 📋 Summary table
 
-| Событие        | Выполнение        | Прерывание | Причина                                |
-| -------------- | ----------------- | ---------- | -------------------------------------- |
-| `install`      | `Параллельно`     | `Нет`      | Независимая инициализация              |
-| `activate`     | `Параллельно`     | `Нет`      | Независимая активация                  |
-| `fetch`        | `Последовательно` | `Да`       | Нужен один ответ                       |
-| `message`      | `Параллельно`     | `Нет`      | Независимые обработчики сообщений      |
-| `sync`         | `Параллельно`     | `Нет`      | Независимые задачи                     |
-| `periodicsync` | `Параллельно`     | `Нет`      | Независимые периодические задачи       |
-| `push`         | `Последовательно` | `Нет`      | Отображение всех необходимых сообщений |
+| Event         | Execution     | Short-circuit | Reason                    |
+| ------------- | ------------- | ------------- | ------------------------- |
+| `install`     | Parallel      | No            | Independent init          |
+| `activate`    | Parallel      | No            | Independent activation    |
+| `fetch`       | Sequential    | Yes           | Single response           |
+| `message`     | Parallel      | No            | Independent handlers      |
+| `sync`        | Parallel      | No            | Independent tasks         |
+| `periodicsync`| Parallel      | No            | Independent periodic      |
+| `push`        | Sequential    | No            | Show all needed notifications |
 
-## Примитивы, пресеты и типовые сервис-воркеры
+## Primitives, presets, and ready-made service workers
 
-### Примитивы (плагины)
+### Primitives (plugins)
 
-Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
-Примитивы с конфигом — **фабрики плагинов** (см. раздел «Фабрика плагинов»): конфиг передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают только `version` (обязательно), `pingPath?`, `logger?` и `onError?`. Примитивы без конфига (`skipWaiting`, `claim`, …) — готовые объекты плагинов.
+One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
+Primitives with config are **plugin factories** (see “Plugin factory”): config is passed at the call site; `initServiceWorker` options are only `version` (required), `pingPath?`, `logger?`, `onError?`. Primitives without config (`skipWaiting`, `claim`, …) are ready-made plugin objects.
 
-| Название                        | Событие    | Описание                                                                                                                                                                                                                                                                     |
-| ------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `precache(config)`              | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                        |
-| `precacheAndNotify(config)`     | `install`  | Выполняет ту же работу что и **precache** плагин, но сначала отправляет активным клиентам сообщение `startInstallingMessage (по-умолчанию SW_MSG_START_INSTALLING)`, затем кэширует ресурсы и после отправляет сообщение `installedMessage (по-умолчанию SW_MSG_INSTALLED)`. |
-| `precacheMissing(config)`       | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
-| `pruneStaleCache(config)`       | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                                                                                                                                 |
-| `skipWaiting`                   | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
-| `claim`                         | `activate` | Вызывает `clients.claim()`.                                                                                                                                                                                                                                                  |
-| `reloadClients`                 | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                          |
-| `claimAndReloadClients`         | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка (порядок гарантирован — один плагин).                                                                                                                                                            |
-| `skipWaitingOnMessage(config?)` | `message`  | В ступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                           |
-| `serveFromCache(config)`        | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                             |
-| `restoreAssetToCache(config)`   | `fetch`    | Для URL из `config.assets`: отдам ресурс из кеша или запрашиваем по сети, затем в кладем кго в кеш. Иначе — undefined.                                                                                                                                                       |
-| `cacheFirst(config)`            | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                    |
-| `networkFirst(config)`          | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кэш. При ошибке — отдаем из кэша. Иначе - `undefined`.                                                                                                                                                                    |
-| `staleWhileRevalidate(config)`  | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                        |
+| Name                         | Event    | Description                                                                                                                                 |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `precache(config)`           | `install`| Caches `config.assets` in cache `config.cacheName`.                                                                                          |
+| `precacheAndNotify(config)`  | `install`| Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
+| `precacheMissing(config)`    | `install`| Adds to cache only assets from `config.assets` that are not yet cached.                                                                     |
+| `pruneStaleCache(config)`    | `activate`| Removes cache entries whose URL is not in `config.assets`.                                                                                   |
+| `skipWaiting`                | `install`| Calls `skipWaiting()`.                                                                                                                      |
+| `claim`                      | `activate`| Calls `clients.claim()`.                                                                                                                    |
+| `reloadClients`              | `activate`| Reloads all client windows via `client.navigate(client.url)`.                                                                               |
+| `claimAndReloadClients`      | `activate`| **claim** + **reloadClients** in one plugin (order guaranteed).                                                                            |
+| `skipWaitingOnMessage(config?)` | `message` | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                   |
+| `serveFromCache(config)`     | `fetch`  | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                       |
+| `restoreAssetToCache(config)`| `fetch`  | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                |
+| `cacheFirst(config)`         | `fetch`  | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                              |
+| `networkFirst(config)`       | `fetch`  | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                       |
+| `staleWhileRevalidate(config)` | `fetch` | Serve from cache, revalidate in background.                                                                                                |
 
-#### Композиция примитивов
+#### Composing primitives
 
-Обработчики одного типа (`install`, `activate` и т.д.) у разных плагинов выполняются **параллельно**. Если нужна строгая последовательность (например «сначала claim, потом перезагрузка клиентов»), соберите один плагин, который по очереди вызывает логику примитивов — для гарантии порядка.
-
-Пример: claimAndReloadClients как композиция двух примитивов. Плагин вызывает существующие примитивы **claim** и **reloadClients** по очереди:
+Handlers of the same type from different plugins run **in parallel**. For strict order (e.g. claim then reload clients), use one plugin that calls the primitives in sequence:
 
 ```typescript
 import { claim } from '@budarin/pluggable-serviceworker/plugins';
@@ -593,9 +580,9 @@ activate: (event, logger) =>
     ),
 ```
 
-**Пример: кастомный кэш и логика по URL**
+**Example: custom cache and URL logic**
 
-Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет `stale-while-revalidate`(SWR) только к запросам, подходящим под `pathPattern`.
+Factory `postsSwrPlugin(config)` returns a plugin that applies `stale-while-revalidate` only to requests matching `pathPattern`:
 
 ```typescript
 // postsSwrPlugin.ts
@@ -642,35 +629,35 @@ initServiceWorker(
 );
 ```
 
-### Пресеты
+### Presets
 
-Комбинации примитивов (стратегии кеширования). Импорт: `@budarin/pluggable-serviceworker/presets`.
+Combinations of primitives. Import from `@budarin/pluggable-serviceworker/presets`.
 
-| Название               | Состав                                      | Назначение                                                                |
-| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------- |
-| `offlineFirst(config)` | `precache(config) + serveFromCache(config)` | Статика из кеша, при отсутствии ресурса в кэше — делаем запрос к серверу. |
-
-<br />
-
-Конфиг пресета: `OfflineFirstConfig` (cacheName, assets). Импорт из `@budarin/pluggable-serviceworker/presets`.
-Стратегии **networkFirst**, **staleWhileRevalidate** и др. доступны как примитивы — собирайте свой кастомный сервис-воркер из примитивов и пресетов.
-
-### Типовые сервис-воркеры (из коробки)
-
-Готовые точки входа по **моменту активации** (все с кешированием offline-first). Импорт: `@budarin/pluggable-serviceworker/sw`.
-
-| Название                              | Описание                                                                                                                                               |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `activateAndUpdateOnNextVisitSW`      | Кеширующий SW, активируется и обновляется при следующем визите на страницу (перезагрузке) после загрузки нового сервисворкера.                         |
-| `immediatelyActivateAndUpdateSW`      | Кеширующий SW, всегда активируется и вступает в действие сразу при загрузке и при обновлении.                                                          |
-| `immediatelyActivateUpdateOnSignalSW` | Кеширующий SW: первая установка сразу, при обновлении новая версия активируется по сигналу со страницы (сообщение `SW_MSG_SKIP_WAITING` по умолчанию). |
+| Name                 | Contents                                  | Purpose                                                                 |
+| -------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |
+| `offlineFirst(config)` | `precache(config) + serveFromCache(config)` | Serve from cache; on miss, fetch from network.                         |
 
 <br />
 
-Пример использования типового SW:
+Preset config: `OfflineFirstConfig` (cacheName, assets). Import from `@budarin/pluggable-serviceworker/presets`.
+Strategies like **networkFirst**, **staleWhileRevalidate** are available as primitives — build your own SW from primitives and presets.
+
+### Ready-made service workers
+
+Pre-built entry points by **activation moment** (all with offline-first caching). Import from `@budarin/pluggable-serviceworker/sw`.
+
+| Name                               | Description                                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activateAndUpdateOnNextVisitSW`   | Caching SW; activates and updates on next page visit (reload) after new SW is loaded.                                                      |
+| `immediatelyActivateAndUpdateSW`    | Caching SW; activates immediately on load and on update.                                                                                    |
+| `immediatelyActivateUpdateOnSignalSW` | Caching SW: first install is immediate; on update, new version activates on signal from page (default message `SW_MSG_SKIP_WAITING`).   |
+
+<br />
+
+Example:
 
 ```typescript
-// sw.js — точка входа вашего сервис-воркера
+// sw.js — your service worker entry
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
 activateAndUpdateOnNextVisitSW({
@@ -680,24 +667,23 @@ activateAndUpdateOnNextVisitSW({
 });
 ```
 
-### Публикуемые утилиты
+### Published utilities
 
-| Название                                                        | Где использовать | Описание                                                                                                                                                                                                               |
-| --------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client           | Регистрация SW для случая, когда в activate вызывается claim(); при первом заходе при необходимости один автоматический reload (обход [бага браузера](https://issues.chromium.org/issues/482903583)).                  |
-| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client           | Подписка на появление новой версии SW. Колбэк вызывается, когда новая версия установлена (`installed`) и есть активный контроллер (обновление уже существующего SW, а не первый install).                              |
-| `onServiceWorkerMessage(messageType, handler)`                  | client           | Подписка на сообщения от SW c указанным `data.type`. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                                                    |
-| `isServiceWorkerSupported()`                                    | client           | Простая проверка поддержки Service Worker в текущем окружении. Полезно для кода, который может выполняться в SSR / тестах или старых браузерах, чтобы условно включать регистрацию SW и связанные утилиты.             |
-| `postMessageToServiceWorker(message, options?)`                 | client           | Отправляет сообщение в активный Service Worker. Возвращает `Promise<boolean>`: `true`, если сообщение было отправлено (есть `controller` или `active`), `false` — если SW не поддерживается или активного воркера нет. |
-| `getServiceWorkerVersion(options?)`                             | client           | Запрашивает у активного SW его версию (поле `version` из `ServiceWorkerInitOptions`). Возвращает `Promise<string \| null>`. Работает через внутренний протокол библиотеки и не требует ручной настройки сообщений.     |
-| `pingServiceWorker(options?)`                                   | client           | Выполняет ping-запрос `GET /sw-ping` (обрабатывается плагином `ping`). Будит SW, если он был "усыплён", и проверяет базовую доступность обработчика fetch. Возвращает `'ok' \| 'no-sw' \| 'error'`.                    |
-| `normalizeUrl(url)`                                             | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения.                                                                                                                                               |
-| `notifyClients(messageType)`                                    | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам.                                                                                                                                                      |
+| Name                                                         | Use in   | Description                                                                                                                                 |
+| ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client   | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)). |
+| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`          | client   | Subscribe to new SW version. Callback when new version is installed and there is an active controller (update, not first install).         |
+| `onServiceWorkerMessage(messageType, handler)`                | client   | Subscribe to messages from SW with given `data.type`. E.g. “new version available” banners.                                                 |
+| `isServiceWorkerSupported()`                                  | client   | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                    |
+| `postMessageToServiceWorker(message, options?)`               | client   | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                          |
+| `getServiceWorkerVersion(options?)`                           | client   | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                       |
+| `pingServiceWorker(options?)`                                 | client   | GET /sw-ping (handled by ping plugin). Wakes SW if sleeping, checks fetch availability. Returns `'ok' \| 'no-sw' \| 'error'`.               |
+| `normalizeUrl(url)`                                           | SW       | Normalize URL (relative → absolute by SW origin) for comparison.                                                                             |
+| `notifyClients(messageType)`                                  | SW       | Send `{ type: messageType }` to all client windows.                                                                                         |
 
 <br />
 
-На странице используйте `registerServiceWorkerWithClaimWorkaround`, чтобы SW корректно взял контроль уже на первой загрузке (если сервисворкер использует `claim()` в сервисворкере) (обход [бага браузера](https://issues.chromium.org/issues/482903583)):
-Без него на первом визите страница может остаться без контроллера до перезагрузки.
+Use `registerServiceWorkerWithClaimWorkaround` on the page so the SW takes control on first load when using `claim()` (workaround for [browser bug](https://issues.chromium.org/issues/482903583)). Without it, the page may have no controller until reload.
 
 <br />
 
@@ -715,34 +701,29 @@ import {
 if (isServiceWorkerSupported()) {
     const reg = await registerServiceWorkerWithClaimWorkaround('/sw.js');
 
-    // Предложить пользователю обновиться, когда браузер скачал новую версию SW
     onNewServiceWorkerVersion(reg, () => {
-        // показать баннер "Доступна новая версия приложения"
+        // show "New version available" banner
     });
 
-    // Реакция на пользовательское сообщение от SW (например, после обновления кэша)
     onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', () => {
-        // показать баннер "Новая версия установлена, перезагрузите страницу"
+        // show "New version installed, reload" banner
     });
 
-    // Пример прямой отправки сообщения в SW (если нужен свой протокол)
     await postMessageToServiceWorker({ type: 'MY_MSG_PING' });
 
-    // Получить текущую версию активного SW (для логирования/отображения в UI)
     const swVersion = await getServiceWorkerVersion();
     console.log('Service Worker version:', swVersion);
 
-    // "Разбудить" SW после долгой паузы (например, на мобильных после разблокировки)
     const pingResult = await pingServiceWorker();
     console.log('Service Worker ping:', pingResult);
 }
 ```
 
-### 📱 Рецепт: мобильный sleep и пробуждение SW
+### 📱 Recipe: mobile sleep and waking the SW
 
-На устройствах при долгой паузе процесс SW может быть "усыплён". После при первом взаимодействии страницы с SW (через сообщения) можно получить ошибки, если воркер ещё не "проснулся". Чтобы минимизировать проблемы:
+On mobile, the SW process can be suspended. After a long idle, the first interaction (e.g. messages) may fail until the worker wakes. To reduce issues:
 
-- Используйте `pingServiceWorker()` при `focus`/`visibilitychange`:
+- Call `pingServiceWorker()` on `focus` / `visibilitychange`:
 
 ```typescript
 import { pingServiceWorker } from '@budarin/pluggable-serviceworker/client';
@@ -752,22 +733,19 @@ window.addEventListener('focus', async () => {
 });
 ```
 
-- При необходимости можно настроить путь ping-запроса через `pingPath` в `initServiceWorker` и опцию `path` в `pingServiceWorker`, чтобы не конфликтовать с существующими маршрутами.
+- Optionally set the ping path via `pingPath` in `initServiceWorker` and `path` in `pingServiceWorker` to avoid clashing with existing routes.
 
-### 📝 Примечание про обход бага Chrome с claim() при 1-й установке сервисворкера
+### 📝 Note on Chrome claim() workaround
 
-Утилита `registerServiceWorkerWithClaimWorkaround` и связанные с ней примеры предназначены для обхода бага Chrome, описанного мною в issue [`https://issues.chromium.org/issues/482903583`](https://issues.chromium.org/issues/482903583). Как только этот баг будет окончательно исправлен и изменение широко доедет до стабильных версий браузеров, имеет смысл:
+`registerServiceWorkerWithClaimWorkaround` and related examples work around a Chrome bug reported in [issue 482903583](https://issues.chromium.org/issues/482903583). Once the bug is fixed and widely shipped, consider simplifying or removing the workaround and updating the README and examples.
 
-- упростить/удалить обход (`registerServiceWorkerWithClaimWorkaround`);
-- обновить README и примеры использования, убрав привязку к этому багу.
+## Developing a separate plugin package
 
-## Разработка отдельного пакета плагина
+Plugin types are exported from this package. A separate plugin package does not publish its own types — it declares a dependency on `@budarin/pluggable-serviceworker` and imports types from it.
 
-Типы для описания плагина экспортируются из этого пакета. Отдельный пакет с плагином не публикует свои типы — он объявляет зависимость от `@budarin/pluggable-serviceworker` и импортирует типы оттуда.
+**1. Plugin package dependencies**
 
-**1. Зависимости в пакете плагина**
-
-В `package.json` своего пакета добавьте:
+In your package’s `package.json`:
 
 ```json
 {
@@ -780,11 +758,11 @@ window.addEventListener('focus', async () => {
 }
 ```
 
-`peerDependencies` — чтобы плагин работал с той версией библиотеки, которую установил пользователь; в `devDependencies` — для сборки и типов.
+`peerDependencies` so the plugin works with the user’s library version; `devDependencies` for build and types.
 
-**2. Импорт типов в коде плагина**
+**2. Importing types in the plugin**
 
-Импортируйте тип **`Plugin`** (алиас для `ServiceWorkerPlugin<PluginContext>`); при необходимости — `Logger`, `SwMessageEvent`, `PushNotificationPayload` и др.
+Import type **`Plugin`** (alias for `ServiceWorkerPlugin<PluginContext>`); and if needed `Logger`, `SwMessageEvent`, `PushNotificationPayload`, etc.
 
 ```typescript
 import type { Plugin } from '@budarin/pluggable-serviceworker';
@@ -813,8 +791,8 @@ export function myPlugin(config: MyPluginConfig): Plugin {
 }
 ```
 
-Пользователь подключает плагин так: `initServiceWorker([..., myPlugin({ cacheName: 'my-v1' })], options)`.
+Users add the plugin like: `initServiceWorker([..., myPlugin({ cacheName: 'my-v1' })], options)`.
 
-## 📄 Лицензия
+## 📄 License
 
 MIT © Vadim Budarin
