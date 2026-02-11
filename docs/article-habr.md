@@ -136,7 +136,7 @@ import {
 
 const staticCache = 'static-v1';
 const postsCache = 'posts-v1';
-const assets = ['/', '/index.html', '/main.js'];
+const assets = ['/', '/main.js', '/styles.css'];
 
 const options = {
     version: '1.0.0',
