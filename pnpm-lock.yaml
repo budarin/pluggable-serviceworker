@@ -37,8 +37,8 @@ importers:
         specifier: ^1.0.21
         version: 1.0.21
       '@budarin/pluggable-serviceworker':
-        specifier: workspace:*
-        version: link:..
+        specifier: 1.8.1
+        version: 1.8.1
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -149,6 +149,9 @@ packages:
 
   '@budarin/http-constants@1.0.21':
     resolution: {integrity: sha512-sNJFSxI4sJicOHIlzj+/DkW0m8z8FicqwYHwx/hwjMft66NnuGR/d7KHKB2DeE+ItPJQthUYuGU0k9xFcY/vcg==}
+
+  '@budarin/pluggable-serviceworker@1.8.1':
+    resolution: {integrity: sha512-LHLZjd62ZwH1o3Jy34xdQXro1zO9JWBPCJHsXD7f9jgBoClbk3z0clMkN7FBCUMbZMwtp1Hi3mRR0e5Jcz1pMA==}
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -930,6 +933,10 @@ snapshots:
       '@babel/helper-validator-identifier': 7.28.5
 
   '@budarin/http-constants@1.0.21': {}
+
+  '@budarin/pluggable-serviceworker@1.8.1':
+    dependencies:
+      '@budarin/http-constants': 1.0.21
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
