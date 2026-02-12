@@ -6,6 +6,7 @@ import { serveFromCache } from '../plugins/serveFromCache.js';
 export interface OfflineFirstConfig {
     cacheName: string;
     assets: string[];
+    order?: number;
 }
 
 /** Пресет: precache при install + отдача из кеша в fetch (при промахе — сеть через фреймворк). */

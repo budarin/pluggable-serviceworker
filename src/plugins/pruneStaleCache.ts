@@ -5,15 +5,18 @@ import { normalizeUrl } from '../utils/normalizeUrl.js';
 export interface PruneStaleCacheConfig {
     cacheName: string;
     assets: string[];
+    order?: number;
 }
 
 /**
  * При activate: обходит ключи кэша и удаляет записи, чей URL не входит в config.assets.
  */
 export function pruneStaleCache(config: PruneStaleCacheConfig): Plugin {
-    const { cacheName, assets } = config;
+    const { cacheName, assets, order = 0 } = config;
     const assetHrefs = new Set(assets.map((url) => normalizeUrl(url)));
+
     return {
+        order,
         name: 'pruneStaleCache',
 
         activate: async () => {

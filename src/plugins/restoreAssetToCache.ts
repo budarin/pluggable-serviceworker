@@ -5,6 +5,7 @@ import { isRequestUrlInAssets } from '../utils/isRequestUrlInAssets.js';
 export interface RestoreAssetToCacheConfig {
     cacheName: string;
     assets: string[];
+    order?: number;
 }
 
 /**
@@ -13,9 +14,10 @@ export interface RestoreAssetToCacheConfig {
  * Если запрос не из списка assets — возвращает undefined (передаёт следующему плагину).
  */
 export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
-    const { cacheName, assets } = config;
+    const { cacheName, assets, order = 0 } = config;
 
     return {
+        order,
         name: 'restoreAssetToCache',
 
         fetch: async (event) => {

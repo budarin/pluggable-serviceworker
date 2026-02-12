@@ -2,12 +2,14 @@ import type { Plugin } from '../index.js';
 
 export interface ServeFromCacheConfig {
     cacheName: string;
+    order?: number;
 }
 
 export function serveFromCache(config: ServeFromCacheConfig): Plugin {
-    const { cacheName } = config;
+    const { cacheName, order = 0 } = config;
 
     return {
+        order,
         name: 'serveFromCache',
 
         fetch: async (event) => {

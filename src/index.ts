@@ -151,8 +151,6 @@ export interface ServiceWorkerPlugin<
 /** Плагин с контекстом по умолчанию (logger). Алиас для ServiceWorkerPlugin<PluginContext>. */
 export type Plugin = ServiceWorkerPlugin<PluginContext>;
 
-/** @deprecated Используйте ServiceWorkerInitOptions. Оставлено для обратной совместимости. */
-export type ServiceWorkerConfig = ServiceWorkerInitOptions;
 export type FetchResponse = Promise<Response | undefined>;
 
 type InstallHandler = (
@@ -207,22 +205,11 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
 
     const logger = options.logger ?? console;
 
-    // Сортировка плагинов по порядку выполнения:
-    // 1. Плагины с order < 0 — по возрастанию order
-    // 2. Плагины без order (undefined) — в порядке добавления
-    // 3. Плагины с order >= 0 — по возрастанию order
-    const withNegativeOrder = plugins
-        .filter((plugin) => plugin.order !== undefined && plugin.order < 0)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const withoutOrder = plugins.filter((plugin) => plugin.order === undefined);
-    const withNonNegativeOrder = plugins
-        .filter((plugin) => plugin.order !== undefined && plugin.order >= 0)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const sortedPlugins = [
-        ...withNegativeOrder,
-        ...withoutOrder,
-        ...withNonNegativeOrder,
-    ];
+    // Сортировка плагинов по order (по умолчанию 0)
+    // Порядок важен для fetch и push (последовательное выполнение)
+    // Для остальных событий (install, activate, message, sync, periodicsync) выполнение параллельное,
+    // но сортировка помогает структурировать конфигурацию
+    const sortedPlugins = [...plugins].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     sortedPlugins.forEach((plugin) => {
         if (plugin.install)

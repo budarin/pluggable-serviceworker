@@ -128,8 +128,8 @@ import { initServiceWorker, Plugin } from '@budarin/pluggable-serviceworker';
 import {
     precache,
     serveFromCache,
-    skipWaiting,
-    claim,
+    skipWaiting(),
+    claim(),
     pruneStaleCache,
     staleWhileRevalidate,
 } from '@budarin/pluggable-serviceworker/plugins';
@@ -155,7 +155,6 @@ function postsSwrPlugin(config: {
 
     return {
         name: 'posts-swr',
-        order: 0, // хотим отработать одним из первых среди fetch плагинов
 
         async fetch(event, logger) {
             const url = new URL(event.request.url);
@@ -176,14 +175,15 @@ initServiceWorker(
     [
         // install: будут вызываны параллельно
         precache({ assets, cacheName: staticCache }),
-        skipWaiting,
+        skipWaiting(),
 
         // activate
-        claim,
+        claim(),
 
         // fetch: цепочка вызовов пока кто-нибудь не вернет ресурс
         serveFromCache({ cacheName: staticCache }),
         postsSwrPlugin({ cacheName: postsCache }),
+        // иначе запрос уйдет в сеть
     ],
     options
 );
@@ -250,8 +250,8 @@ if (isServiceWorkerSupported()) {
     - Каждый плагин делает свою задачу (кеш, авторизация, нотификации, SWR для API и т.д.).
 
 - **Прозрачный порядок выполнения**
-    - Под капотом: под каждый тип событий (`install`, `activate`, `fetch`, `message`, `sync`, `periodicsync`, `push`) создаётся свой массив обработчиков. Плагины сортируются: с отрицательным `order` (по возрастанию), затем без `order` (порядок добавления), затем с положительным `order` (по возрастанию); в этом порядке обработчики попадают в массивы. При наступлении события в сервис‑воркере вызываются обработчики из нужного массива.
-    - Встроенные плагины пакета не задают `order` и выполняются в группе «без order» в порядке перечисления.
+    - Под капотом: под каждый тип событий (`install`, `activate`, `fetch`, `message`, `sync`, `periodicsync`, `push`) создаётся свой массив обработчиков. Плагины сортируются по `order` (по возрастанию, по умолчанию 0); в этом порядке обработчики попадают в массивы. При наступлении события в сервис‑воркере вызываются обработчики из нужного массива.
+    - Порядок важен для `fetch` и `push` (последовательное выполнение). Для остальных событий (`install`, `activate`, `message`, `sync`, `periodicsync`) обработчики выполняются параллельно. Используйте `order` в конфиге плагина для управления порядком выполнения.
     - `install` / `activate` / `message` / `sync` / `periodicsync` — обработчики выполняются параллельно;
     - `fetch` — последовательно, с понятной логикой прерывания;
     - `push` — все обработчики выполняются последовательно.

@@ -25,7 +25,7 @@ Building Service Workers (SW) is traditionally hard: manual event handlers, erro
 
 ### 🎯 **Predictable execution order**
 
-- Execution order: plugins with negative `order` (ascending), then without `order` (registration order), then with non‑negative `order` (ascending)
+- Execution order: plugins sorted by `order` (ascending, default 0)
 - Control initialization order explicitly
 - **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`
 - **Sequential** for `fetch` (first non-undefined response wins); for `push` all handlers run
@@ -133,7 +133,7 @@ initServiceWorker(
         }),
     ],
     {
-        version: '1.7.2',
+        version: '1.8.0',
     }
 );
 ```
@@ -146,7 +146,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list.
 
-- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see “Plugin factory”).
+- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory").
 - **`options`** — at least `version` (required), and optional `pingPath?`, `logger?`, `onError?`. The **logger** (from options or `console`) is passed as the second argument to plugin handlers.
 
 **Example:**
@@ -158,7 +158,7 @@ initServiceWorker(
         serveFromCache({ cacheName: 'v1' }),
     ],
     {
-        version: '1.7.2',
+        version: '1.8.0',
         logger: customLogger,
         onError: handleError,
     }
@@ -177,7 +177,7 @@ interface PluginContext {
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
-    /** Service worker / app version string (e.g. '1.7.2'). */
+    /** Service worker / app version string (e.g. '1.8.0'). */
     version: string;
 
     /** Optional path for ping requests (default '/sw-ping'). */
@@ -193,7 +193,7 @@ interface ServiceWorkerInitOptions extends PluginContext {
 
 Version string for the service worker / app. Used by:
 
-- the library’s internal plugin that answers version requests (`getServiceWorkerVersion()` on the client);
+- the library's internal plugin that answers version requests (`getServiceWorkerVersion()` on the client);
 - logging and debugging (you can log it in your `onError` or logger).
 
 Recommend using the same string as your frontend app version (e.g. from `package.json`).
@@ -202,25 +202,25 @@ Recommend using the same string as your frontend app version (e.g. from `package
 
 ```typescript
 initServiceWorker(plugins, {
-    version: '1.7.2',
+    version: '1.8.0',
 });
 ```
 
 #### `pingPath?: string` (optional)
 
-Overrides the ping path handled by the library’s internal ping plugin. Default is `'/sw-ping'` (constant `SW_PING_PATH`). This must match what you use on the client in `pingServiceWorker({ path: ... })` if you change it.
+Overrides the ping path handled by the library's internal ping plugin. Default is `'/sw-ping'` (constant `SW_PING_PATH`). This must match what you use on the client in `pingServiceWorker({ path: ... })` if you change it.
 
 **Examples:**
 
 ```typescript
 // Default — internal plugin handles GET /sw-ping
 initServiceWorker(plugins, {
-    version: '1.7.2',
+    version: '1.8.0',
 });
 
 // Custom ping path (e.g. to avoid clashing with backend)
 initServiceWorker(plugins, {
-    version: '1.7.2',
+    version: '1.8.0',
     pingPath: '/internal/sw-ping',
 });
 ```
@@ -263,7 +263,7 @@ Single handler for all error types in the Service Worker. **There is no default 
 
 - `error: Error | any` — error object
 - `event: Event` — event where the error occurred
-- `errorType?: ServiceWorkerErrorType` — error type (see “Error handling”)
+- `errorType?: ServiceWorkerErrorType` — error type (see "Error handling")
 
 **Important:** If `onError` is not set, plugin and global errors are not handled. For production, always set `onError` for logging and monitoring.
 
@@ -272,12 +272,12 @@ Single handler for all error types in the Service Worker. **There is no default 
 ```typescript
 // Minimal: version only
 initServiceWorker([cachePlugin], {
-    version: '1.7.2',
+    version: '1.8.0',
 });
 
 // With onError
 initServiceWorker([cachePlugin], {
-    version: '1.7.2',
+    version: '1.8.0',
     onError: (error, event, errorType) => {
         console.error('Service Worker error:', error, errorType);
     },
@@ -297,7 +297,7 @@ import {
 const logger = console; // or your own logger
 
 const options = {
-    version: '1.7.2',
+    version: '1.8.0',
     logger,
     onError: (error, event, errorType) => {
         logger.info(`Error type "${errorType}":`, error);
@@ -414,8 +414,8 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 How the package works:
 
 - Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push
-- Plugins are sorted: those with `order` &lt; 0 (ascending), then without `order` (registration order), then with `order` ≥ 0 (ascending)
-- In that order, each plugin’s handlers are pushed into the corresponding arrays
+- Plugins are sorted by `order` (ascending, default 0)
+- In that order, each plugin's handlers are pushed into the corresponding arrays
 - When an event fires in the service worker, handlers from the matching array are run
 
 ### 🎯 Handler behaviour
@@ -423,38 +423,67 @@ How the package works:
 - Every method receives `event` as the first argument and **logger** as the second.
 - **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
 - **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called. No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
-- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`): return value is ignored; the framework calls each plugin’s method in order; the chain does not short-circuit.
+- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
 - **All handlers are optional** — implement only the events you need.
 
 ## 🎯 Plugin execution order
 
-Plugins run in this order:
+Plugins are sorted by `order` (ascending). If `order` is not specified, it defaults to `0`.
 
-1. **Plugins with negative `order`** — sorted ascending (e.g. -10 → -1)
-2. **Plugins without `order`** — in the order they were added
-3. **Plugins with `order` ≥ 0** — sorted ascending (e.g. 0 → 5)
+**Important:** Order matters for:
 
-Built-in plugins (precache, claim, serveFromCache, etc.) do not set `order` and run in the “no order” group—in the order you list them in the array.
+- **`fetch`** — handlers run sequentially; first plugin that returns a `Response` stops the chain
+- **`push`** — handlers run sequentially
+
+For other events (`install`, `activate`, `message`, `sync`, `periodicsync`), handlers run **in parallel**, so order is mainly for organizing your configuration.
 
 ### Example:
 
 ```typescript
-const plugins = [
-    { name: 'fifth', order: 4 },
-    { name: 'second' }, // no order
-    { name: 'first', order: -1 }, // negative — runs first
-    { name: 'fourth', order: 3 },
-    { name: 'third', order: 0 },
-];
+import {
+    precache,
+    serveFromCache,
+    cacheFirst,
+} from '@budarin/pluggable-serviceworker/plugins';
 
-// Execution order: first (order -1) → second (no order) → third (0) → fourth (3) → fifth (4)
+initServiceWorker(
+    [
+        precache({
+            cacheName: 'v1',
+            assets: ['/'],
+            order: -10, // Early
+        }),
+        serveFromCache({
+            cacheName: 'v1', // order defaults to 0
+        }),
+        cacheFirst({
+            cacheName: 'api',
+            order: 100, // Late
+        }),
+    ],
+    {
+        version: '1.8.0',
+    }
+);
+
+// Execution order: precache (order -10) → serveFromCache (order 0) → cacheFirst (order 100)
 ```
 
-**Benefits:**
+**Recommendations for using `order`:**
 
-- 🎯 **Predictable** — negative → no order → non‑negative, each group sorted where applicable
-- 🔧 **Simple** — use negative for “early”, positive for “late”, omit for “middle”
-- 📈 **Scalable** — easy to slot plugins without renumbering
+In most cases, you can do without explicitly specifying `order` — just place plugins in the array in the order you want them to execute. All plugins default to `order = 0`, so they will execute in registration order.
+
+Explicit `order` is useful in edge cases when you need to:
+
+- If you use presets with unknown pluggins order in it
+- Use plugins from different sources and control their relative order
+- Organize plugins into groups (early, regular, late)
+
+**Recommended order ranges:**
+
+- **`-100…-1`** — Early plugins (logging, metrics, tracing)
+- **`0`** — Regular plugins (default)
+- **`1…100`** — Late plugins (fallbacks, final handlers)
 
 ## ⚡ Handler execution behaviour
 
@@ -479,12 +508,18 @@ import { initServiceWorker } from '@budarin/pluggable-serviceworker';
 // All install handlers run in parallel
 initServiceWorker(
     [
-        precache({ cacheName: 'app-v1', assets: ['/', '/main.js'] }),
-        precacheMissing({ cacheName: 'ext-v1', assets: ['/worker.js'] }),
-        skipWaiting,
+        precache({
+            cacheName: 'app-v1',
+            assets: ['/', '/main.js'],
+        }),
+        precacheMissing({
+            cacheName: 'ext-v1',
+            assets: ['/worker.js'],
+        }),
+        skipWaiting(),
     ],
     {
-        version: '1.7.2',
+        version: '1.8.0',
         logger: customLogger,
     }
 );
@@ -512,10 +547,14 @@ Example factory that short-circuits for unauthorized access to protected paths:
 ```typescript
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
-function authPlugin(config: { protectedPaths: string[] }): Plugin {
-    const { protectedPaths } = config;
+function authPlugin(config: {
+    protectedPaths: string[];
+    order?: number;
+}): Plugin {
+    const { protectedPaths, order = 0 } = config;
 
     return {
+        order,
         name: 'auth',
 
         fetch: async (event, logger) => {
@@ -528,12 +567,13 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
                     return new Response('Unauthorized', { status: 401 }); // Stops chain
                 }
             }
+
             return undefined; // Pass to next plugin
         },
     };
 }
 
-// Usage: authPlugin({ protectedPaths: ['/api/'] })
+// using: authPlugin({ protectedPaths: ['/api/'] })
 ```
 
 **Why sequential:**
@@ -558,12 +598,13 @@ function authPlugin(config: { protectedPaths: string[] }): Plugin {
 ### Primitives (plugins)
 
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
-Primitives with config are **plugin factories** (see “Plugin factory”): config is passed at the call site; `initServiceWorker` options are only `version` (required), `pingPath?`, `logger?`, `onError?`. Primitives without config (`skipWaiting`, `claim`, …) are ready-made plugin objects.
+All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are only `version` (required), `pingPath?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order.
 
 | Name                               | Event      | Description                                                                                                                                                                  |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claim`                            | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
-| `claimAndReloadClients`            | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
+| `claim()`                          | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
+| `claimAndReloadClients()`          | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
+| `reloadClients()`                  | `activate` | Reloads all client windows.                                                                                                                                                  |
 | `pruneStaleCache(config)`          | `activate` | Removes cache entries whose URL is not in `config.assets`.                                                                                                                   |
 | `cacheFirst(config)`               | `fetch`    | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                                                               |
 | `networkFirst(config)`             | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
@@ -573,7 +614,7 @@ Primitives with config are **plugin factories** (see “Plugin factory”): conf
 | `precache(config)`                 | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
 | `precacheWithNotification(config)` | `install`  | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
 | `precacheMissing(config)`          | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
-| `skipWaiting`                      | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
+| `skipWaiting()`                    | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
 | `skipWaitingOnMessage(config?)`    | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
 
 #### Composing primitives
@@ -600,24 +641,25 @@ Factory `postsSwrPlugin(config)` returns a plugin that applies `stale-while-reva
 ```typescript
 // postsSwrPlugin.ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
-
 import { staleWhileRevalidate } from '@budarin/pluggable-serviceworker/plugins';
 
 function postsSwrPlugin(config: {
     cacheName: string;
     pathPattern?: RegExp;
+    order?: number;
 }): Plugin {
-    const { cacheName, pathPattern = /\/api\/posts(\/|$)/ } = config;
+    const { cacheName, pathPattern = /\/api\/posts(\/|$)/, order = 0 } = config;
     const swrPlugin = staleWhileRevalidate({ cacheName });
 
     return {
+        order,
         name: 'postsSwr',
-        order: 0,
 
         fetch: async (event, logger) => {
             if (!pathPattern.test(new URL(event.request.url).pathname)) {
                 return undefined;
             }
+
             return swrPlugin.fetch!(event, logger);
         },
     };
@@ -631,12 +673,19 @@ const assets = ['/', '/main.js'];
 
 initServiceWorker(
     [
-        precache({ cacheName: staticCache, assets }),
-        serveFromCache({ cacheName: staticCache }),
-        postsSwrPlugin({ cacheName: 'posts' }),
+        precache({
+            cacheName: staticCache,
+            assets,
+        }),
+        serveFromCache({
+            cacheName: staticCache,
+        }),
+        postsSwrPlugin({
+            cacheName: 'posts',
+        }),
     ],
     {
-        version: '1.7.2',
+        version: '1.8.0',
         logger: console,
     }
 );
@@ -674,7 +723,7 @@ Example:
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
 activateAndUpdateOnNextVisitSW({
-    version: '1.7.2',
+    version: '1.8.0',
     cacheName: 'my-cache-v1',
     assets: ['/', '/styles.css', '/script.js'],
     onError: (err, event, type) => console.error(type, err),
@@ -687,7 +736,7 @@ activateAndUpdateOnNextVisitSW({
 | --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)).       |
 | `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client | Subscribe to new SW version. Returns an unsubscribe function. Callback when new version is installed and there is an active controller (update, not first install). |
-| `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. “new version available” banners.                                        |
+| `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. "new version available" banners.                                        |
 | `isServiceWorkerSupported()`                                    | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                            |
 | `postMessageToServiceWorker(message, options?)`                 | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                                  |
 | `getServiceWorkerVersion(options?)`                             | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                               |
@@ -766,7 +815,7 @@ Plugin types are exported from this package. A separate plugin package does not 
 
 **1. Plugin package dependencies**
 
-In your package’s `package.json`:
+In your package's `package.json`:
 
 ```json
 {
@@ -779,7 +828,7 @@ In your package’s `package.json`:
 }
 ```
 
-`peerDependencies` so the plugin works with the user’s library version; `devDependencies` for build and types.
+`peerDependencies` so the plugin works with the user's library version; `devDependencies` for build and types.
 
 **2. Importing types in the plugin**
 
@@ -790,12 +839,14 @@ import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 export interface MyPluginConfig {
     cacheName: string;
+    order?: number;
 }
 
 export function myPlugin(config: MyPluginConfig): Plugin {
-    const { cacheName } = config;
+    const { cacheName, order = 0 } = config;
 
     return {
+        order,
         name: 'my-plugin',
 
         install: async (_event, logger) => {
@@ -804,15 +855,13 @@ export function myPlugin(config: MyPluginConfig): Plugin {
             await cache.add('/offline.html');
         },
 
-        fetch: async (event, _logger) => {
+        fetch: async (event) => {
             const cached = await caches.match(event.request);
             return cached ?? undefined;
         },
     };
 }
 ```
-
-Users add the plugin like: `initServiceWorker([..., myPlugin({ cacheName: 'my-v1' })], options)`.
 
 ## 📄 License
 

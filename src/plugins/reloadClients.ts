@@ -1,7 +1,14 @@
 import type { Plugin } from '../index.js';
 
-export function reloadClients(): Plugin {
+export interface ReloadClientsConfig {
+    order?: number;
+}
+
+export function reloadClients(config?: ReloadClientsConfig): Plugin {
+    const { order = 0 } = config ?? {};
+
     return {
+        order,
         name: 'reloadClients',
 
         activate: async () => {

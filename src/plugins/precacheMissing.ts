@@ -5,6 +5,7 @@ import { normalizeUrl } from '../utils/normalizeUrl.js';
 export interface PrecacheMissingConfig {
     cacheName: string;
     assets: string[];
+    order?: number;
 }
 
 /**
@@ -12,8 +13,10 @@ export interface PrecacheMissingConfig {
  * и добавляет только их через cache.addAll.
  */
 export function precacheMissing(config: PrecacheMissingConfig): Plugin {
-    const { cacheName, assets } = config;
+    const { cacheName, assets, order = 0 } = config;
+
     return {
+        order,
         name: 'precacheMissing',
 
         install: async () => {

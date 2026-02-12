@@ -2,14 +2,16 @@ import type { Plugin } from '../index.js';
 
 export interface StaleWhileRevalidateConfig {
     cacheName: string;
+    order?: number;
 }
 
 export function staleWhileRevalidate(
     config: StaleWhileRevalidateConfig
 ): Plugin {
-    const { cacheName } = config;
+    const { cacheName, order = 0 } = config;
 
     return {
+        order,
         name: 'staleWhileRevalidate',
 
         fetch: async (event) => {

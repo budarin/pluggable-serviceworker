@@ -3,12 +3,12 @@ import {
     createEventHandlers,
     ServiceWorkerErrorType,
     type ServiceWorkerPlugin,
-    type ServiceWorkerConfig,
+    type ServiceWorkerInitOptions,
 } from '../src/index.ts';
 
 describe('createEventHandlers', () => {
     describe('plugin order', () => {
-        it('calls install handlers in order: no order first, then by order ascending', async () => {
+        it('calls install handlers sorted by order (default 0)', async () => {
             const order: string[] = [];
             const plugins: ServiceWorkerPlugin[] = [
                 {
@@ -20,6 +20,7 @@ describe('createEventHandlers', () => {
                 },
                 {
                     name: 'first',
+                    // no order - defaults to 0
                     install: () => {
                         order.push('first');
                     },
@@ -33,12 +34,13 @@ describe('createEventHandlers', () => {
                 },
                 {
                     name: 'fourth',
+                    // no order - defaults to 0
                     install: () => {
                         order.push('fourth');
                     },
                 },
             ];
-            const config: ServiceWorkerConfig = {};
+            const config: ServiceWorkerInitOptions = { version: '1.0.0' };
             const handlers = createEventHandlers(plugins, config);
 
             const waitUntil = vi.fn((p: Promise<unknown>) => p);
@@ -46,23 +48,25 @@ describe('createEventHandlers', () => {
 
             await waitUntil.mock.results[0]?.value;
 
+            // Plugins sorted by order (default 0), same order maintains registration order
             expect(order).toEqual(['first', 'fourth', 'second', 'third']);
         });
 
-        it('calls install handlers in order: negative order first, then no order, then non-negative order', async () => {
+        it('calls install handlers sorted by order (negative first, then ascending)', async () => {
             const order: string[] = [];
             const plugins: ServiceWorkerPlugin[] = [
-                { name: 'mid', install: () => order.push('mid') },
+                { name: 'mid', install: () => order.push('mid') }, // defaults to order 0
                 { name: 'late', order: 1, install: () => order.push('late') },
                 { name: 'early', order: -1, install: () => order.push('early') },
                 { name: 'last', order: 2, install: () => order.push('last') },
             ];
-            const handlers = createEventHandlers(plugins, {});
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
 
             const waitUntil = vi.fn((p: Promise<unknown>) => p);
             handlers.install({ waitUntil } as unknown as ExtendableEvent);
             await waitUntil.mock.results[0]?.value;
 
+            // Sorted by order ascending: -1, 0, 1, 2
             expect(order).toEqual(['early', 'mid', 'late', 'last']);
         });
     });
@@ -79,7 +83,7 @@ describe('createEventHandlers', () => {
                 },
             ];
             const event = { waitUntil: vi.fn((p: Promise<unknown>) => p) };
-            const handlers = createEventHandlers(plugins, { onError });
+            const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
 
             handlers.install(event as unknown as ExtendableEvent);
             await event.waitUntil.mock.results[0]?.value;
@@ -104,7 +108,7 @@ describe('createEventHandlers', () => {
                 },
             ];
             const event = { waitUntil: vi.fn((p: Promise<unknown>) => p) };
-            const handlers = createEventHandlers(plugins, { onError });
+            const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
 
             handlers.install(event as unknown as ExtendableEvent);
             await event.waitUntil.mock.results[0]?.value;
@@ -134,7 +138,7 @@ describe('createEventHandlers', () => {
                 request: new Request('https://example.com/'),
                 respondWith,
             };
-            const handlers = createEventHandlers(plugins, {});
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
 
             handlers.fetch(event as unknown as FetchEvent);
 
@@ -156,7 +160,7 @@ describe('createEventHandlers', () => {
             const request = new Request('https://example.com/');
             const respondWith = vi.fn();
             const event = { request, respondWith };
-            const handlers = createEventHandlers(plugins, {});
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
 
             handlers.fetch(event as unknown as FetchEvent);
 
@@ -182,7 +186,7 @@ describe('createEventHandlers', () => {
                 request: new Request('https://example.com/'),
                 respondWith,
             };
-            const handlers = createEventHandlers(plugins, { onError });
+            const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
 
             handlers.fetch(event as unknown as FetchEvent);
 
@@ -206,7 +210,7 @@ describe('createEventHandlers', () => {
             const event = { data: { type: 'test' } } as unknown as Parameters<
                 ReturnType<typeof createEventHandlers>['message']
             >[0];
-            const handlers = createEventHandlers(plugins, {});
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
 
             handlers.message(event);
 
@@ -228,7 +232,7 @@ describe('createEventHandlers', () => {
             const event = { data: { type: 'test' } } as unknown as Parameters<
                 ReturnType<typeof createEventHandlers>['message']
             >[0];
-            const handlers = createEventHandlers(plugins, { onError });
+            const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
 
             handlers.message(event);
 
@@ -245,7 +249,7 @@ describe('createEventHandlers', () => {
             const onError = vi.fn();
             const err = new Error('runtime error');
             const event = { error: err } as unknown as ErrorEvent;
-            const handlers = createEventHandlers([], { onError });
+            const handlers = createEventHandlers([], { version: '1.0.0', onError });
 
             handlers.error(event);
 
@@ -259,7 +263,7 @@ describe('createEventHandlers', () => {
         it('calls onError with MESSAGE_ERROR type for messageerror event', () => {
             const onError = vi.fn();
             const event = { data: 'bad data' } as unknown as MessageEvent;
-            const handlers = createEventHandlers([], { onError });
+            const handlers = createEventHandlers([], { version: '1.0.0', onError });
 
             handlers.messageerror(event);
 
@@ -274,7 +278,7 @@ describe('createEventHandlers', () => {
             const onError = vi.fn();
             const reason = new Error('unhandled');
             const event = { reason } as unknown as PromiseRejectionEvent;
-            const handlers = createEventHandlers([], { onError });
+            const handlers = createEventHandlers([], { version: '1.0.0', onError });
 
             handlers.unhandledrejection(event);
 

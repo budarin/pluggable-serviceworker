@@ -27,7 +27,7 @@ export function immediatelyActivateUpdateOnSignalSW(
         [
             ...offlineFirst(options),
             skipWaitingOnMessage(skipWaitingConfig),
-            claim,
+            claim(),
         ],
         options
     );

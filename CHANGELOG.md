@@ -1,3 +1,12 @@
+## 1.8.0
+
+- **Breaking change**: Removed deprecated `ServiceWorkerConfig` type alias (use `ServiceWorkerInitOptions` instead).
+- **Breaking change**: Removed deprecated `precacheAndNotify` function and `PrecacheAndNotifyConfig` type (use `precacheWithNotification` and `PrecacheWithNotificationConfig` instead).
+- Added `order?: number` parameter to all plugin config interfaces. Plugins without config now accept optional `config?: { order?: number }` parameter.
+- Plugins now extract `order` from config with default value `0`, making execution order visible directly in plugin initialization code.
+- Updated documentation (README.md, README.ru.md, docs/article-habr.md) with examples showing `order` usage in plugin configs.
+- Added recommendations about when to use explicit `order` vs relying on array order (most cases don't need explicit `order`).
+
 ## 1.7.2
 
 - Docs: bump README and README.ru examples to use version `1.7.2` so snippets match the published package version.

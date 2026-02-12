@@ -15,5 +15,8 @@ export interface ImmediatelyActivateAndUpdateSWOptions
 export function immediatelyActivateAndUpdateSW(
     options: ImmediatelyActivateAndUpdateSWOptions
 ): void {
-    initServiceWorker([...offlineFirst(options), skipWaiting, claim], options);
+    initServiceWorker(
+        [...offlineFirst(options), skipWaiting(), claim()],
+        options
+    );
 }

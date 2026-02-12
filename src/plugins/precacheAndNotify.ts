@@ -14,9 +14,6 @@ export interface PrecacheWithNotificationConfig extends PrecacheConfig {
     installedMessage?: string;
 }
 
-/** @deprecated Используйте PrecacheWithNotificationConfig. Оставлено для обратной совместимости. */
-export type PrecacheAndNotifyConfig = PrecacheWithNotificationConfig;
-
 /**
  * Кеширует список ассетов, затем отправляет активным клиентам сообщения
  * с указанными типами: сначала о начале установки, затем — после успешного
@@ -26,18 +23,21 @@ export function precacheWithNotification(
     config: PrecacheWithNotificationConfig
 ): Plugin {
     const {
-        cacheName,
         assets,
+        cacheName,
         startInstallingMessage = SW_MSG_START_INSTALLING,
         installedMessage = SW_MSG_INSTALLED,
+        order = 0,
     } = config;
 
     const preCachePlugin = precache({
         assets,
         cacheName,
+        order,
     });
 
     return {
+        order,
         name: 'precacheWithNotification',
 
         install: async (event, logger) => {
@@ -46,13 +46,4 @@ export function precacheWithNotification(
             await notifyClients(installedMessage);
         },
     };
-}
-
-/**
- * @deprecated Используйте precacheWithNotification. Оставлено для обратной совместимости.
- */
-export function precacheAndNotify(
-    config: PrecacheAndNotifyConfig
-): Plugin {
-    return precacheWithNotification(config);
 }

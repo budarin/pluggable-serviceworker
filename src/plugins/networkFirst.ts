@@ -2,12 +2,14 @@ import type { Plugin } from '../index.js';
 
 export interface NetworkFirstConfig {
     cacheName: string;
+    order?: number;
 }
 
 export function networkFirst(config: NetworkFirstConfig): Plugin {
-    const { cacheName } = config;
+    const { cacheName, order = 0 } = config;
 
     return {
+        order,
         name: 'networkFirst',
 
         fetch: async (event) => {
