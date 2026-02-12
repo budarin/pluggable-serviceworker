@@ -125,7 +125,7 @@ initServiceWorker(
         }),
     ],
     {
-        version: '1.6.0',
+        version: '1.7.2',
     }
 );
 ```
@@ -150,7 +150,7 @@ initServiceWorker(
         serveFromCache({ cacheName: 'v1' }),
     ],
     {
-        version: '1.6.0',
+        version: '1.7.2',
         logger: customLogger,
         onError: handleError,
     }
@@ -169,7 +169,7 @@ interface PluginContext {
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
-    /** Версия сервис-воркера / приложения (строка, например '1.6.0'). */
+    /** Версия сервис-воркера / приложения (строка, например '1.7.2'). */
     version: string;
 
     /** Необязательный путь для ping-запроса (по умолчанию '/sw-ping'). */
@@ -194,7 +194,7 @@ interface ServiceWorkerInitOptions extends PluginContext {
 
 ```typescript
 initServiceWorker(plugins, {
-    version: '1.6.0',
+    version: '1.7.2',
 });
 ```
 
@@ -207,12 +207,12 @@ initServiceWorker(plugins, {
 ```typescript
 // По умолчанию — внутренний плагин обрабатывает GET /sw-ping
 initServiceWorker(plugins, {
-    version: '1.6.0',
+    version: '1.7.2',
 });
 
 // Кастомный путь для ping (например, чтобы не конфликтовать с бэкендом)
 initServiceWorker(plugins, {
-    version: '1.6.0',
+    version: '1.7.2',
     pingPath: '/internal/sw-ping',
 });
 ```
@@ -264,12 +264,12 @@ const options = {
 ```typescript
 // Минимальная конфигурация: только версия
 initServiceWorker([cachePlugin], {
-    version: '1.6.0',
+    version: '1.7.2',
 });
 
 // С onError - ошибки будут обработаны
 initServiceWorker([cachePlugin], {
-    version: '1.6.0',
+    version: '1.7.2',
     onError: (error, event, errorType) => {
         console.error('Service Worker error:', error, errorType);
     },
@@ -289,7 +289,7 @@ import {
 const logger = console; // или свой объект с методами info, warn, error, debug
 
 const options = {
-    version: '1.0.0',
+    version: '1.7.2',
     logger,
     onError: (error, event, errorType) => {
         logger.info(`Ошибка типа "${errorType}":`, error);
@@ -489,7 +489,7 @@ initServiceWorker(
         skipWaiting,
     ],
     {
-        version: '1.6.0',
+        version: '1.7.2',
         logger: customLogger,
     }
 );
@@ -644,7 +644,7 @@ initServiceWorker(
         postsSwrPlugin({ cacheName: 'posts' }),
     ],
     {
-        version: '1.6.0',
+        version: '1.7.2',
         logger: console,
     }
 );
@@ -682,7 +682,7 @@ initServiceWorker(
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
 activateAndUpdateOnNextVisitSW({
-    version: '1.6.0',
+    version: '1.7.2',
     cacheName: 'my-cache-v1',
     assets: ['/', '/styles.css', '/script.js'],
     onError: (err, event, type) => console.error(type, err),

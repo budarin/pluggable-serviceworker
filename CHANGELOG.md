@@ -1,3 +1,8 @@
+## 1.7.2
+
+- Docs: bump README and README.ru examples to use version `1.7.2` so snippets match the published package version.
+- Docs: verified status badges (CI, npm, bundle size, license) in the English README still point to the correct repository and package.
+
 ## 1.7.1
 
 - `precacheAndNotify` has been renamed to `precacheWithNotification` for clearer semantics (notifications at the start and end of precache); the old factory and config type remain as deprecated aliases for backwards compatibility.
