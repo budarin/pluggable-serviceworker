@@ -789,9 +789,9 @@ if (isServiceWorkerSupported()) {
 }
 ```
 
-### 📱 Recipe: mobile sleep and waking the SW
+### 📱 Recipe: waking up the SW
 
-On mobile, the SW process can be suspended. After a long idle, the first interaction (e.g. messages) may fail until the worker wakes. To reduce issues:
+On devices, the SW process can be suspended. After a long idle, the first interaction (e.g. messages) may fail until the worker wakes. To reduce issues:
 
 - Call `pingServiceWorker()` on `focus` / `visibilitychange`:
 
