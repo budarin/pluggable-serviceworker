@@ -1,3 +1,10 @@
+## 1.10.0
+
+- **Breaking**: `ServiceWorkerErrorType` enum replaced with `serviceWorkerErrorTypes` const object and `ServiceWorkerErrorType` type. Import the value as `serviceWorkerErrorTypes` (e.g. `serviceWorkerErrorTypes.INSTALL_ERROR`); use type `ServiceWorkerErrorType` for annotations. Aligns with project rule: no enums, use const object + type (see .cursor/rules/types.mdc).
+- **Internal**: Added `src/constants/versionMessages.ts` and `src/constants/paths.ts` (previously missing modules).
+- **Rules**: types.mdc — "No enums, use const object + type"; main.mdc — strengthened role as equal co-author and critical review before changes.
+- Docs: README, README.ru, tests updated to use `serviceWorkerErrorTypes`.
+
 ## 1.9.0
 
 - **Background Fetch API**: Service worker now supports Background Fetch events. Plugins can implement `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick` handlers. New error types: `BACKGROUNDFETCHSUCCESS_ERROR`, `BACKGROUNDFETCHFAIL_ERROR`, `BACKGROUNDFETCHABORT_ERROR`, `BACKGROUNDFETCHCLICK_ERROR`.

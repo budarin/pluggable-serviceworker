@@ -284,7 +284,7 @@ initServiceWorker([cachePlugin], {
 ```typescript
 import {
     initServiceWorker,
-    ServiceWorkerErrorType,
+    serviceWorkerErrorTypes,
 } from '@budarin/pluggable-serviceworker';
 
 const logger = console; // или свой объект с методами info, warn, error, debug
@@ -297,17 +297,17 @@ const options = {
 
         switch (errorType) {
             // Ошибки в плагинах при обработке соответствующего события
-            case ServiceWorkerErrorType.INSTALL_ERROR:
-            case ServiceWorkerErrorType.ACTIVATE_ERROR:
-            case ServiceWorkerErrorType.FETCH_ERROR:
-            case ServiceWorkerErrorType.MESSAGE_ERROR:
-            case ServiceWorkerErrorType.SYNC_ERROR:
-            case ServiceWorkerErrorType.PERIODICSYNC_ERROR:
-            case ServiceWorkerErrorType.PUSH_ERROR:
-            case ServiceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR:
-            case ServiceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR:
-            case ServiceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR:
-            case ServiceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR:
+            case serviceWorkerErrorTypes.INSTALL_ERROR:
+            case serviceWorkerErrorTypes.ACTIVATE_ERROR:
+            case serviceWorkerErrorTypes.FETCH_ERROR:
+            case serviceWorkerErrorTypes.MESSAGE_ERROR:
+            case serviceWorkerErrorTypes.SYNC_ERROR:
+            case serviceWorkerErrorTypes.PERIODICSYNC_ERROR:
+            case serviceWorkerErrorTypes.PUSH_ERROR:
+            case serviceWorkerErrorTypes.BACKGROUNDFETCHSUCCESS_ERROR:
+            case serviceWorkerErrorTypes.BACKGROUNDFETCHFAIL_ERROR:
+            case serviceWorkerErrorTypes.BACKGROUNDFETCHABORT_ERROR:
+            case serviceWorkerErrorTypes.BACKGROUNDFETCHCLICK_ERROR:
                 logger.error(`Plugin error (${errorType}):`, error);
 
                 // если нужно - мы можем получить конкретную точку в коде того плагина в котором произошла ошибка
@@ -318,22 +318,22 @@ const options = {
                 break;
 
             // Глобальные JavaScript ошибки
-            case ServiceWorkerErrorType.ERROR:
+            case serviceWorkerErrorTypes.ERROR:
                 logger.error('JavaScript error:', error);
                 break;
 
             // Глобальное событие messageerror (например, ошибка structured clone)
-            case ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER:
+            case serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER:
                 logger.error('Message error:', error);
                 break;
 
             // Необработанные Promise rejection
-            case ServiceWorkerErrorType.UNHANDLED_REJECTION:
+            case serviceWorkerErrorTypes.UNHANDLED_REJECTION:
                 logger.error('Unhandled promise rejection:', error);
                 break;
 
             // Обработанные Promise rejection
-            case ServiceWorkerErrorType.REJECTION_HANDLED:
+            case serviceWorkerErrorTypes.REJECTION_HANDLED:
                 logger.info('Promise rejection handled:', error);
                 break;
 

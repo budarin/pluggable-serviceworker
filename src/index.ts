@@ -24,7 +24,7 @@ import {
 import { SW_PING_PATH } from './constants/paths.js';
 
 /** Error type identifiers for onError. Use const object instead of enum (see .cursor/rules/types.mdc). */
-export const serviceWorkerErrorType = {
+export const serviceWorkerErrorTypes = {
     ERROR: SW_EVENT_ERROR,
     /** Ошибка в плагине при обработке события install */
     INSTALL_ERROR: 'install_error',
@@ -55,7 +55,7 @@ export const serviceWorkerErrorType = {
 } as const;
 
 export type ServiceWorkerErrorType =
-    (typeof serviceWorkerErrorType)[keyof typeof serviceWorkerErrorType];
+    (typeof serviceWorkerErrorTypes)[keyof typeof serviceWorkerErrorTypes];
 
 interface SyncEvent extends ExtendableEvent {
     readonly tag: string;
@@ -316,7 +316,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.error,
                     event,
-                    serviceWorkerErrorType.ERROR
+                    serviceWorkerErrorTypes.ERROR
                 );
             } catch (error) {
                 logger.error('Error in error handler:', error);
@@ -328,7 +328,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.data,
                     event,
-                    serviceWorkerErrorType.MESSAGE_ERROR
+                    serviceWorkerErrorTypes.MESSAGE_ERROR
                 );
             } catch (error) {
                 logger.error('Error in messageerror handler:', error);
@@ -340,7 +340,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.reason,
                     event,
-                    serviceWorkerErrorType.UNHANDLED_REJECTION
+                    serviceWorkerErrorTypes.UNHANDLED_REJECTION
                 );
             } catch (error) {
                 logger.error('Error in unhandledrejection handler:', error);
@@ -352,7 +352,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.reason,
                     event,
-                    serviceWorkerErrorType.REJECTION_HANDLED
+                    serviceWorkerErrorTypes.REJECTION_HANDLED
                 );
             } catch (error) {
                 logger.error('Error in rejectionhandled handler:', error);
@@ -371,7 +371,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.INSTALL_ERROR
+                                    serviceWorkerErrorTypes.INSTALL_ERROR
                                 )
                             )
                     )
@@ -390,7 +390,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.ACTIVATE_ERROR
+                                    serviceWorkerErrorTypes.ACTIVATE_ERROR
                                 )
                             )
                     )
@@ -413,7 +413,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             options.onError?.(
                                 error as Error,
                                 event,
-                                serviceWorkerErrorType.FETCH_ERROR
+                                serviceWorkerErrorTypes.FETCH_ERROR
                             );
                         }
                     }
@@ -423,7 +423,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         options.onError?.(
                             error as Error,
                             event,
-                            serviceWorkerErrorType.FETCH_ERROR
+                            serviceWorkerErrorTypes.FETCH_ERROR
                         );
                         return new Response('', {
                             status: 503,
@@ -443,7 +443,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     options.onError?.(
                         error as Error,
                         event,
-                        serviceWorkerErrorType.MESSAGE_ERROR_HANDLER
+                        serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER
                     );
                 }
             });
@@ -460,7 +460,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.SYNC_ERROR
+                                    serviceWorkerErrorTypes.SYNC_ERROR
                                 )
                             )
                     )
@@ -479,7 +479,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.PERIODICSYNC_ERROR
+                                    serviceWorkerErrorTypes.PERIODICSYNC_ERROR
                                 )
                             )
                     )
@@ -513,7 +513,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             options.onError?.(
                                 error as Error,
                                 event,
-                                serviceWorkerErrorType.PUSH_ERROR
+                                serviceWorkerErrorTypes.PUSH_ERROR
                             );
 
                             returns.push(undefined);
@@ -591,7 +591,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         options.onError?.(
                             error as Error,
                             event,
-                            serviceWorkerErrorType.PUSH_ERROR
+                            serviceWorkerErrorTypes.PUSH_ERROR
                         );
                     }
                 })()
@@ -611,7 +611,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR
+                                    serviceWorkerErrorTypes.BACKGROUNDFETCHSUCCESS_ERROR
                                 )
                             )
                     )
@@ -632,7 +632,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR
+                                    serviceWorkerErrorTypes.BACKGROUNDFETCHFAIL_ERROR
                                 )
                             )
                     )
@@ -651,7 +651,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR
+                                    serviceWorkerErrorTypes.BACKGROUNDFETCHABORT_ERROR
                                 )
                             )
                     )
@@ -670,7 +670,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    serviceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR
+                                    serviceWorkerErrorTypes.BACKGROUNDFETCHCLICK_ERROR
                                 )
                             )
                     )

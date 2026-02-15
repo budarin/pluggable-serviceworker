@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     createEventHandlers,
-    ServiceWorkerErrorType,
+    serviceWorkerErrorTypes,
     type ServiceWorkerPlugin,
     type ServiceWorkerInitOptions,
 } from '../src/index.ts';
@@ -92,7 +92,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.INSTALL_ERROR
+                serviceWorkerErrorTypes.INSTALL_ERROR
             );
             expect((onError.mock.calls[0]?.[0] as Error).message).toBe(
                 'plugin failed'
@@ -116,7 +116,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.INSTALL_ERROR
+                serviceWorkerErrorTypes.INSTALL_ERROR
             );
         });
     });
@@ -195,7 +195,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.FETCH_ERROR
+                serviceWorkerErrorTypes.FETCH_ERROR
             );
         });
     });
@@ -239,7 +239,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
                 event,
-                ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
+                serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER
             );
         });
     });
@@ -256,7 +256,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 err,
                 event,
-                ServiceWorkerErrorType.ERROR
+                serviceWorkerErrorTypes.ERROR
             );
         });
 
@@ -270,7 +270,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 'bad data',
                 event,
-                ServiceWorkerErrorType.MESSAGE_ERROR
+                serviceWorkerErrorTypes.MESSAGE_ERROR
             );
         });
 
@@ -285,7 +285,7 @@ describe('createEventHandlers', () => {
             expect(onError).toHaveBeenCalledWith(
                 reason,
                 event,
-                ServiceWorkerErrorType.UNHANDLED_REJECTION
+                serviceWorkerErrorTypes.UNHANDLED_REJECTION
             );
         });
     });
