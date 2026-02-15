@@ -1,4 +1,5 @@
-/** Типы сообщений для запроса/ответа версии Service Worker. */
+/** Message type: client requests SW version. */
 export const PLUGGABLE_SW_GET_VERSION = 'PLUGGABLE_SW_GET_VERSION';
-export const PLUGGABLE_SW_VERSION = 'PLUGGABLE_SW_VERSION';
 
+/** Message type: SW responds with version. */
+export const PLUGGABLE_SW_VERSION = 'PLUGGABLE_SW_VERSION';

@@ -467,7 +467,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 - **`fetch`** — обработчики выполняются последовательно; первый плагин, вернувший `Response`, останавливает цепочку
 - **`push`** — обработчики выполняются последовательно
 
-Для остальных событий (`install`, `activate`, `message`, `sync`, `periodicsync`) обработчики выполняются **параллельно**, поэтому порядок в основном нужен для организации конфигурации.
+Для остальных событий (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`) обработчики выполняются **параллельно**, поэтому порядок в основном нужен для организации конфигурации.
 
 ### Пример:
 
@@ -784,6 +784,8 @@ activateAndUpdateOnNextVisitSW({
 | `notifyClients(messageType)`                                    | SW               | Отправляет сообщение `{ type: messageType }` всем окнам-клиентам.                                                                                                                                                      |
 
 **Клиентские подпути (для меньшего бандла):** можно импортировать из `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health` или `.../client/background-fetch` вместо `.../client`, чтобы подтянуть только нужные утилиты.
+
+**Клиентские утилиты — подробная документация (интерфейс, назначение, примеры):** [Регистрация (RU)](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/registration/README.ru.md) | [EN](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/registration/README.md) · [Сообщения (RU)](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/messaging/README.ru.md) | [EN](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/messaging/README.md) · [Доступность и ping (RU)](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/health/README.ru.md) | [EN](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/health/README.md) · [Background Fetch (RU)](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/backgroundFetch/README.ru.md) | [EN](https://github.com/budarin/pluggable-serviceworker/blob/master/src/client/backgroundFetch/README.md)
 
 <br />
 

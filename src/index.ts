@@ -10,42 +10,52 @@ import {
     SW_EVENT_MESSAGEERROR,
     SW_EVENT_REJECTIONHANDLED,
     SW_EVENT_UNHANDLEDREJECTION,
+    SW_EVENT_BACKGROUNDFETCHFAIL,
+    SW_EVENT_BACKGROUNDFETCHABORT,
+    SW_EVENT_BACKGROUNDFETCHCLICK,
+    SW_EVENT_BACKGROUNDFETCHSUCCESS,
 } from '@budarin/http-constants/service-worker';
+
 import {
     PLUGGABLE_SW_GET_VERSION,
     PLUGGABLE_SW_VERSION,
 } from './constants/versionMessages.js';
+
 import { SW_PING_PATH } from './constants/paths.js';
 
-export enum ServiceWorkerErrorType {
-    ERROR = 'error',
+/** Error type identifiers for onError. Use const object instead of enum (see .cursor/rules/types.mdc). */
+export const serviceWorkerErrorType = {
+    ERROR: SW_EVENT_ERROR,
     /** Ошибка в плагине при обработке события install */
-    INSTALL_ERROR = 'install_error',
+    INSTALL_ERROR: 'install_error',
     /** Ошибка в плагине при обработке события activate */
-    ACTIVATE_ERROR = 'activate_error',
+    ACTIVATE_ERROR: 'activate_error',
     /** Ошибка в плагине при обработке fetch или при сетевом запросе (офлайн) */
-    FETCH_ERROR = 'fetch_error',
+    FETCH_ERROR: 'fetch_error',
     /** Глобальное событие messageerror (например, ошибка structured clone) */
-    MESSAGE_ERROR = 'messageerror',
+    MESSAGE_ERROR: SW_EVENT_MESSAGEERROR,
     /** Ошибка в плагине при обработке события message */
-    MESSAGE_ERROR_HANDLER = 'message_error_handler',
+    MESSAGE_ERROR_HANDLER: 'message_error_handler',
     /** Ошибка в плагине при обработке события sync */
-    SYNC_ERROR = 'sync_error',
+    SYNC_ERROR: 'sync_error',
     /** Ошибка в плагине при обработке события periodicsync */
-    PERIODICSYNC_ERROR = 'periodicsync_error',
+    PERIODICSYNC_ERROR: 'periodicsync_error',
     /** Ошибка в плагине при обработке события push или при показе уведомления */
-    PUSH_ERROR = 'push_error',
+    PUSH_ERROR: 'push_error',
     /** Ошибка в плагине при обработке события backgroundfetchsuccess */
-    BACKGROUNDFETCHSUCCESS_ERROR = 'backgroundfetchsuccess_error',
+    BACKGROUNDFETCHSUCCESS_ERROR: 'backgroundfetchsuccess_error',
     /** Ошибка в плагине при обработке события backgroundfetchfail */
-    BACKGROUNDFETCHFAIL_ERROR = 'backgroundfetchfail_error',
+    BACKGROUNDFETCHFAIL_ERROR: 'backgroundfetchfail_error',
     /** Ошибка в плагине при обработке события backgroundfetchabort */
-    BACKGROUNDFETCHABORT_ERROR = 'backgroundfetchabort_error',
+    BACKGROUNDFETCHABORT_ERROR: 'backgroundfetchabort_error',
     /** Ошибка в плагине при обработке события backgroundfetchclick */
-    BACKGROUNDFETCHCLICK_ERROR = 'backgroundfetchclick_error',
-    REJECTION_HANDLED = 'rejectionhandled',
-    UNHANDLED_REJECTION = 'unhandledrejection',
-}
+    BACKGROUNDFETCHCLICK_ERROR: 'backgroundfetchclick_error',
+    REJECTION_HANDLED: SW_EVENT_REJECTIONHANDLED,
+    UNHANDLED_REJECTION: SW_EVENT_UNHANDLEDREJECTION,
+} as const;
+
+export type ServiceWorkerErrorType =
+    (typeof serviceWorkerErrorType)[keyof typeof serviceWorkerErrorType];
 
 interface SyncEvent extends ExtendableEvent {
     readonly tag: string;
@@ -264,7 +274,9 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     // Порядок важен для fetch и push (последовательное выполнение)
     // Для остальных событий (install, activate, message, sync, periodicsync) выполнение параллельное,
     // но сортировка помогает структурировать конфигурацию
-    const sortedPlugins = [...plugins].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const sortedPlugins = [...plugins].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    );
 
     sortedPlugins.forEach((plugin) => {
         if (plugin.install)
@@ -304,7 +316,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.error,
                     event,
-                    ServiceWorkerErrorType.ERROR
+                    serviceWorkerErrorType.ERROR
                 );
             } catch (error) {
                 logger.error('Error in error handler:', error);
@@ -316,7 +328,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.data,
                     event,
-                    ServiceWorkerErrorType.MESSAGE_ERROR
+                    serviceWorkerErrorType.MESSAGE_ERROR
                 );
             } catch (error) {
                 logger.error('Error in messageerror handler:', error);
@@ -328,7 +340,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.reason,
                     event,
-                    ServiceWorkerErrorType.UNHANDLED_REJECTION
+                    serviceWorkerErrorType.UNHANDLED_REJECTION
                 );
             } catch (error) {
                 logger.error('Error in unhandledrejection handler:', error);
@@ -340,7 +352,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 options.onError?.(
                     event.reason,
                     event,
-                    ServiceWorkerErrorType.REJECTION_HANDLED
+                    serviceWorkerErrorType.REJECTION_HANDLED
                 );
             } catch (error) {
                 logger.error('Error in rejectionhandled handler:', error);
@@ -359,7 +371,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.INSTALL_ERROR
+                                    serviceWorkerErrorType.INSTALL_ERROR
                                 )
                             )
                     )
@@ -378,7 +390,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.ACTIVATE_ERROR
+                                    serviceWorkerErrorType.ACTIVATE_ERROR
                                 )
                             )
                     )
@@ -393,12 +405,15 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     for (const handler of handlers.fetch) {
                         try {
                             const res = await handler(event, logger);
-                            if (res !== undefined) return res;
+
+                            if (res !== undefined) {
+                                return res;
+                            }
                         } catch (error) {
                             options.onError?.(
                                 error as Error,
                                 event,
-                                ServiceWorkerErrorType.FETCH_ERROR
+                                serviceWorkerErrorType.FETCH_ERROR
                             );
                         }
                     }
@@ -408,7 +423,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         options.onError?.(
                             error as Error,
                             event,
-                            ServiceWorkerErrorType.FETCH_ERROR
+                            serviceWorkerErrorType.FETCH_ERROR
                         );
                         return new Response('', {
                             status: 503,
@@ -428,7 +443,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     options.onError?.(
                         error as Error,
                         event,
-                        ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
+                        serviceWorkerErrorType.MESSAGE_ERROR_HANDLER
                     );
                 }
             });
@@ -445,7 +460,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.SYNC_ERROR
+                                    serviceWorkerErrorType.SYNC_ERROR
                                 )
                             )
                     )
@@ -464,7 +479,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.PERIODICSYNC_ERROR
+                                    serviceWorkerErrorType.PERIODICSYNC_ERROR
                                 )
                             )
                     )
@@ -481,11 +496,13 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         | false
                         | undefined
                     )[] = [];
+
                     for (const handler of handlers.push) {
                         try {
                             const res = await Promise.resolve(
                                 handler(event, logger)
                             );
+
                             returns.push(
                                 res as
                                     | PushNotificationPayload
@@ -496,11 +513,13 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             options.onError?.(
                                 error as Error,
                                 event,
-                                ServiceWorkerErrorType.PUSH_ERROR
+                                serviceWorkerErrorType.PUSH_ERROR
                             );
+
                             returns.push(undefined);
                         }
                     }
+
                     const payloads = returns.filter(
                         (r): r is PushNotificationPayload =>
                             r != null &&
@@ -509,29 +528,47 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             'title' in r &&
                             typeof r.title === 'string'
                     );
+
                     if (
                         returns.length === handlers.push.length &&
                         returns.every((r) => r === false)
                     ) {
                         return;
                     }
+
                     for (const payload of payloads) {
                         const { title, ...opts } = payload;
                         await self.registration.showNotification(title, opts);
                     }
-                    if (payloads.length > 0) return;
-                    if (!returns.every((r) => r === undefined)) return;
+
+                    if (payloads.length > 0) {
+                        return;
+                    }
+
+                    if (!returns.every((r) => r === undefined)) {
+                        return;
+                    }
+
                     try {
                         const data = event.data;
-                        if (!data) return;
+
+                        if (!data) {
+                            return;
+                        }
+
                         let payload: unknown;
+
                         try {
                             payload = await data.json();
                         } catch {
                             const text = data.text();
                             payload = text.length > 0 ? { title: text } : null;
                         }
-                        if (payload == null) return;
+
+                        if (payload == null) {
+                            return;
+                        }
+
                         const withTitle =
                             typeof payload === 'object' &&
                             payload !== null &&
@@ -542,14 +579,19 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                       title: string;
                                   } & Record<string, unknown>)
                                 : null;
-                        if (withTitle == null) return;
+
+                        if (withTitle == null) {
+                            return;
+                        }
+
                         const { title, ...opts } = withTitle;
+
                         await self.registration.showNotification(title, opts);
                     } catch (error) {
                         options.onError?.(
                             error as Error,
                             event,
-                            ServiceWorkerErrorType.PUSH_ERROR
+                            serviceWorkerErrorType.PUSH_ERROR
                         );
                     }
                 })()
@@ -569,7 +611,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR
+                                    serviceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR
                                 )
                             )
                     )
@@ -590,7 +632,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR
+                                    serviceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR
                                 )
                             )
                     )
@@ -609,7 +651,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR
+                                    serviceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR
                                 )
                             )
                     )
@@ -628,7 +670,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                                 options.onError?.(
                                     error as Error,
                                     event,
-                                    ServiceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR
+                                    serviceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR
                                 )
                             )
                     )
@@ -657,15 +699,23 @@ export function initServiceWorker<P extends readonly unknown[]>(
     ];
 
     const names = new Set<string>();
-    for (const plugin of [...internalPlugins, ...(plugins as readonly Plugin[])]) {
+
+    for (const plugin of [
+        ...internalPlugins,
+        ...(plugins as readonly Plugin[]),
+    ]) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
+
         names.add(plugin.name);
     }
 
     const handlers = createEventHandlers(
-        [...internalPlugins, ...(plugins as readonly Plugin[])] as readonly Plugin[],
+        [
+            ...internalPlugins,
+            ...(plugins as readonly Plugin[]),
+        ] as readonly Plugin[],
         opts
     );
 
@@ -683,8 +733,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
         self.addEventListener(SW_EVENT_INSTALL, handlers.install);
     if (handlers.activate)
         self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
-    if (handlers.fetch)
-        self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
+    if (handlers.fetch) self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
     if (handlers.message)
         self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
     if (handlers.sync) self.addEventListener(SW_EVENT_SYNC, handlers.sync);
@@ -693,22 +742,22 @@ export function initServiceWorker<P extends readonly unknown[]>(
     if (handlers.push) self.addEventListener(SW_EVENT_PUSH, handlers.push);
     if (handlers.backgroundfetchsuccess)
         self.addEventListener(
-            'backgroundfetchsuccess',
+            SW_EVENT_BACKGROUNDFETCHSUCCESS,
             handlers.backgroundfetchsuccess
         );
     if (handlers.backgroundfetchfail)
         self.addEventListener(
-            'backgroundfetchfail',
+            SW_EVENT_BACKGROUNDFETCHFAIL,
             handlers.backgroundfetchfail
         );
     if (handlers.backgroundfetchabort)
         self.addEventListener(
-            'backgroundfetchabort',
+            SW_EVENT_BACKGROUNDFETCHABORT,
             handlers.backgroundfetchabort
         );
     if (handlers.backgroundfetchclick)
         self.addEventListener(
-            'backgroundfetchclick',
+            SW_EVENT_BACKGROUNDFETCHCLICK,
             handlers.backgroundfetchclick
         );
 }
@@ -747,6 +796,7 @@ function createPingPlugin(path: string): Plugin {
             }
 
             const url = new URL(event.request.url);
+
             if (url.pathname !== path) {
                 return undefined;
             }

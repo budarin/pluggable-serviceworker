@@ -9,18 +9,18 @@ importers:
   .:
     dependencies:
       '@budarin/http-constants':
-        specifier: ^1.0.20
-        version: 1.0.21
+        specifier: ^1.0.22
+        version: 1.0.22
     devDependencies:
       '@types/node':
         specifier: ^25.2.3
         version: 25.2.3
       '@types/serviceworker':
-        specifier: ^0.0.186
-        version: 0.0.186
+        specifier: ^0.0.190
+        version: 0.0.190
       '@types/web':
-        specifier: ^0.0.330
-        version: 0.0.330
+        specifier: ^0.0.335
+        version: 0.0.335
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -35,7 +35,7 @@ importers:
     dependencies:
       '@budarin/http-constants':
         specifier: ^1.0.21
-        version: 1.0.21
+        version: 1.0.22
       '@budarin/pluggable-serviceworker':
         specifier: 1.8.1
         version: 1.8.1
@@ -147,8 +147,8 @@ packages:
     resolution: {integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==}
     engines: {node: '>=6.9.0'}
 
-  '@budarin/http-constants@1.0.21':
-    resolution: {integrity: sha512-sNJFSxI4sJicOHIlzj+/DkW0m8z8FicqwYHwx/hwjMft66NnuGR/d7KHKB2DeE+ItPJQthUYuGU0k9xFcY/vcg==}
+  '@budarin/http-constants@1.0.22':
+    resolution: {integrity: sha512-XZu3JmErHaTTwDPnsGikjwzZ/NHS3DWQNcxmRemhY1jJTr9Va5Arnk4mbE6lVAg1bir1AYyO1zygzQTjiSEtZw==}
 
   '@budarin/pluggable-serviceworker@1.8.1':
     resolution: {integrity: sha512-LHLZjd62ZwH1o3Jy34xdQXro1zO9JWBPCJHsXD7f9jgBoClbk3z0clMkN7FBCUMbZMwtp1Hi3mRR0e5Jcz1pMA==}
@@ -501,11 +501,11 @@ packages:
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
 
-  '@types/serviceworker@0.0.186':
-    resolution: {integrity: sha512-pW4pNqGk2aOfSMWxzHcuLBGDPfujYmXVwIKoQ7FAREZPcIGFntfUuSzPLNcX1/JcpXczGlk7oHAw5AuDk+GeBQ==}
+  '@types/serviceworker@0.0.190':
+    resolution: {integrity: sha512-bzItk9mz6qntVZ2AI/foSu6OADylZEYqcWZxxYhm7vLD3e0bG4iPJHzltAOL+V8OBb7QbZkEofIC6t1LFEqMsA==}
 
-  '@types/web@0.0.330':
-    resolution: {integrity: sha512-645fts8JWfXUyNAOydwrNJf+fEn3mkph70tsGPI+KAL2ZQXfb1AfsnEuxK7NF+qwjxtIKqG27AbS6NsuZRFISw==}
+  '@types/web@0.0.335':
+    resolution: {integrity: sha512-MdqOg7t1MaQdaQoGuffSdxOx8icrisFBAuI8/DrdCco4TmRVgcwPJdS9zzbQ6rYocRQNW9yekQtnurTDWksOBg==}
 
   '@vitejs/plugin-react@5.1.4':
     resolution: {integrity: sha512-VIcFLdRi/VYRU8OL/puL7QXMYafHmqOnwTZY50U1JPlCNj30PxCMx65c494b1K9be9hX83KVt0+gTEwTWLqToA==}
@@ -932,11 +932,11 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@budarin/http-constants@1.0.21': {}
+  '@budarin/http-constants@1.0.22': {}
 
   '@budarin/pluggable-serviceworker@1.8.1':
     dependencies:
-      '@budarin/http-constants': 1.0.21
+      '@budarin/http-constants': 1.0.22
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
@@ -1156,9 +1156,9 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@types/serviceworker@0.0.186': {}
+  '@types/serviceworker@0.0.190': {}
 
-  '@types/web@0.0.330': {}
+  '@types/web@0.0.335': {}
 
   '@vitejs/plugin-react@5.1.4(vite@7.3.1(@types/node@25.2.3))':
     dependencies:

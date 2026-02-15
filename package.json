@@ -33,14 +33,14 @@
     },
     "devDependencies": {
         "@types/node": "^25.2.3",
-        "@types/serviceworker": "^0.0.186",
-        "@types/web": "^0.0.330",
+        "@types/serviceworker": "^0.0.190",
+        "@types/web": "^0.0.335",
         "prettier": "^3.8.1",
         "typescript": "^5.9.3",
         "vitest": "^4.0.18"
     },
     "dependencies": {
-        "@budarin/http-constants": "^1.0.20"
+        "@budarin/http-constants": "^1.0.22"
     },
     "scripts": {
         "build": "tsc",
