@@ -1,6 +1,6 @@
 {
     "name": "@budarin/pluggable-serviceworker",
-    "version": "1.8.1",
+    "version": "1.9.0",
     "description": "Extensible via plugins service worker",
     "keywords": [
         "serviceworker",
@@ -22,6 +22,10 @@
     "exports": {
         ".": "./dist/index.js",
         "./client": "./dist/client/index.js",
+        "./client/registration": "./dist/client/registration/index.js",
+        "./client/messaging": "./dist/client/messaging/index.js",
+        "./client/health": "./dist/client/health/index.js",
+        "./client/background-fetch": "./dist/client/backgroundFetch/index.js",
         "./plugins": "./dist/plugins/index.js",
         "./presets": "./dist/presets/index.js",
         "./sw": "./dist/sw/index.js",

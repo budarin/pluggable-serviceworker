@@ -1,5 +1,5 @@
 import { isServiceWorkerSupported } from './isServiceWorkerSupported.js';
-import { SW_PING_PATH } from '../constants/paths.js';
+import { SW_PING_PATH } from '../../constants/paths.js';
 
 export type PingServiceWorkerResult = 'ok' | 'no-sw' | 'error';
 
@@ -47,4 +47,3 @@ export async function pingServiceWorker(
         return 'error';
     }
 }
-

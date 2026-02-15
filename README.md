@@ -27,8 +27,9 @@ Building Service Workers (SW) is traditionally hard: manual event handlers, erro
 
 - Execution order: plugins sorted by `order` (ascending, default 0)
 - Control initialization order explicitly
-- **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`
+- **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`
 - **Sequential** for `fetch` (first non-undefined response wins); for `push` all handlers run
+- **Event handlers are only registered when at least one plugin handles that event** — no empty listeners
 - Easy to slot new plugins where you need them
 
 ### 📖 **Easy to learn**
@@ -68,7 +69,7 @@ Building Service Workers (SW) is traditionally hard: manual event handlers, erro
 - Plugins: precache, cacheFirst, networkFirst, staleWhileRevalidate, skipWaiting, claim, and more
 - **offlineFirst** preset — precache on install, serve from cache on fetch
 - Ready-made SW entry points: **activateOnSignal**, **activateImmediately**, **activateOnNextVisit**
-- Client utilities: registration with claim() workaround, new-version detection, message subscription, version query, ping to wake SW, support check
+- Client utilities: registration with claim() workaround, new-version detection, message subscription, version query, ping to wake SW, support check, **Background Fetch** (start/abort/status)
 
 ## 📦 Installation
 
@@ -144,7 +145,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 
 ## initServiceWorker(plugins, options)
 
-`initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list.
+`initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
 - **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory").
 - **`options`** — at least `version` (required), and optional `pingPath?`, `logger?`, `onError?`. The **logger** (from options or `console`) is passed as the second argument to plugin handlers.
@@ -310,6 +311,10 @@ const options = {
             case ServiceWorkerErrorType.SYNC_ERROR:
             case ServiceWorkerErrorType.PERIODICSYNC_ERROR:
             case ServiceWorkerErrorType.PUSH_ERROR:
+            case ServiceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR:
+            case ServiceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR:
+            case ServiceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR:
+            case ServiceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR:
                 logger.error(`Plugin error (${errorType}):`, error);
                 if (error instanceof Error && error.stack) {
                     logger.error('Plugin error Stack:', error.stack);
@@ -396,6 +401,23 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
         event: PeriodicSyncEvent,
         logger: Logger
     ) => Promise<void> | void;
+
+    backgroundfetchsuccess?: (
+        event: BackgroundFetchUpdateUIEvent,
+        logger: Logger
+    ) => Promise<void> | void;
+    backgroundfetchfail?: (
+        event: BackgroundFetchUpdateUIEvent,
+        logger: Logger
+    ) => Promise<void> | void;
+    backgroundfetchabort?: (
+        event: BackgroundFetchEvent,
+        logger: Logger
+    ) => Promise<void> | void;
+    backgroundfetchclick?: (
+        event: BackgroundFetchEvent,
+        logger: Logger
+    ) => Promise<void> | void;
 }
 ```
 
@@ -410,12 +432,17 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 | `sync`         | `sync`         | `void`                                          | Background sync                   |
 | `push`         | `push`         | `PushNotificationPayload \| false \| undefined` | Handle and show push notification |
 | `periodicsync` | `periodicsync` | `void`                                          | Periodic background tasks         |
+| `backgroundfetchsuccess` | `backgroundfetchsuccess` | `void`                    | [Background Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API): all fetches succeeded |
+| `backgroundfetchfail`    | `backgroundfetchfail`    | `void`                    | Background Fetch: at least one fetch failed      |
+| `backgroundfetchabort`   | `backgroundfetchabort`   | `void`                    | Background Fetch: fetch aborted by user or app   |
+| `backgroundfetchclick`  | `backgroundfetchclick`   | `void`                    | Background Fetch: user clicked download UI       |
 
 How the package works:
 
-- Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push
+- Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push, backgroundfetchsuccess, backgroundfetchfail, backgroundfetchabort, backgroundfetchclick
 - Plugins are sorted by `order` (ascending, default 0)
 - In that order, each plugin's handlers are pushed into the corresponding arrays
+- **Only event types that have at least one handler get a listener** — `addEventListener` is called only for those
 - When an event fires in the service worker, handlers from the matching array are run
 
 ### 🎯 Handler behaviour
@@ -423,8 +450,8 @@ How the package works:
 - Every method receives `event` as the first argument and **logger** as the second.
 - **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
 - **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called. No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
-- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
-- **All handlers are optional** — implement only the events you need.
+- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
+- **All handlers are optional** — implement only the events you need. If no plugin implements a given event, that event is not listened for in the service worker.
 
 ## 🎯 Plugin execution order
 
@@ -592,6 +619,7 @@ function authPlugin(config: {
 | `sync`         | Parallel   | No            | Independent tasks             |
 | `periodicsync` | Parallel   | No            | Independent periodic          |
 | `push`         | Sequential | No            | Show all needed notifications |
+| `backgroundfetchsuccess` / `backgroundfetchfail` / `backgroundfetchabort` / `backgroundfetchclick` | Parallel | No | [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) events |
 
 ## Primitives, presets, and ready-made service workers
 
@@ -741,8 +769,15 @@ activateAndUpdateOnNextVisitSW({
 | `postMessageToServiceWorker(message, options?)`                 | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                                  |
 | `getServiceWorkerVersion(options?)`                             | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                               |
 | `pingServiceWorker(options?)`                                   | client | GET /sw-ping (handled by ping plugin). Wakes SW if sleeping, checks fetch availability. Returns `'ok' \| 'no-sw' \| 'error'`.                                       |
+| `isBackgroundFetchSupported()`                                  | client | Check if [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) is available. Returns `Promise<boolean>`.                   |
+| `startBackgroundFetch(registration, id, requests, options?)`     | client | Start a background fetch. Returns `Promise<BackgroundFetchRegistration>`.                                                                                            |
+| `getBackgroundFetchRegistration(registration, id)`              | client | Get background fetch registration by id. Returns `Promise<BackgroundFetchRegistration \| undefined>`.                                                               |
+| `abortBackgroundFetch(registration, id)`                        | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                 |
+| `getBackgroundFetchIds(registration)`                           | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                  |
 | `normalizeUrl(url)`                                             | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                    |
 | `notifyClients(messageType)`                                    | SW     | Send `{ type: messageType }` to all client windows.                                                                                                                 |
+
+**Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.
 
 <br />
 

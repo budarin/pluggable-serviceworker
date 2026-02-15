@@ -35,6 +35,14 @@ export enum ServiceWorkerErrorType {
     PERIODICSYNC_ERROR = 'periodicsync_error',
     /** Ошибка в плагине при обработке события push или при показе уведомления */
     PUSH_ERROR = 'push_error',
+    /** Ошибка в плагине при обработке события backgroundfetchsuccess */
+    BACKGROUNDFETCHSUCCESS_ERROR = 'backgroundfetchsuccess_error',
+    /** Ошибка в плагине при обработке события backgroundfetchfail */
+    BACKGROUNDFETCHFAIL_ERROR = 'backgroundfetchfail_error',
+    /** Ошибка в плагине при обработке события backgroundfetchabort */
+    BACKGROUNDFETCHABORT_ERROR = 'backgroundfetchabort_error',
+    /** Ошибка в плагине при обработке события backgroundfetchclick */
+    BACKGROUNDFETCHCLICK_ERROR = 'backgroundfetchclick_error',
     REJECTION_HANDLED = 'rejectionhandled',
     UNHANDLED_REJECTION = 'unhandledrejection',
 }
@@ -52,6 +60,10 @@ declare global {
     interface ServiceWorkerGlobalScopeEventMap {
         sync: SyncEvent;
         periodicsync: PeriodicSyncEvent;
+        backgroundfetchsuccess: BackgroundFetchUpdateUIEvent;
+        backgroundfetchfail: BackgroundFetchUpdateUIEvent;
+        backgroundfetchabort: BackgroundFetchEvent;
+        backgroundfetchclick: BackgroundFetchEvent;
     }
 }
 
@@ -139,6 +151,22 @@ interface ServiceWorkerEventHandlers {
         | PushNotificationPayload
         | false
         | Promise<void | PushNotificationPayload | false>;
+    backgroundfetchsuccess?: (
+        event: BackgroundFetchUpdateUIEvent,
+        logger: Logger
+    ) => void | Promise<void>;
+    backgroundfetchfail?: (
+        event: BackgroundFetchUpdateUIEvent,
+        logger: Logger
+    ) => void | Promise<void>;
+    backgroundfetchabort?: (
+        event: BackgroundFetchEvent,
+        logger: Logger
+    ) => void | Promise<void>;
+    backgroundfetchclick?: (
+        event: BackgroundFetchEvent,
+        logger: Logger
+    ) => void | Promise<void>;
 }
 
 export interface ServiceWorkerPlugin<
@@ -176,23 +204,46 @@ type PushHandler = (
     | PushNotificationPayload
     | false
     | Promise<void | PushNotificationPayload | false>;
+type BackgroundFetchSuccessHandler = (
+    event: BackgroundFetchUpdateUIEvent,
+    logger: Logger
+) => void | Promise<void>;
+type BackgroundFetchFailHandler = (
+    event: BackgroundFetchUpdateUIEvent,
+    logger: Logger
+) => void | Promise<void>;
+type BackgroundFetchAbortHandler = (
+    event: BackgroundFetchEvent,
+    logger: Logger
+) => void | Promise<void>;
+type BackgroundFetchClickHandler = (
+    event: BackgroundFetchEvent,
+    logger: Logger
+) => void | Promise<void>;
 
-export function createEventHandlers<_C extends PluginContext = PluginContext>(
-    plugins: readonly ServiceWorkerPlugin<_C>[],
-    options: _C & ServiceWorkerInitOptions
-): {
-    install: (event: ExtendableEvent) => void;
-    activate: (event: ExtendableEvent) => void;
-    fetch: (event: FetchEvent) => void;
-    message: (event: SwMessageEvent) => void;
-    sync: (event: SyncEvent) => void;
-    periodicsync: (event: PeriodicSyncEvent) => void;
-    push: (event: PushEvent) => void;
+/** Тип возвращаемых обработчиков: обработчики событий SW добавляются только при наличии плагинов. */
+export interface CreateEventHandlersResult {
+    install?: (event: ExtendableEvent) => void;
+    activate?: (event: ExtendableEvent) => void;
+    fetch?: (event: FetchEvent) => void;
+    message?: (event: SwMessageEvent) => void;
+    sync?: (event: SyncEvent) => void;
+    periodicsync?: (event: PeriodicSyncEvent) => void;
+    push?: (event: PushEvent) => void;
+    backgroundfetchsuccess?: (event: BackgroundFetchUpdateUIEvent) => void;
+    backgroundfetchfail?: (event: BackgroundFetchUpdateUIEvent) => void;
+    backgroundfetchabort?: (event: BackgroundFetchEvent) => void;
+    backgroundfetchclick?: (event: BackgroundFetchEvent) => void;
     error: (event: ErrorEvent) => void;
     messageerror: (event: MessageEvent) => void;
     unhandledrejection: (event: PromiseRejectionEvent) => void;
     rejectionhandled: (event: PromiseRejectionEvent) => void;
-} {
+}
+
+export function createEventHandlers<_C extends PluginContext = PluginContext>(
+    plugins: readonly ServiceWorkerPlugin<_C>[],
+    options: _C & ServiceWorkerInitOptions
+): CreateEventHandlersResult {
     const handlers = {
         install: [] as InstallHandler[],
         activate: [] as ActivateHandler[],
@@ -201,6 +252,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         sync: [] as SyncHandler[],
         periodicsync: [] as PeriodicsyncHandler[],
         push: [] as PushHandler[],
+        backgroundfetchsuccess: [] as BackgroundFetchSuccessHandler[],
+        backgroundfetchfail: [] as BackgroundFetchFailHandler[],
+        backgroundfetchabort: [] as BackgroundFetchAbortHandler[],
+        backgroundfetchclick: [] as BackgroundFetchClickHandler[],
     };
 
     const logger = options.logger ?? console;
@@ -225,231 +280,25 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 plugin.periodicsync as PeriodicsyncHandler
             );
         if (plugin.push) handlers.push.push(plugin.push as PushHandler);
+        if (plugin.backgroundfetchsuccess)
+            handlers.backgroundfetchsuccess.push(
+                plugin.backgroundfetchsuccess as BackgroundFetchSuccessHandler
+            );
+        if (plugin.backgroundfetchfail)
+            handlers.backgroundfetchfail.push(
+                plugin.backgroundfetchfail as BackgroundFetchFailHandler
+            );
+        if (plugin.backgroundfetchabort)
+            handlers.backgroundfetchabort.push(
+                plugin.backgroundfetchabort as BackgroundFetchAbortHandler
+            );
+        if (plugin.backgroundfetchclick)
+            handlers.backgroundfetchclick.push(
+                plugin.backgroundfetchclick as BackgroundFetchClickHandler
+            );
     });
 
-    return {
-        install: (event: ExtendableEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.install.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, logger))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    ServiceWorkerErrorType.INSTALL_ERROR
-                                )
-                            )
-                    )
-                )
-            );
-        },
-
-        activate: (event: ExtendableEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.activate.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, logger))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    ServiceWorkerErrorType.ACTIVATE_ERROR
-                                )
-                            )
-                    )
-                )
-            );
-        },
-
-        fetch: (event: FetchEvent): void => {
-            event.respondWith(
-                (async (): Promise<Response> => {
-                    for (const handler of handlers.fetch) {
-                        try {
-                            const result = await handler(event, logger);
-                            if (result !== undefined) {
-                                return result;
-                            }
-                        } catch (error) {
-                            options.onError?.(
-                                error as Error,
-                                event,
-                                ServiceWorkerErrorType.FETCH_ERROR
-                            );
-                        }
-                    }
-                    try {
-                        return await fetch(event.request);
-                    } catch (error) {
-                        // Офлайн или сетевая ошибка — не оставляем promise в respondWith rejected
-                        options.onError?.(
-                            error as Error,
-                            event,
-                            ServiceWorkerErrorType.FETCH_ERROR
-                        );
-                        return new Response('', {
-                            status: 503,
-                            statusText: 'Service Unavailable',
-                        });
-                    }
-                })()
-            );
-        },
-
-        message: (event: SwMessageEvent): void => {
-            handlers.message.forEach((handler) => {
-                try {
-                    handler(event, logger);
-                } catch (error) {
-                    options.onError?.(
-                        error as Error,
-                        event,
-                        ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
-                    );
-                }
-            });
-        },
-
-        sync: (event: SyncEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.sync.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, logger))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    ServiceWorkerErrorType.SYNC_ERROR
-                                )
-                            )
-                    )
-                )
-            );
-        },
-
-        periodicsync: (event: PeriodicSyncEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.periodicsync.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, logger))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    ServiceWorkerErrorType.PERIODICSYNC_ERROR
-                                )
-                            )
-                    )
-                )
-            );
-        },
-
-        push: (event: PushEvent): void => {
-            event.waitUntil(
-                (async (): Promise<void> => {
-                    const returns: (
-                        | PushNotificationPayload
-                        | false
-                        | undefined
-                    )[] = [];
-
-                    for (const handler of handlers.push) {
-                        try {
-                            const result = await Promise.resolve(
-                                handler(event, logger)
-                            );
-                            returns.push(
-                                result as
-                                    | PushNotificationPayload
-                                    | false
-                                    | undefined
-                            );
-                        } catch (error) {
-                            options.onError?.(
-                                error as Error,
-                                event,
-                                ServiceWorkerErrorType.PUSH_ERROR
-                            );
-                            returns.push(undefined);
-                        }
-                    }
-
-                    const payloads = returns.filter(
-                        (r): r is PushNotificationPayload =>
-                            r != null &&
-                            typeof r === 'object' &&
-                            !Array.isArray(r) &&
-                            'title' in r &&
-                            typeof r.title === 'string'
-                    );
-
-                    if (
-                        returns.length === handlers.push.length &&
-                        returns.every((r) => r === false)
-                    ) {
-                        return;
-                    }
-
-                    for (const payload of payloads) {
-                        const { title, ...opts } = payload;
-                        await self.registration.showNotification(title, opts);
-                    }
-                    if (payloads.length > 0) {
-                        return;
-                    }
-                    if (!returns.every((r) => r === undefined)) return;
-
-                    // Fallback: все плагины вернули undefined — показываем из event.data
-                    try {
-                        const data = event.data;
-                        if (!data) {
-                            return;
-                        }
-
-                        let payload: unknown;
-                        try {
-                            payload = await data.json();
-                        } catch {
-                            const text = data.text();
-                            payload = text.length > 0 ? { title: text } : null;
-                        }
-
-                        if (payload == null) {
-                            return;
-                        }
-
-                        const withTitle =
-                            typeof payload === 'object' &&
-                            payload !== null &&
-                            'title' in payload &&
-                            typeof (payload as { title: unknown }).title ===
-                                'string'
-                                ? (payload as {
-                                      title: string;
-                                  } & Record<string, unknown>)
-                                : null;
-                        if (withTitle == null) {
-                            return;
-                        }
-
-                        const { title, ...opts } = withTitle;
-                        await self.registration.showNotification(title, opts);
-                    } catch (error) {
-                        options.onError?.(
-                            error as Error,
-                            event,
-                            ServiceWorkerErrorType.PUSH_ERROR
-                        );
-                    }
-                })()
-            );
-        },
-
+    const result: CreateEventHandlersResult = {
         error: (event: ErrorEvent): void => {
             try {
                 options.onError?.(
@@ -498,6 +347,297 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
             }
         },
     };
+
+    if (handlers.install.length > 0) {
+        result.install = (event: ExtendableEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.install.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.INSTALL_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.activate.length > 0) {
+        result.activate = (event: ExtendableEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.activate.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.ACTIVATE_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.fetch.length > 0) {
+        result.fetch = (event: FetchEvent): void => {
+            event.respondWith(
+                (async (): Promise<Response> => {
+                    for (const handler of handlers.fetch) {
+                        try {
+                            const res = await handler(event, logger);
+                            if (res !== undefined) return res;
+                        } catch (error) {
+                            options.onError?.(
+                                error as Error,
+                                event,
+                                ServiceWorkerErrorType.FETCH_ERROR
+                            );
+                        }
+                    }
+                    try {
+                        return await fetch(event.request);
+                    } catch (error) {
+                        options.onError?.(
+                            error as Error,
+                            event,
+                            ServiceWorkerErrorType.FETCH_ERROR
+                        );
+                        return new Response('', {
+                            status: 503,
+                            statusText: 'Service Unavailable',
+                        });
+                    }
+                })()
+            );
+        };
+    }
+    if (handlers.message.length > 0) {
+        result.message = (event: SwMessageEvent): void => {
+            handlers.message.forEach((handler) => {
+                try {
+                    handler(event, logger);
+                } catch (error) {
+                    options.onError?.(
+                        error as Error,
+                        event,
+                        ServiceWorkerErrorType.MESSAGE_ERROR_HANDLER
+                    );
+                }
+            });
+        };
+    }
+    if (handlers.sync.length > 0) {
+        result.sync = (event: SyncEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.sync.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.SYNC_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.periodicsync.length > 0) {
+        result.periodicsync = (event: PeriodicSyncEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.periodicsync.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.PERIODICSYNC_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.push.length > 0) {
+        result.push = (event: PushEvent): void => {
+            event.waitUntil(
+                (async (): Promise<void> => {
+                    const returns: (
+                        | PushNotificationPayload
+                        | false
+                        | undefined
+                    )[] = [];
+                    for (const handler of handlers.push) {
+                        try {
+                            const res = await Promise.resolve(
+                                handler(event, logger)
+                            );
+                            returns.push(
+                                res as
+                                    | PushNotificationPayload
+                                    | false
+                                    | undefined
+                            );
+                        } catch (error) {
+                            options.onError?.(
+                                error as Error,
+                                event,
+                                ServiceWorkerErrorType.PUSH_ERROR
+                            );
+                            returns.push(undefined);
+                        }
+                    }
+                    const payloads = returns.filter(
+                        (r): r is PushNotificationPayload =>
+                            r != null &&
+                            typeof r === 'object' &&
+                            !Array.isArray(r) &&
+                            'title' in r &&
+                            typeof r.title === 'string'
+                    );
+                    if (
+                        returns.length === handlers.push.length &&
+                        returns.every((r) => r === false)
+                    ) {
+                        return;
+                    }
+                    for (const payload of payloads) {
+                        const { title, ...opts } = payload;
+                        await self.registration.showNotification(title, opts);
+                    }
+                    if (payloads.length > 0) return;
+                    if (!returns.every((r) => r === undefined)) return;
+                    try {
+                        const data = event.data;
+                        if (!data) return;
+                        let payload: unknown;
+                        try {
+                            payload = await data.json();
+                        } catch {
+                            const text = data.text();
+                            payload = text.length > 0 ? { title: text } : null;
+                        }
+                        if (payload == null) return;
+                        const withTitle =
+                            typeof payload === 'object' &&
+                            payload !== null &&
+                            'title' in payload &&
+                            typeof (payload as { title: unknown }).title ===
+                                'string'
+                                ? (payload as {
+                                      title: string;
+                                  } & Record<string, unknown>)
+                                : null;
+                        if (withTitle == null) return;
+                        const { title, ...opts } = withTitle;
+                        await self.registration.showNotification(title, opts);
+                    } catch (error) {
+                        options.onError?.(
+                            error as Error,
+                            event,
+                            ServiceWorkerErrorType.PUSH_ERROR
+                        );
+                    }
+                })()
+            );
+        };
+    }
+    if (handlers.backgroundfetchsuccess.length > 0) {
+        result.backgroundfetchsuccess = (
+            event: BackgroundFetchUpdateUIEvent
+        ): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.backgroundfetchsuccess.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.BACKGROUNDFETCHSUCCESS_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.backgroundfetchfail.length > 0) {
+        result.backgroundfetchfail = (
+            event: BackgroundFetchUpdateUIEvent
+        ): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.backgroundfetchfail.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.BACKGROUNDFETCHFAIL_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.backgroundfetchabort.length > 0) {
+        result.backgroundfetchabort = (event: BackgroundFetchEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.backgroundfetchabort.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.BACKGROUNDFETCHABORT_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+    if (handlers.backgroundfetchclick.length > 0) {
+        result.backgroundfetchclick = (event: BackgroundFetchEvent): void => {
+            event.waitUntil(
+                Promise.all(
+                    handlers.backgroundfetchclick.map((handler) =>
+                        Promise.resolve()
+                            .then(() => handler(event, logger))
+                            .catch((error: unknown) =>
+                                options.onError?.(
+                                    error as Error,
+                                    event,
+                                    ServiceWorkerErrorType.BACKGROUNDFETCHCLICK_ERROR
+                                )
+                            )
+                    )
+                )
+            );
+        };
+    }
+
+    return result;
 }
 
 export function initServiceWorker<P extends readonly unknown[]>(
@@ -538,14 +678,39 @@ export function initServiceWorker<P extends readonly unknown[]>(
     );
     self.addEventListener(SW_EVENT_REJECTIONHANDLED, handlers.rejectionhandled);
 
-    // Регистрируем стандартные обработчики событий Service Worker
-    self.addEventListener(SW_EVENT_INSTALL, handlers.install);
-    self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
-    self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
-    self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
-    self.addEventListener(SW_EVENT_SYNC, handlers.sync);
-    self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
-    self.addEventListener(SW_EVENT_PUSH, handlers.push);
+    // Регистрируем обработчики событий SW только для тех, для которых есть плагины
+    if (handlers.install)
+        self.addEventListener(SW_EVENT_INSTALL, handlers.install);
+    if (handlers.activate)
+        self.addEventListener(SW_EVENT_ACTIVATE, handlers.activate);
+    if (handlers.fetch)
+        self.addEventListener(SW_EVENT_FETCH, handlers.fetch);
+    if (handlers.message)
+        self.addEventListener(SW_EVENT_MESSAGE, handlers.message);
+    if (handlers.sync) self.addEventListener(SW_EVENT_SYNC, handlers.sync);
+    if (handlers.periodicsync)
+        self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
+    if (handlers.push) self.addEventListener(SW_EVENT_PUSH, handlers.push);
+    if (handlers.backgroundfetchsuccess)
+        self.addEventListener(
+            'backgroundfetchsuccess',
+            handlers.backgroundfetchsuccess
+        );
+    if (handlers.backgroundfetchfail)
+        self.addEventListener(
+            'backgroundfetchfail',
+            handlers.backgroundfetchfail
+        );
+    if (handlers.backgroundfetchabort)
+        self.addEventListener(
+            'backgroundfetchabort',
+            handlers.backgroundfetchabort
+        );
+    if (handlers.backgroundfetchclick)
+        self.addEventListener(
+            'backgroundfetchclick',
+            handlers.backgroundfetchclick
+        );
 }
 
 function createVersionPlugin(version: string): Plugin {

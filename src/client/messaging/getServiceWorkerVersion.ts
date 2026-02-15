@@ -1,9 +1,9 @@
-import { isServiceWorkerSupported } from './isServiceWorkerSupported.js';
+import { isServiceWorkerSupported } from '../health/isServiceWorkerSupported.js';
 import { postMessageToServiceWorker } from './postMessageToServiceWorker.js';
 import {
     PLUGGABLE_SW_GET_VERSION,
     PLUGGABLE_SW_VERSION,
-} from '../constants/versionMessages.js';
+} from '../../constants/versionMessages.js';
 
 export interface GetServiceWorkerVersionOptions {
     /** Таймаут ожидания ответа, мс (по умолчанию 5000). */
@@ -77,4 +77,3 @@ export async function getServiceWorkerVersion(
         );
     });
 }
-

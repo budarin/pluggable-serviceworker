@@ -90,4 +90,3 @@ function attachUpdateListener(
         registration.removeEventListener('updatefound', onUpdateFound);
     };
 }
-

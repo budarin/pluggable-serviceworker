@@ -41,10 +41,14 @@ describe('initServiceWorker', () => {
         ];
 
         const errorIndices = errorEvents.map((e) => calls.indexOf(e));
-        const standardIndices = standardEvents.map((e) => calls.indexOf(e));
+        const standardIndices = standardEvents
+            .map((e) => calls.indexOf(e))
+            .filter((i) => i >= 0);
         const maxErrorIndex = Math.max(...errorIndices);
-        const minStandardIndex = Math.min(...standardIndices);
-        expect(maxErrorIndex).toBeLessThan(minStandardIndex);
+        if (standardIndices.length > 0) {
+            const minStandardIndex = Math.min(...standardIndices);
+            expect(maxErrorIndex).toBeLessThan(minStandardIndex);
+        }
     });
 
     it('warns when plugin names are duplicated', () => {

@@ -1,3 +1,11 @@
+## Unreleased
+
+- **Background Fetch API**: Service worker now supports Background Fetch events. Plugins can implement `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick` handlers. New error types: `BACKGROUNDFETCHSUCCESS_ERROR`, `BACKGROUNDFETCHFAIL_ERROR`, `BACKGROUNDFETCHABORT_ERROR`, `BACKGROUNDFETCHCLICK_ERROR`.
+- **Client — Background Fetch**: New client utilities (import from `@budarin/pluggable-serviceworker/client` or `.../client/background-fetch`): `isBackgroundFetchSupported()`, `startBackgroundFetch()`, `getBackgroundFetchRegistration()`, `abortBackgroundFetch()`, `getBackgroundFetchIds()`.
+- **Client — structure**: Client utilities are grouped into subfolders. New package exports: `./client/registration`, `./client/messaging`, `./client/health`, `./client/background-fetch`. Import from these subpaths to reduce bundle size. The main `./client` entry still re-exports everything for backward compatibility.
+- **Event handlers only when needed**: Event listeners (`install`, `activate`, `fetch`, `message`, `sync`, `periodicsync`, `push`, background fetch events) are now registered only when at least one plugin provides a handler for that event. No empty listeners. Return type of `createEventHandlers` is now `CreateEventHandlersResult` with optional event handler properties.
+- Documentation updated (README.md, README.ru.md): Background Fetch, client subpaths, new error types, conditional handler registration.
+
 ## 1.8.0
 
 - **Breaking change**: Removed deprecated `ServiceWorkerConfig` type alias (use `ServiceWorkerInitOptions` instead).

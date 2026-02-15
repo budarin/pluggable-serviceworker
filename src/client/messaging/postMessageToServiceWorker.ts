@@ -1,4 +1,4 @@
-import { isServiceWorkerSupported } from './isServiceWorkerSupported.js';
+import { isServiceWorkerSupported } from '../health/isServiceWorkerSupported.js';
 
 export interface PostMessageToServiceWorkerOptions {
     /**
@@ -44,4 +44,3 @@ export async function postMessageToServiceWorker(
 
     return false;
 }
-

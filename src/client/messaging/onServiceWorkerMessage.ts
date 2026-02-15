@@ -38,4 +38,3 @@ export function onServiceWorkerMessage(
         navigator.serviceWorker.removeEventListener('message', listener);
     };
 }
-

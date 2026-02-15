@@ -7,4 +7,3 @@
 export function isServiceWorkerSupported(): boolean {
     return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
 }
-
