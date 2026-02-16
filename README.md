@@ -147,7 +147,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
-- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory").
+- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
 - **`options`** — at least `version` (required), and optional `pingPath?`, `logger?`, `onError?`. The **logger** (from options or `console`) is passed as the second argument to plugin handlers.
 
 **Example:**

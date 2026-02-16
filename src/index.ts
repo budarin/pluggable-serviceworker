@@ -693,6 +693,12 @@ export function initServiceWorker<P extends readonly unknown[]>(
 
     const opts = { ...options, logger: options.logger ?? console };
 
+    const filteredPlugins: readonly Plugin[] = Array.isArray(plugins)
+        ? (plugins as readonly (Plugin | null | undefined)[]).filter(
+              (p): p is Plugin => p != null
+          )
+        : [];
+
     const internalPlugins: Plugin[] = [
         createVersionPlugin(opts.version),
         createPingPlugin(opts.pingPath ?? SW_PING_PATH),
@@ -700,10 +706,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
 
     const names = new Set<string>();
 
-    for (const plugin of [
-        ...internalPlugins,
-        ...(plugins as readonly Plugin[]),
-    ]) {
+    for (const plugin of [...internalPlugins, ...filteredPlugins]) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
@@ -712,10 +715,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
     }
 
     const handlers = createEventHandlers(
-        [
-            ...internalPlugins,
-            ...(plugins as readonly Plugin[]),
-        ] as readonly Plugin[],
+        [...internalPlugins, ...filteredPlugins],
         opts
     );
 

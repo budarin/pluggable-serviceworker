@@ -1,5 +1,10 @@
+## 1.10.1
+
+- Plugins array: `null` and `undefined` entries are ignored (e.g. when a factory returns `undefined` when an API is unavailable). No need to filter manually.
+
 ## 1.10.0
 
+- Plugins array: `null` and `undefined` entries are ignored (e.g. when a factory returns `undefined` when an API is unavailable). No need to filter manually.
 - **Breaking**: `ServiceWorkerErrorType` enum replaced with `serviceWorkerErrorTypes` const object and `ServiceWorkerErrorType` type. Import the value as `serviceWorkerErrorTypes` (e.g. `serviceWorkerErrorTypes.INSTALL_ERROR`); use type `ServiceWorkerErrorType` for annotations. Aligns with project rule: no enums, use const object + type (see .cursor/rules/types.mdc).
 - **Internal**: Added `src/constants/versionMessages.ts` and `src/constants/paths.ts` (previously missing modules).
 - **Rules**: types.mdc — "No enums, use const object + type"; main.mdc — strengthened role as equal co-author and critical review before changes.

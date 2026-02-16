@@ -83,4 +83,29 @@ describe('initServiceWorker', () => {
 
         expect(secondCallCount).toBe(firstCallCount);
     });
+
+    it('ignores null and undefined in plugins array', () => {
+        const warn = vi.fn();
+        const plugins = [
+            undefined,
+            { name: 'real' } as ServiceWorkerPlugin,
+            null,
+        ];
+        expect(() => {
+            initServiceWorker(plugins as ServiceWorkerPlugin[], {
+                version: 'test-version',
+                logger: {
+                    info: vi.fn(),
+                    warn,
+                    error: vi.fn(),
+                    debug: vi.fn(),
+                    trace: vi.fn(),
+                },
+            });
+        }).not.toThrow();
+        expect(warn).not.toHaveBeenCalledWith(
+            expect.stringContaining('Duplicate')
+        );
+        expect(addEventListener.mock.calls.length).toBeGreaterThan(0);
+    });
 });
