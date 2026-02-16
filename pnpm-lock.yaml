@@ -16,11 +16,11 @@ importers:
         specifier: ^25.2.3
         version: 25.2.3
       '@types/serviceworker':
-        specifier: ^0.0.190
-        version: 0.0.190
+        specifier: ^0.0.191
+        version: 0.0.191
       '@types/web':
-        specifier: ^0.0.335
-        version: 0.0.335
+        specifier: ^0.0.336
+        version: 0.0.336
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -498,11 +498,11 @@ packages:
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
 
-  '@types/serviceworker@0.0.190':
-    resolution: {integrity: sha512-bzItk9mz6qntVZ2AI/foSu6OADylZEYqcWZxxYhm7vLD3e0bG4iPJHzltAOL+V8OBb7QbZkEofIC6t1LFEqMsA==}
+  '@types/serviceworker@0.0.191':
+    resolution: {integrity: sha512-DFQspa5cuobxgUuoeGGYBW45oOvPvgYp68Yk24mLdMGGGcgoH0nj5TawBZdRpIqPV8kkZodcQrqradnwGhRVNQ==}
 
-  '@types/web@0.0.335':
-    resolution: {integrity: sha512-MdqOg7t1MaQdaQoGuffSdxOx8icrisFBAuI8/DrdCco4TmRVgcwPJdS9zzbQ6rYocRQNW9yekQtnurTDWksOBg==}
+  '@types/web@0.0.336':
+    resolution: {integrity: sha512-BF63oBTS3D5d1XEKR2fou32PlxSqiaYZxTCchI/eeS/q6f51mKQdcVvFJcLUPsiO8G6KyEPlSYVvhQfa1KVeSw==}
 
   '@vitejs/plugin-react@5.1.4':
     resolution: {integrity: sha512-VIcFLdRi/VYRU8OL/puL7QXMYafHmqOnwTZY50U1JPlCNj30PxCMx65c494b1K9be9hX83KVt0+gTEwTWLqToA==}
@@ -1149,9 +1149,9 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@types/serviceworker@0.0.190': {}
+  '@types/serviceworker@0.0.191': {}
 
-  '@types/web@0.0.335': {}
+  '@types/web@0.0.336': {}
 
   '@vitejs/plugin-react@5.1.4(vite@7.3.1(@types/node@25.2.3))':
     dependencies:
