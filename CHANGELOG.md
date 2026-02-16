@@ -1,3 +1,7 @@
+## 1.10.3
+
+- Docs: README, README.ru — in "How the package works" section, added that `null` and `undefined` entries in the plugins array are ignored (no need to filter manually).
+
 ## 1.10.2
 
 - **Background Fetch**: At service worker init, support is checked (`'backgroundFetch' in self.registration`). Handlers for `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick` are registered only when the API is supported. If plugins registered BF handlers but the browser does not support Background Fetch, a warning is logged. Documentation (README, README.ru) updated accordingly.

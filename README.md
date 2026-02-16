@@ -439,6 +439,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
 How the package works:
 
+- `null` and `undefined` entries in the plugins array are ignored (e.g. when a factory returns `undefined` when an API is unavailable). No need to filter manually
 - Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push, backgroundfetchsuccess, backgroundfetchfail, backgroundfetchabort, backgroundfetchclick
 - Plugins are sorted by `order` (ascending, default 0)
 - In that order, each plugin's handlers are pushed into the corresponding arrays

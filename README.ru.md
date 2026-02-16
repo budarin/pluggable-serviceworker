@@ -444,6 +444,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
 Логика работы пакета очень простая:
 
+- элементы массива плагинов `null` и `undefined` игнорируются (например, когда фабрика возвращает `undefined`, если API недоступен). Фильтровать вручную не нужно
 - создаются массивы под все типы событий: install, activate, fetch, message, sync, periodicsync, push, backgroundfetchsuccess, backgroundfetchfail, backgroundfetchabort, backgroundfetchclick
 - плагины сортируются по `order` (по возрастанию, по умолчанию 0)
 - в этом порядке по каждому плагину его обработчики добавляются в соответствующие массивы по типам
