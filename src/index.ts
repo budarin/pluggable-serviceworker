@@ -740,26 +740,45 @@ export function initServiceWorker<P extends readonly unknown[]>(
     if (handlers.periodicsync)
         self.addEventListener(SW_EVENT_PERIODICSYNC, handlers.periodicsync);
     if (handlers.push) self.addEventListener(SW_EVENT_PUSH, handlers.push);
-    if (handlers.backgroundfetchsuccess)
-        self.addEventListener(
-            SW_EVENT_BACKGROUNDFETCHSUCCESS,
-            handlers.backgroundfetchsuccess
+
+    const hasBackgroundFetchHandlers =
+        !!handlers.backgroundfetchsuccess ||
+        !!handlers.backgroundfetchfail ||
+        !!handlers.backgroundfetchabort ||
+        !!handlers.backgroundfetchclick;
+    const isBackgroundFetchSupported =
+        typeof self.registration !== 'undefined' &&
+        self.registration != null &&
+        'backgroundFetch' in (self.registration as object);
+
+    if (hasBackgroundFetchHandlers && !isBackgroundFetchSupported) {
+        opts.logger.warn(
+            'Background Fetch API is not supported in this browser; plugins registered background fetch handlers but they will not be used.'
         );
-    if (handlers.backgroundfetchfail)
-        self.addEventListener(
-            SW_EVENT_BACKGROUNDFETCHFAIL,
-            handlers.backgroundfetchfail
-        );
-    if (handlers.backgroundfetchabort)
-        self.addEventListener(
-            SW_EVENT_BACKGROUNDFETCHABORT,
-            handlers.backgroundfetchabort
-        );
-    if (handlers.backgroundfetchclick)
-        self.addEventListener(
-            SW_EVENT_BACKGROUNDFETCHCLICK,
-            handlers.backgroundfetchclick
-        );
+    }
+
+    if (isBackgroundFetchSupported) {
+        if (handlers.backgroundfetchsuccess)
+            self.addEventListener(
+                SW_EVENT_BACKGROUNDFETCHSUCCESS,
+                handlers.backgroundfetchsuccess
+            );
+        if (handlers.backgroundfetchfail)
+            self.addEventListener(
+                SW_EVENT_BACKGROUNDFETCHFAIL,
+                handlers.backgroundfetchfail
+            );
+        if (handlers.backgroundfetchabort)
+            self.addEventListener(
+                SW_EVENT_BACKGROUNDFETCHABORT,
+                handlers.backgroundfetchabort
+            );
+        if (handlers.backgroundfetchclick)
+            self.addEventListener(
+                SW_EVENT_BACKGROUNDFETCHCLICK,
+                handlers.backgroundfetchclick
+            );
+    }
 }
 
 function createVersionPlugin(version: string): Plugin {

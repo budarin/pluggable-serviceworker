@@ -443,6 +443,7 @@ How the package works:
 - Plugins are sorted by `order` (ascending, default 0)
 - In that order, each plugin's handlers are pushed into the corresponding arrays
 - **Only event types that have at least one handler get a listener** — `addEventListener` is called only for those
+- **Background Fetch**: listeners for `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick` are registered only when the browser supports the API (`'backgroundFetch' in self.registration`). If plugins registered BF handlers but the API is not supported, a warning is logged.
 - When an event fires in the service worker, handlers from the matching array are run
 
 ### 🎯 Handler behaviour

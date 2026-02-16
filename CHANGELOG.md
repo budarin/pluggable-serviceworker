@@ -1,3 +1,7 @@
+## 1.10.2
+
+- **Background Fetch**: At service worker init, support is checked (`'backgroundFetch' in self.registration`). Handlers for `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick` are registered only when the API is supported. If plugins registered BF handlers but the browser does not support Background Fetch, a warning is logged. Documentation (README, README.ru) updated accordingly.
+
 ## 1.10.1
 
 - Plugins array: `null` and `undefined` entries are ignored (e.g. when a factory returns `undefined` when an API is unavailable). No need to filter manually.
