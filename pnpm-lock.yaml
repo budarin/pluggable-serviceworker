@@ -34,11 +34,11 @@ importers:
   demo:
     dependencies:
       '@budarin/http-constants':
-        specifier: ^1.0.21
+        specifier: ^1.0.22
         version: 1.0.22
       '@budarin/pluggable-serviceworker':
-        specifier: 1.9.0
-        version: 1.9.0
+        specifier: workspace:*
+        version: link:..
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -149,9 +149,6 @@ packages:
 
   '@budarin/http-constants@1.0.22':
     resolution: {integrity: sha512-XZu3JmErHaTTwDPnsGikjwzZ/NHS3DWQNcxmRemhY1jJTr9Va5Arnk4mbE6lVAg1bir1AYyO1zygzQTjiSEtZw==}
-
-  '@budarin/pluggable-serviceworker@1.9.0':
-    resolution: {integrity: sha512-bgwMYSh8FNvGmStIFsZ+kWYXHwdpTlgLJ/Oomvy2ZSi/LYY49Fj0bH7aiIA2GV8pwqGd3xqwMfG+Gg5T5NyMbg==}
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -933,10 +930,6 @@ snapshots:
       '@babel/helper-validator-identifier': 7.28.5
 
   '@budarin/http-constants@1.0.22': {}
-
-  '@budarin/pluggable-serviceworker@1.9.0':
-    dependencies:
-      '@budarin/http-constants': 1.0.22
 
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
