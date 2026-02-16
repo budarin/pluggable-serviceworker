@@ -12,6 +12,46 @@ A library for building modular, pluggable Service Workers.
 [![bundle](https://img.shields.io/bundlephobia/minzip/@budarin/pluggable-serviceworker)](https://bundlephobia.com/result?p=@budarin/pluggable-serviceworker)
 [![GitHub](https://img.shields.io/github/license/budarin/pluggable-serviceworker)](https://github.com/budarin/pluggable-serviceworker)
 
+## Table of contents
+
+- [Why this package?](#-why-this-package)
+  - [Modular architecture](#-modular-architecture)
+  - [Predictable execution order](#-predictable-execution-order)
+  - [Easy to learn](#-easy-to-learn)
+  - [Small footprint](#-small-footprint)
+  - [Full control](#-full-control)
+  - [Centralized error handling](#-centralized-error-handling)
+  - [Logging](#-logging)
+  - [Ready-made building blocks](#-ready-made-building-blocks)
+- [Installation](#-installation)
+- [Quick start](#-quick-start)
+  - [Basic usage](#basic-usage)
+- [Demo](#demo)
+- [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
+- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-logger-onerror)
+  - [Option fields](#option-fields)
+  - [Error handling](#error-handling)
+- [Plugins](#plugins)
+  - [Plugin interface](#-plugin-interface)
+  - [Method summary](#-method-summary)
+  - [Handler behaviour](#-handler-behaviour)
+- [Plugin execution order](#-plugin-execution-order)
+  - [Example](#example)
+- [Handler execution behaviour](#-handler-execution-behaviour)
+  - [Parallel execution](#-parallel-execution)
+  - [Sequential execution](#️-sequential-execution)
+  - [Summary table](#-summary-table)
+- [Primitives, presets, and ready-made service workers](#primitives-presets-and-ready-made-service-workers)
+  - [Primitives (plugins)](#primitives-plugins)
+  - [Presets](#presets)
+  - [Ready-made service workers](#ready-made-service-workers)
+  - [Published utilities](#published-utilities)
+  - [Recipe: waking up the SW](#-recipe-waking-up-the-sw)
+  - [Note on Chrome claim() workaround](#-note-on-chrome-claim-workaround)
+- [Developing a separate plugin package](#developing-a-separate-plugin-package)
+- [Plugins (ready-made)](#plugins-ready-made)
+- [License](#-license)
+
 ## 🚀 Why this package?
 
 Building Service Workers (SW) is traditionally hard: manual event handlers, error handling, execution order, or learning large frameworks. This package addresses that:
@@ -901,6 +941,17 @@ export function myPlugin(config: MyPluginConfig): Plugin {
     };
 }
 ```
+
+## Plugins (ready-made)
+
+Ready-made plugins are installed as separate dependencies and passed into `initServiceWorker` along with the rest:
+
+| Plugin | Purpose |
+|--------|---------|
+| [**@budarin/psw-plugin-serve-root-from-asset**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-root-from-asset) | Serves a chosen cached HTML asset for root (`/`) navigation — typical SPA setup. |
+| [**@budarin/psw-plugin-serve-range-requests**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-range-requests) | Handles Range requests for cached files (video, audio, PDF): 206 responses, seeking and streaming from cache. |
+
+Install and API details are in each plugin’s README on npm.
 
 ## 📄 License
 

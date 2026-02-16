@@ -1,3 +1,7 @@
+## 1.10.5
+
+- Docs: README and README.ru — added Table of contents / Содержание at the top; new section “Plugins (ready-made)” / “Плагины” at the end with links to `@budarin/psw-plugin-serve-root-from-asset` and `@budarin/psw-plugin-serve-range-requests`.
+
 ## 1.10.4
 
 - **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
