@@ -1,3 +1,7 @@
+## 1.10.4
+
+- **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
+
 ## 1.10.3
 
 - Docs: README, README.ru — in "How the package works" section, added that `null` and `undefined` entries in the plugins array are ignored (no need to filter manually).

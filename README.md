@@ -777,7 +777,7 @@ activateAndUpdateOnNextVisitSW({
 | `abortBackgroundFetch(registration, id)`                        | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                 |
 | `getBackgroundFetchIds(registration)`                           | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                  |
 | `normalizeUrl(url)`                                             | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                    |
-| `notifyClients(messageType)`                                    | SW     | Send `{ type: messageType }` to all client windows.                                                                                                                 |
+| `notifyClients(messageType, data?)`                             | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows. Optional second argument: object whose fields are merged into the message.  |
 
 **Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.
 
