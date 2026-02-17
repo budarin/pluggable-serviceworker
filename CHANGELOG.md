@@ -1,3 +1,9 @@
+## 1.10.6
+
+- Docs: README and README.ru — tone and structure aligned with project doc rules; sections rewritten to start with short "what / when" intros and to avoid duplicated explanations.
+- Docs: added `@budarin/psw-plugin-opfs-serve-range` to the "Plugins (ready-made)" / "Плагины" tables in both READMEs.
+- Docs: `docs/article-habr.md` and `.cursor/rules/docs.mdc` updated so future documentation changes follow the same neutral, user-focused style.
+
 ## 1.10.5
 
 - Docs: README and README.ru — added Table of contents / Содержание at the top; new section “Plugins (ready-made)” / “Плагины” at the end with links to `@budarin/psw-plugin-serve-root-from-asset` and `@budarin/psw-plugin-serve-range-requests`.

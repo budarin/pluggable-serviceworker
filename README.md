@@ -54,62 +54,57 @@ A library for building modular, pluggable Service Workers.
 
 ## 🚀 Why this package?
 
-Building Service Workers (SW) is traditionally hard: manual event handlers, error handling, execution order, or learning large frameworks. This package addresses that:
+Service workers are powerful but easy to get wrong: many event handlers, error paths, race conditions, and browser quirks. Large frameworks help, but often bring their own routing model, strategy DSL, and a lot of concepts to keep in your head. This package focuses on a smaller surface: a typed plugin contract, predictable execution, and tools that stay close to the native Service Worker API.
 
 ### 🔌 **Modular architecture**
 
-- **Plugin system** — split behaviour into independent modules
-- Each plugin handles one concern (caching, auth, notifications)
-- Add or remove behaviour without touching core SW code
-- No need to think about event wiring — write simple handlers and let the library run them
+- **Plugins as building blocks** — each plugin owns one concern (caching, auth, notifications, version checks).
+- You compose a service worker from small pieces instead of one large script.
+- Infrastructure code for events (`install`, `activate`, `fetch`, …) lives in the library; your code focuses on behaviour.
 
 ### 🎯 **Predictable execution order**
 
-- Execution order: plugins sorted by `order` (ascending, default 0)
-- Control initialization order explicitly
-- **Parallel** for `install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`
-- **Sequential** for `fetch` (first non-undefined response wins); for `push` all handlers run
-- **Event handlers are only registered when at least one plugin handles that event** — no empty listeners
-- Easy to slot new plugins where you need them
+- Plugins are sorted by `order` (ascending, default `0`) before handlers are registered.
+- For `fetch` the chain is **sequential**: the first plugin that returns a non‑`undefined` `Response` wins.
+- For `push` all handlers run; for most other events (`install`, `activate`, `message`, `sync`, `periodicsync`, background fetch events and others) handlers run **in parallel**.
+- Event listeners are only registered when at least one plugin provides a handler for that event.
 
 ### 📖 **Easy to learn**
 
-- Single contract: a plugin with optional hooks, no separate routing/strategy model
-- Few concepts: plugin, plugin factory, `initServiceWorker`, options
-- Low cognitive load: plugin order and return values define behaviour
-- Quick onboarding via examples and the `ServiceWorkerPlugin` type
+- One main concept: `Plugin` with optional hooks; no separate routing language or strategy objects.
+- Few moving parts: plugin, plugin factory, `initServiceWorker`, options.
+- The `ServiceWorkerPlugin` type acts as an executable contract and documentation at the same time.
 
 ### 📦 **Small footprint**
 
-- Minimal dependencies, plugin runtime only
-- No built-in build step or heavy modules — only what you import is bundled
-- Fits projects where bundle size and dependency count matter
+- Minimal runtime with no bundled build system or large dependencies.
+- Only the code you import is included in your bundle.
+- Suitable for projects where bundle size and dependency graph are tightly controlled.
 
 ### 🎛 **Full control**
 
-- You define cached assets and strategies (in code or config)
-- Plugin order, error handling, and logger are under your control
-- Custom logic in `fetch`, `push`, `sync` via your own plugins, no framework workarounds
+- You decide what to cache and how to update it.
+- Plugin order, logging, and error handling are configured explicitly.
+- If you need a non‑standard behaviour, you implement it directly in a plugin instead of working around a framework.
 
 ### 🛡️ **Centralized error handling**
 
-- **Single** `onError` for all error types in the service worker, with error location
-- **Typed errors** — you know what failed
-- **Isolation** — a failing plugin does not break others
-- **Automatic** handling of global error events
+- A single `onError` hook receives structured information about where and what failed.
+- Errors in one plugin do not break others; errors from global Service Worker events are handled in one place.
+- Error types are typed so you can react differently to installation, activation, fetch, or background fetch failures.
 
 ### 📝 **Logging**
 
-- **Configurable logger** with levels (`trace`, `debug`, `info`, `warn`, `error`)
-- The same `logger` is passed into every plugin handler
-- You can supply any object that implements the logger interface
+- Pluggable logger with levels (`trace`, `debug`, `info`, `warn`, `error`).
+- The same logger instance is passed into every plugin hook, which makes it easier to correlate logs across events.
+- You can use your own logging infrastructure as long as it matches the expected interface.
 
-### ✅ **Ready-made building blocks**
+### ✅ **Ready‑made building blocks**
 
-- Plugins: precache, cacheFirst, networkFirst, staleWhileRevalidate, skipWaiting, claim, and more
-- **offlineFirst** preset — precache on install, serve from cache on fetch
-- Ready-made SW entry points: **activateOnSignal**, **activateImmediately**, **activateOnNextVisit**
-- Client utilities: registration with claim() workaround, new-version detection, message subscription, version query, ping to wake SW, support check, **Background Fetch** (start/abort/status)
+- A set of ready‑to‑use plugins: `precache`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `skipWaiting`, `claim`, and others.
+- `offlineFirst` preset that combines precache on install with cache‑first fetch behaviour.
+- Ready‑made service worker entry points: `activateOnSignal`, `activateImmediately`, `activateOnNextVisit`.
+- Client utilities for registration, update detection, messaging, health checks, and Background Fetch — with a focus on predictable behaviour and minimal boilerplate.
 
 ## 📦 Installation
 
@@ -950,6 +945,7 @@ Ready-made plugins are installed as separate dependencies and passed into `initS
 |--------|---------|
 | [**@budarin/psw-plugin-serve-root-from-asset**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-root-from-asset) | Serves a chosen cached HTML asset for root (`/`) navigation — typical SPA setup. |
 | [**@budarin/psw-plugin-serve-range-requests**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-range-requests) | Handles Range requests for cached files (video, audio, PDF): 206 responses, seeking and streaming from cache. |
+| [**@budarin/psw-plugin-opfs-serve-range**](https://www.npmjs.com/package/@budarin/psw-plugin-opfs-serve-range) | Serves HTTP Range requests for files stored in the Origin Private File System (OPFS) — handy for offline storage and large media. |
 
 Install and API details are in each plugin’s README on npm.
 
