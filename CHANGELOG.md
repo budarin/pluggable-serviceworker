@@ -3,6 +3,7 @@
 - Docs: README and README.ru — tone and structure aligned with project doc rules; sections rewritten to start with short "what / when" intros and to avoid duplicated explanations.
 - Docs: added `@budarin/psw-plugin-opfs-serve-range` to the "Plugins (ready-made)" / "Плагины" tables in both READMEs.
 - Docs: `docs/article-habr.md` and `.cursor/rules/docs.mdc` updated so future documentation changes follow the same neutral, user-focused style.
+- **notifyClients**: Added third argument `includeUncontrolled = false`. By default sends messages only to window clients controlled by this SW; when `includeUncontrolled = true`, also sends to uncontrolled window clients in scope. Backward compatible; docs updated in README, README.ru, reference.mdc.
 
 ## 1.10.5
 
@@ -10,7 +11,7 @@
 
 ## 1.10.4
 
-- **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients controlled by this SW. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
+- **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
 
 ## 1.10.3
 
