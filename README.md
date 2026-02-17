@@ -122,7 +122,7 @@ pnpm add @budarin/pluggable-serviceworker
 
 ### Basic usage
 
-```typescript
+```ts
 // precacheAndServePlugin.js
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
@@ -156,7 +156,7 @@ export function precacheAndServePlugin(config: {
 }
 ```
 
-```typescript
+```ts
 // sw.ts
 import { precacheAndServePlugin } from './precacheAndServePlugin';
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
@@ -187,7 +187,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 
 **Example:**
 
-```typescript
+```ts
 initServiceWorker(
     [
         precache({ cacheName: 'v1', assets: ['/'] }),
@@ -207,7 +207,7 @@ The second parameter `options` is of type `ServiceWorkerInitOptions`: required `
 
 `PluginContext` in the API is for typing (it has `logger?`); plugins do not receive a richer context.
 
-```typescript
+```ts
 interface PluginContext {
     logger?: Logger; // default: console
 }
@@ -236,7 +236,7 @@ Recommend using the same string as your frontend app version (e.g. from `package
 
 **Example:**
 
-```typescript
+```ts
 initServiceWorker(plugins, {
     version: '1.8.0',
 });
@@ -248,7 +248,7 @@ Overrides the ping path handled by the library's internal ping plugin. Default i
 
 **Examples:**
 
-```typescript
+```ts
 // Default — internal plugin handles GET /sw-ping
 initServiceWorker(plugins, {
     version: '1.8.0',
@@ -265,7 +265,7 @@ initServiceWorker(plugins, {
 
 Logger object with `info`, `warn`, `error`, `debug`. Default is `console`. Any object implementing the `Logger` interface is accepted.
 
-```typescript
+```ts
 interface Logger {
     trace: (...data: unknown[]) => void;
     debug: (...data: unknown[]) => void;
@@ -277,7 +277,7 @@ interface Logger {
 
 **Example:**
 
-```typescript
+```ts
 const options = {
     logger: customLogger,
     // or
@@ -305,7 +305,7 @@ Single handler for all error types in the Service Worker. **There is no default 
 
 **Examples:**
 
-```typescript
+```ts
 // Minimal: version only
 initServiceWorker([cachePlugin], {
     version: '1.8.0',
@@ -324,7 +324,7 @@ initServiceWorker([cachePlugin], {
 
 The library lets you define one handler for all error types and handle each type as needed. It subscribes to global `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`; an error in one plugin does not stop others. If `onError` throws, the exception is logged via `options.logger`.
 
-```typescript
+```ts
 import {
     initServiceWorker,
     serviceWorkerErrorTypes,
@@ -405,7 +405,7 @@ A **plugin factory** is a function that takes config and returns a plugin (e.g. 
 
 A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when calling the **factory**. The `_C` type parameter (e.g. `PluginContext`) is for typing; the default context only has `logger`.
 
-```typescript
+```ts
 interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
     name: string;
 
@@ -503,7 +503,7 @@ For other events (`install`, `activate`, `message`, `sync`, `periodicsync`, `bac
 
 ### Example:
 
-```typescript
+```ts
 import {
     precache,
     serveFromCache,
@@ -559,7 +559,7 @@ Different Service Worker events are handled differently:
 
 All handlers run **in parallel** via `Promise.all()`:
 
-```typescript
+```ts
 import {
     precache,
     skipWaiting,
@@ -608,7 +608,7 @@ Handlers run **one after another**:
 
 Example factory that short-circuits for unauthorized access to protected paths:
 
-```typescript
+```ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 function authPlugin(config: {
@@ -686,7 +686,7 @@ All primitives are **plugin factories**: config (if any) is passed at the call s
 
 Handlers of the same type from different plugins run **in parallel**. For strict order (e.g. claim then reload clients), use one plugin that calls the primitives in sequence:
 
-```typescript
+```ts
 import { claim } from '@budarin/pluggable-serviceworker/plugins';
 import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
 
@@ -703,7 +703,7 @@ activate: async (event, logger) => {
 
 Factory `postsSwrPlugin(config)` returns a plugin that applies `stale-while-revalidate` only to requests matching `pathPattern`:
 
-```typescript
+```ts
 // postsSwrPlugin.ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 import { staleWhileRevalidate } from '@budarin/pluggable-serviceworker/plugins';
@@ -731,7 +731,7 @@ function postsSwrPlugin(config: {
 }
 ```
 
-```typescript
+```ts
 // sw.ts
 const staticCache = 'static-v1';
 const assets = ['/', '/main.js'];
@@ -783,7 +783,7 @@ Pre-built entry points by **activation moment** (all with offline-first caching)
 
 Example:
 
-```typescript
+```ts
 // sw.js — your service worker entry
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
@@ -824,7 +824,7 @@ Use `registerServiceWorkerWithClaimWorkaround` on the page so the SW takes contr
 
 <br />
 
-```typescript
+```ts
 import {
     isServiceWorkerSupported,
     registerServiceWorkerWithClaimWorkaround,
@@ -869,7 +869,7 @@ On devices, the SW process can be suspended. After a long idle, the first intera
 
 - Call `pingServiceWorker()` on `focus` / `visibilitychange`:
 
-```typescript
+```ts
 import { pingServiceWorker } from '@budarin/pluggable-serviceworker/client';
 
 window.addEventListener('focus', async () => {

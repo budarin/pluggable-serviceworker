@@ -116,7 +116,7 @@ pnpm add @budarin/pluggable-serviceworker
 
 ### Базовое использование
 
-```typescript
+```ts
 // precacheAndServePlugin.js
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
@@ -150,7 +150,7 @@ export function precacheAndServePlugin(config: {
 }
 ```
 
-```typescript
+```ts
 // sw.ts
 import { precacheAndServePlugin } from './precacheAndServePlugin';
 import { initServiceWorker } from '@budarin/pluggable-serviceworker';
@@ -181,7 +181,7 @@ initServiceWorker(
 
 **Пример:**
 
-```typescript
+```ts
 initServiceWorker(
     [
         precache({ cacheName: 'v1', assets: ['/'] }),
@@ -201,7 +201,7 @@ initServiceWorker(
 
 Тип `PluginContext` в API используется для типизации (содержит `logger?`); «богатого контекста» плагинам не передаётся.
 
-```typescript
+```ts
 interface PluginContext {
     logger?: Logger; // по умолчанию console
 }
@@ -230,7 +230,7 @@ interface ServiceWorkerInitOptions extends PluginContext {
 
 **Пример:**
 
-```typescript
+```ts
 initServiceWorker(plugins, {
     version: '1.8.0',
 });
@@ -242,7 +242,7 @@ initServiceWorker(plugins, {
 
 **Примеры:**
 
-```typescript
+```ts
 // По умолчанию — внутренний плагин обрабатывает GET /sw-ping
 initServiceWorker(plugins, {
     version: '1.8.0',
@@ -259,7 +259,7 @@ initServiceWorker(plugins, {
 
 Объект для логирования с методами `info`, `warn`, `error`, `debug`. По умолчанию используется `console`. Может быть передан любой объект, реализующий интерфейс `Logger`.
 
-```typescript
+```ts
 interface Logger {
     trace: (...data: unknown[]) => void;
     debug: (...data: unknown[]) => void;
@@ -271,7 +271,7 @@ interface Logger {
 
 **Пример:**
 
-```typescript
+```ts
 const options = {
     logger: customLogger, // Использование кастомного логгера
     // или
@@ -299,7 +299,7 @@ const options = {
 
 **Примеры конфигурации:**
 
-```typescript
+```ts
 // Минимальная конфигурация: только версия
 initServiceWorker([cachePlugin], {
     version: '1.8.0',
@@ -318,7 +318,7 @@ initServiceWorker([cachePlugin], {
 
 Библиотека позволяет описать единый обработчик для всех типов ошибок в Service Worker и выполнить обработку индивидуально каждого типа ошибки. Она сама подписывается на глобальные события `error`, `messageerror`, `unhandledrejection`, `rejectionhandled`; ошибка в одном плагине не останавливает выполнение остальных. Если внутри `onError` произойдёт исключение, оно логируется через `options.logger`.
 
-```typescript
+```ts
 import {
     initServiceWorker,
     serviceWorkerErrorTypes,
@@ -412,7 +412,7 @@ initServiceWorker(
 
 Плагин — объект, реализующий интерфейс `ServiceWorkerPlugin`. Специфичный для плагина конфиг задаётся при вызове **фабрики** плагина; Параметр типа `_C` (например `PluginContext`) используется для типизации; по умолчанию контекст содержит только `logger`.
 
-```typescript
+```ts
 interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
     name: string;
 
@@ -510,7 +510,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
 ### Пример:
 
-```typescript
+```ts
 import {
     precache,
     serveFromCache,
@@ -566,7 +566,7 @@ initServiceWorker(
 
 Все обработчики выполняются **одновременно** с помощью `Promise.all()`:
 
-```typescript
+```ts
 import {
     precache,
     skipWaiting,
@@ -615,7 +615,7 @@ initServiceWorker(
 
 Пример фабрики, которая прерывает цепочку при неавторизованном доступе к защищённым путям:
 
-```typescript
+```ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 
 function authPlugin(config: {
@@ -695,7 +695,7 @@ function authPlugin(config: {
 
 Пример: claimAndReloadClients как композиция двух примитивов. Плагин вызывает существующие примитивы **claim** и **reloadClients** по очереди:
 
-```typescript
+```ts
 import { claim } from '@budarin/pluggable-serviceworker/plugins';
 import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
 
@@ -712,7 +712,7 @@ activate: async (event, logger) => {
 
 Фабрика `postsSwrPlugin(config)` возвращает плагин, который применяет `stale-while-revalidate`(SWR) только к запросам, подходящим под `pathPattern`.
 
-```typescript
+```ts
 // postsSwrPlugin.ts
 import type { Plugin } from '@budarin/pluggable-serviceworker';
 import { staleWhileRevalidate } from '@budarin/pluggable-serviceworker/plugins';
@@ -739,7 +739,7 @@ function postsSwrPlugin(config: {
 }
 ```
 
-```typescript
+```ts
 // sw.ts
 const staticCache = 'static-v1';
 const assets = ['/', '/main.js'];
@@ -791,7 +791,7 @@ initServiceWorker(
 
 Пример использования типового SW:
 
-```typescript
+```ts
 // sw.js — точка входа вашего сервис-воркера
 import { activateAndUpdateOnNextVisitSW } from '@budarin/pluggable-serviceworker/sw';
 
@@ -833,7 +833,7 @@ activateAndUpdateOnNextVisitSW({
 
 <br />
 
-```typescript
+```ts
 import {
     isServiceWorkerSupported,
     registerServiceWorkerWithClaimWorkaround,
@@ -883,7 +883,7 @@ if (isServiceWorkerSupported()) {
 
 - Используйте `pingServiceWorker()` при `focus`/`visibilitychange`:
 
-```typescript
+```ts
 import { pingServiceWorker } from '@budarin/pluggable-serviceworker/client';
 
 window.addEventListener('focus', async () => {

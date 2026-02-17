@@ -1,4 +1,4 @@
-## 1.10.7
+## 1.10.8
 
 - Docs: README and README.ru — tone and structure aligned with project doc rules; sections rewritten to start with short "what / when" intros and to avoid duplicated explanations.
 - Docs: added `@budarin/psw-plugin-opfs-serve-range` to the "Plugins (ready-made)" / "Плагины" tables in both READMEs.
