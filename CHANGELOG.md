@@ -1,4 +1,4 @@
-## 1.10.6
+## 1.10.7
 
 - Docs: README and README.ru — tone and structure aligned with project doc rules; sections rewritten to start with short "what / when" intros and to avoid duplicated explanations.
 - Docs: added `@budarin/psw-plugin-opfs-serve-range` to the "Plugins (ready-made)" / "Плагины" tables in both READMEs.
@@ -10,7 +10,7 @@
 
 ## 1.10.4
 
-- **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
+- **notifyClients**: Optional second argument `data?: Record<string, unknown>`. With one argument, sends `{ type: messageType }` as before; with two, sends `{ type: messageType, ...data }` to all window clients controlled by this SW. Payload object is not mutated. Backward compatible. Docs: README, README.ru, reference.mdc.
 
 ## 1.10.3
 
