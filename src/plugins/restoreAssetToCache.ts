@@ -1,6 +1,6 @@
 import type { Plugin } from '../index.js';
 
-import { isRequestUrlInAssets } from '../utils/isRequestUrlInAssets.js';
+import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 export interface RestoreAssetToCacheConfig {
     cacheName: string;
@@ -15,13 +15,14 @@ export interface RestoreAssetToCacheConfig {
  */
 export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
     const { cacheName, assets, order = 0 } = config;
+    const normalizedHrefs = new Set(assets.map((url) => normalizeUrl(url)));
 
     return {
         order,
         name: 'restoreAssetToCache',
 
         fetch: async (event) => {
-            if (!isRequestUrlInAssets(event.request.url, assets)) {
+            if (!normalizedHrefs.has(normalizeUrl(event.request.url))) {
                 return undefined;
             }
 

@@ -23,9 +23,12 @@ export function precacheMissing(config: PrecacheMissingConfig): Plugin {
             const cache = await caches.open(cacheName);
             const keys = await cache.keys();
             const cachedHrefs = new Set(keys.map((r) => normalizeUrl(r.url)));
-            const missing = assets.filter(
-                (url) => !cachedHrefs.has(normalizeUrl(url))
+            const hrefToUrl = new Map(
+                assets.map((url) => [normalizeUrl(url), url] as const)
             );
+            const missing = [...hrefToUrl.keys()].filter(
+                (href) => !cachedHrefs.has(href)
+            ).map((href) => hrefToUrl.get(href)!);
 
             if (missing.length > 0) {
                 await cache.addAll(missing);

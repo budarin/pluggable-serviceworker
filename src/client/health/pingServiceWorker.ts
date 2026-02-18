@@ -31,19 +31,19 @@ export async function pingServiceWorker(
 
     const { timeoutMs = 3000, path = SW_PING_PATH } = options;
 
-    try {
-        const ac = new AbortController();
-        const timer = setTimeout(() => ac.abort(), timeoutMs);
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
 
+    try {
         const resp = await fetch(path, {
             method: 'GET',
             signal: ac.signal,
         });
 
-        clearTimeout(timer);
-
         return resp.ok ? 'ok' : 'error';
     } catch {
         return 'error';
+    } finally {
+        clearTimeout(timer);
     }
 }

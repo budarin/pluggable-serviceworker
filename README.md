@@ -486,7 +486,7 @@ How the package works:
 
 - Every method receives `event` as the first argument and **logger** as the second.
 - **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
-- **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called. No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
+- **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called (multiple notifications are shown in parallel). No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
 - **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
 - **All handlers are optional** — implement only the events you need. If no plugin implements a given event, that event is not listened for in the service worker.
 
@@ -643,7 +643,7 @@ function authPlugin(config: {
 **Why sequential:**
 
 - **fetch**: Only one response per request; first non-undefined stops the chain. If none returns a response, `fetch(event.request)` is used
-- **push**: Plugin can return `PushNotificationPayload`, `false`, or `undefined`. The library calls `showNotification` for each payload. It shows one notification when **all** plugins return `undefined`
+- **push**: Plugin can return `PushNotificationPayload`, `false`, or `undefined`. The library calls `showNotification` for each payload (in parallel). It shows one notification when **all** plugins return `undefined`
 
 ### 📋 Summary table
 

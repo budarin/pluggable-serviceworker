@@ -536,10 +536,11 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         return;
                     }
 
-                    for (const payload of payloads) {
-                        const { title, ...opts } = payload;
-                        await self.registration.showNotification(title, opts);
-                    }
+                    await Promise.all(
+                        payloads.map(({ title, ...opts }) =>
+                            self.registration.showNotification(title, opts)
+                        )
+                    );
 
                     if (payloads.length > 0) {
                         return;

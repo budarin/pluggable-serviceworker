@@ -1,3 +1,10 @@
+## 1.10.9
+
+- **pingServiceWorker**: Timer is always cleared in `finally`, so it no longer stays active after timeout or fetch error.
+- Push: notifications from returned payloads are now shown in parallel (`Promise.all`).
+- **restoreAssetToCache**: Normalized asset URLs are precomputed once at plugin creation; fetch handler uses a single normalization per request.
+- **precacheMissing**: Each asset URL is normalized once when computing the missing list (via Map).
+
 ## 1.10.8
 
 - Docs: README and README.ru — tone and structure aligned with project doc rules; sections rewritten to start with short "what / when" intros and to avoid duplicated explanations.
