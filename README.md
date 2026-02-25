@@ -213,7 +213,7 @@ The second parameter `options` is of type `ServiceWorkerInitOptions`: required `
 interface PluginContext {
     logger?: Logger;   // default: console
     base?: string;     // app base path
-    passthroughHeader: string; // header name for passthrough requests (always set)
+    passthroughHeader?: string; // header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER)
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -469,7 +469,7 @@ A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when ca
 interface PluginContext {
     logger?: Logger;         // Logger (default: console).
     base?: string;           // App base path.
-    passthroughHeader: string; // Header name for passthrough requests (always set).
+    passthroughHeader?: string; // Header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER).
 }
 ```
 

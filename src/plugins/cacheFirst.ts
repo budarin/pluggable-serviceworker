@@ -23,7 +23,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
 
             try {
                 const headers = new Headers(event.request.headers);
-                headers.set(context.passthroughHeader, '1');
+                headers.set(context.passthroughHeader!, '1');
                 const response = await fetch(new Request(event.request, { headers }));
 
                 if (response.ok) {

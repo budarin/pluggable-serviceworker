@@ -207,7 +207,7 @@ initServiceWorker(
 interface PluginContext {
     logger?: Logger;           // по умолчанию console
     base?: string;             // base path приложения, напр. '/' или '/my-app/'
-    passthroughHeader: string; // имя заголовка для сквозных запросов (всегда заполнено)
+    passthroughHeader?: string; // имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER)
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -476,7 +476,7 @@ initServiceWorker(
 interface PluginContext {
     logger?: Logger;           // Логгер (по умолчанию console).
     base?: string;             // Base path приложения.
-    passthroughHeader: string; // Имя заголовка для сквозных запросов (всегда заполнено).
+    passthroughHeader?: string; // Имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER).
 }
 ```
 

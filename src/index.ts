@@ -103,9 +103,9 @@ export interface PluginContext {
      * Имя заголовка для «сквозных» запросов (passthrough).
      * Плагины должны добавлять этот заголовок к своим внутренним fetch-запросам,
      * чтобы они не попадали обратно в цепочку плагинов.
-     * Всегда заполнено (по умолчанию PSW_PASSTHROUGH_HEADER).
+     * По умолчанию PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough').
      */
-    passthroughHeader: string;
+    passthroughHeader?: string;
 }
 
 /** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */

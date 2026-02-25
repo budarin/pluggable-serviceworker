@@ -19,7 +19,7 @@ export function staleWhileRevalidate(
             const cache = await caches.open(cacheName);
             const cached = await matchByUrl(cache, event.request);
             const headers = new Headers(event.request.headers);
-            headers.set(context.passthroughHeader, '1');
+                headers.set(context.passthroughHeader!, '1');
             const networkRequest = new Request(event.request, { headers });
             const revalidate = fetch(networkRequest).then(async (response) => {
                 if (response.ok) {

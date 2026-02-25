@@ -3,8 +3,8 @@
 - **passthrough requests**: New mechanism to bypass the plugin chain for "internal" fetch calls made by plugins. Requests carrying the passthrough header are not passed to any plugin — the browser handles them natively (network request).
 - **`PSW_PASSTHROUGH_HEADER`**: New exported constant (`'X-PSW-Passthrough'`) — the default passthrough header name. Active without any explicit configuration.
 - **`ServiceWorkerInitOptions.passthroughRequestHeader?: string`**: Optional option to override the default header name.
-- **`PluginContext.passthroughHeader: string`**: New required field — the resolved header name, always set. Plugins that make internal `fetch()` calls must add this header to their requests so they don't re-enter the plugin chain. **Breaking for TypeScript users who construct `PluginContext` manually (e.g. in tests)** — add `passthroughHeader: PSW_PASSTHROUGH_HEADER` to mock contexts.
-- **Built-in plugins updated**: `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache` now add `context.passthroughHeader` to all their internal `fetch()` calls, preventing infinite re-entry into the plugin chain.
+- **`PluginContext.passthroughHeader?: string`**: New optional field — the resolved header name (populated by the library from `passthroughRequestHeader` option, defaulting to `PSW_PASSTHROUGH_HEADER`). Plugins that make internal `fetch()` calls use `context.passthroughHeader!` to add this header to their requests so they don't re-enter the plugin chain. Mock contexts in tests do not need to include this field.
+- **Built-in plugins updated**: `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache` now add `context.passthroughHeader!` to all their internal `fetch()` calls, preventing infinite re-entry into the plugin chain.
 
 ## 1.11.0
 
