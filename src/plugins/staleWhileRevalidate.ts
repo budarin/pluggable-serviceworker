@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { matchByUrl } from '../utils/matchByUrl.js';
 
 export interface StaleWhileRevalidateConfig {
     cacheName: string;
@@ -16,7 +17,7 @@ export function staleWhileRevalidate(
 
         fetch: async (event) => {
             const cache = await caches.open(cacheName);
-            const cached = await cache.match(event.request);
+            const cached = await matchByUrl(cache, event.request);
             const revalidate = fetch(event.request).then(async (response) => {
                 if (response.ok) {
                     await cache.put(event.request, response.clone());

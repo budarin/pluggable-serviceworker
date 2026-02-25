@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { matchByUrl } from '../utils/matchByUrl.js';
 
 export interface NetworkFirstConfig {
     cacheName: string;
@@ -24,7 +25,7 @@ export function networkFirst(config: NetworkFirstConfig): Plugin {
 
                 return response;
             } catch {
-                return (await cache.match(event.request)) ?? undefined;
+                return (await matchByUrl(cache, event.request)) ?? undefined;
             }
         },
     };

@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { matchByUrl } from '../utils/matchByUrl.js';
 
 export interface ServeFromCacheConfig {
     cacheName: string;
@@ -15,7 +16,7 @@ export function serveFromCache(config: ServeFromCacheConfig): Plugin {
         fetch: async (event) => {
             const cache = await caches.open(cacheName);
 
-            return cache.match(event.request) ?? undefined;
+            return (await matchByUrl(cache, event.request)) ?? undefined;
         },
     };
 }

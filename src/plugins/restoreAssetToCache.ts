@@ -1,5 +1,6 @@
 import type { Plugin } from '../index.js';
 
+import { matchByUrl } from '../utils/matchByUrl.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 
 export interface RestoreAssetToCacheConfig {
@@ -27,7 +28,7 @@ export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
             }
 
             const cache = await caches.open(cacheName);
-            const cached = await cache.match(event.request);
+            const cached = await matchByUrl(cache, event.request);
 
             if (cached) {
                 return cached;

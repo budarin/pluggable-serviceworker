@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { matchByUrl } from '../utils/matchByUrl.js';
 
 export interface CacheFirstConfig {
     cacheName: string;
@@ -14,7 +15,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
 
         fetch: async (event) => {
             const cache = await caches.open(cacheName);
-            const cached = await cache.match(event.request);
+            const cached = await matchByUrl(cache, event.request);
 
             if (cached) {
                 return cached;

@@ -399,7 +399,13 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         };
     }
     if (handlers.fetch.length > 0) {
+        /** Depth of fallback fetch calls. When > 0, we don't call respondWith so the browser handles the request natively (avoids recursion). */
+        let passthroughDepth = 0;
+
         result.fetch = (event: FetchEvent): void => {
+            if (passthroughDepth > 0) {
+                return;
+            }
             event.respondWith(
                 (async (): Promise<Response> => {
                     for (const handler of handlers.fetch) {
@@ -418,7 +424,12 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
-                        return await fetch(event.request);
+                        passthroughDepth++;
+                        try {
+                            return await fetch(event.request);
+                        } finally {
+                            passthroughDepth--;
+                        }
                     } catch (error) {
                         options.onError?.(
                             error as Error,
