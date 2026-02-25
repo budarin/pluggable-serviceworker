@@ -1,3 +1,15 @@
+## 1.11.0
+
+- **Breaking**: Handler signature changed from `(event, logger)` to `(event, context)`. The second parameter is now `PluginContext` with `logger?` and `base?`. Update plugins: use `context.logger` instead of `logger`.
+- **base**: Added `base?: string` to `PluginContext` and `ServiceWorkerInitOptions` for app base path. Used by asset plugins (`precache`, `restoreAssetToCache`, etc.) to resolve URLs when app is deployed under a subpath.
+- **matchByUrl**: New utility `matchByUrl(cache, request)` — cache match by URL only (ignores request mode). Fixes "Failed to fetch" for script requests. Built-in plugins updated to use it.
+- **resolveAssetUrls**: New utility for resolving asset paths with base. Skip `normalizeUrl` for `http://` and `https://` URLs when base is `'/'` or unset.
+- **Utils**: Exported `isRequestUrlInAssets(requestUrl, assets)`. Added to README, README.ru, reference.mdc.
+- **restoreAssetToCache**: Memoize resolved asset URLs per `context.base`; avoid recomputing on every fetch.
+- **initServiceWorker**: Single `allPlugins` array instead of creating it twice.
+- **createEventHandlers**: Extracted `runParallelHandlers` helper for install, activate, sync, periodicsync, backgroundfetch* handlers.
+- **fetch**: Passthrough depth tracking to prevent recursion when fallback `fetch()` triggers the SW's own fetch handler.
+
 ## 1.10.9
 
 - **pingServiceWorker**: Timer is always cleared in `finally`, so it no longer stays active after timeout or fetch error.
