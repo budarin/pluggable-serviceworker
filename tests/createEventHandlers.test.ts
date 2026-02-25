@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     createEventHandlers,
     serviceWorkerErrorTypes,
+    PSW_PASSTHROUGH_HEADER,
     type ServiceWorkerPlugin,
     type ServiceWorkerInitOptions,
 } from '../src/index.ts';
@@ -167,6 +168,123 @@ describe('createEventHandlers', () => {
             const result = await respondWith.mock.calls[0]?.[0];
             expect(result).toBe(fetchResponse);
             expect(globalFetch).toHaveBeenCalledWith(request);
+        });
+
+        it('passes passthroughHeader to plugin context (default)', () => {
+            let receivedHeader: string | undefined;
+            const plugins: ServiceWorkerPlugin[] = [
+                {
+                    name: 'a',
+                    fetch: async (_event, context) => {
+                        receivedHeader = context.passthroughHeader;
+                        return undefined;
+                    },
+                },
+            ];
+            const respondWith = vi.fn((p: Promise<unknown>) => p);
+            const globalFetch = vi.fn().mockResolvedValue(new Response('ok'));
+            vi.stubGlobal('fetch', globalFetch);
+            const event = {
+                request: new Request('https://example.com/'),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+
+            handlers.fetch(event as unknown as FetchEvent);
+
+            return respondWith.mock.results[0]?.value.then(() => {
+                expect(receivedHeader).toBe(PSW_PASSTHROUGH_HEADER);
+            });
+        });
+
+        it('passes custom passthroughHeader to plugin context', () => {
+            let receivedHeader: string | undefined;
+            const plugins: ServiceWorkerPlugin[] = [
+                {
+                    name: 'a',
+                    fetch: async (_event, context) => {
+                        receivedHeader = context.passthroughHeader;
+                        return undefined;
+                    },
+                },
+            ];
+            const respondWith = vi.fn((p: Promise<unknown>) => p);
+            const globalFetch = vi.fn().mockResolvedValue(new Response('ok'));
+            vi.stubGlobal('fetch', globalFetch);
+            const event = {
+                request: new Request('https://example.com/'),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, {
+                version: '1.0.0',
+                passthroughRequestHeader: 'X-My-Internal',
+            });
+
+            handlers.fetch(event as unknown as FetchEvent);
+
+            return respondWith.mock.results[0]?.value.then(() => {
+                expect(receivedHeader).toBe('X-My-Internal');
+            });
+        });
+
+        it('skips respondWith for request with default passthrough header (no option set)', () => {
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', fetch: async () => new Response('should not reach') },
+            ];
+            const respondWith = vi.fn();
+            const event = {
+                request: new Request('https://example.com/', {
+                    headers: { [PSW_PASSTHROUGH_HEADER]: '1' },
+                }),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+
+            handlers.fetch(event as unknown as FetchEvent);
+
+            expect(respondWith).not.toHaveBeenCalled();
+        });
+
+        it('skips respondWith for request matching custom passthroughRequestHeader string', () => {
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', fetch: async () => new Response('should not reach') },
+            ];
+            const respondWith = vi.fn();
+            const event = {
+                request: new Request('https://example.com/', {
+                    headers: { 'X-My-Internal': '1' },
+                }),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, {
+                version: '1.0.0',
+                passthroughRequestHeader: 'X-My-Internal',
+            });
+
+            handlers.fetch(event as unknown as FetchEvent);
+
+            expect(respondWith).not.toHaveBeenCalled();
+        });
+
+        it('processes request normally when no passthrough header is present', async () => {
+            const response = new Response('ok');
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', fetch: async () => response },
+            ];
+            const respondWith = vi.fn();
+            const event = {
+                request: new Request('https://example.com/'),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, {
+                version: '1.0.0',
+                passthroughRequestHeader: 'X-My-Internal',
+            });
+
+            handlers.fetch(event as unknown as FetchEvent);
+
+            expect(respondWith).toHaveBeenCalled();
+            expect(await respondWith.mock.calls[0]?.[0]).toBe(response);
         });
 
         it('calls onError when a plugin throws and continues to next', async () => {

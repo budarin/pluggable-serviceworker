@@ -28,7 +28,7 @@ A library for building modular, pluggable Service Workers.
     - [Basic usage](#basic-usage)
 - [Demo](#demo)
 - [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
-- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-base-logger-onerror)
+- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-base-logger-onerror-passthroughrequestheader)
     - [Option fields](#option-fields)
     - [Error handling](#error-handling)
 - [Plugins](#plugins)
@@ -203,16 +203,17 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ initServiceWorker options (version, pingPath, base, logger, onError)
+## ⚙️ initServiceWorker options (version, pingPath, base, logger, onError, passthroughRequestHeader)
 
-The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `onError?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
+The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `onError?`, `passthroughRequestHeader?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
 
 `PluginContext` in the API is for typing; plugins receive it as the second argument.
 
 ```ts
 interface PluginContext {
-    logger?: Logger; // default: console
-    base?: string; // app base path
+    logger?: Logger;   // default: console
+    base?: string;     // app base path
+    passthroughHeader: string; // header name for passthrough requests (always set)
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -221,6 +222,13 @@ interface ServiceWorkerInitOptions extends PluginContext {
 
     /** Optional path for ping requests (default '/sw-ping'). */
     pingPath?: string;
+
+    /**
+     * Header name that marks a request as passthrough:
+     * such requests bypass all plugins and are handled by the browser directly.
+     * Default: PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough').
+     */
+    passthroughRequestHeader?: string;
 
     onError?: (error, event, errorType?) => void; // library only, not passed to plugins
 }
@@ -278,6 +286,36 @@ initServiceWorker(plugins, {
 initServiceWorker(plugins, {
     version: '1.8.0',
     pingPath: '/internal/sw-ping',
+});
+```
+
+#### `passthroughRequestHeader?: string` (optional)
+
+**The problem.** When a plugin makes an internal `fetch()` — for example, `staleWhileRevalidate` fetches a fresh copy to update the cache, or an analytics plugin sends an event — that request re-enters the Service Worker's `fetch` handler and goes through all plugins again. This can cause infinite recursion or an "internal" request being served from cache instead of going to the network.
+
+**The solution.** A plugin marks its internal requests with a special header. The library detects it at the very start of the `fetch` handler, before any plugins are invoked, and lets the browser handle the request as a plain network request.
+
+The header name is configurable. Default is `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`), active without any explicit configuration.
+
+**Usage in a plugin** — use `context.passthroughHeader` so the correct header name is always used regardless of what the SW was configured with:
+
+```ts
+fetch: async (event, context) => {
+    const headers = new Headers(event.request.headers);
+    headers.set(context.passthroughHeader, '1');
+    const response = await fetch(new Request(event.request, { headers }));
+    // ...
+}
+```
+
+The built-in plugins (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) already do this internally — all their outbound `fetch()` calls carry the passthrough header to avoid re-entering the plugin chain.
+
+**Custom header name** (useful to avoid clashes with other headers):
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    passthroughRequestHeader: 'X-My-Internal',
 });
 ```
 
@@ -429,8 +467,9 @@ A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when ca
 
 ```ts
 interface PluginContext {
-    logger?: Logger; // Logger (default: console).
-    base?: string; // App base path.
+    logger?: Logger;         // Logger (default: console).
+    base?: string;           // App base path.
+    passthroughHeader: string; // Header name for passthrough requests (always set).
 }
 ```
 

@@ -22,7 +22,7 @@
     - [Базовое использование](#базовое-использование)
 - [Демо](#демо)
 - [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
-- [Опции initServiceWorker](#️-опции-initserviceworker-version-pingpath-base-logger-onerror)
+- [Опции initServiceWorker](#️-опции-initserviceworker-version-pingpath-base-logger-onerror-passthroughrequestheader)
     - [Поля options](#поля-options)
     - [Обработка ошибок](#обработка-ошибок)
 - [Плагины](#плагины)
@@ -197,16 +197,17 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ Опции initServiceWorker (version, pingPath, base, logger, onError)
+## ⚙️ Опции initServiceWorker (version, pingPath, base, logger, onError, passthroughRequestHeader)
 
-Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `pingPath?`, `base?`, `logger?` и `onError?`. В обработчики плагинов передаётся **context** (logger, base); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
+Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `pingPath?`, `base?`, `logger?`, `onError?` и `passthroughRequestHeader?`. В обработчики плагинов передаётся **context** (logger, base); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
 
 Тип `PluginContext` в API используется для типизации; плагины получают его вторым аргументом.
 
 ```ts
 interface PluginContext {
-    logger?: Logger; // по умолчанию console
-    base?: string; // base path приложения, напр. '/' или '/my-app/'
+    logger?: Logger;           // по умолчанию console
+    base?: string;             // base path приложения, напр. '/' или '/my-app/'
+    passthroughHeader: string; // имя заголовка для сквозных запросов (всегда заполнено)
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -215,6 +216,13 @@ interface ServiceWorkerInitOptions extends PluginContext {
 
     /** Необязательный путь для ping-запроса (по умолчанию '/sw-ping'). */
     pingPath?: string;
+
+    /**
+     * Имя заголовка, по которому запрос считается «сквозным»:
+     * он не передаётся в плагины и обрабатывается браузером напрямую (сетевой запрос).
+     * По умолчанию — PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough'), работает без явной настройки.
+     */
+    passthroughRequestHeader?: string;
 
     onError?: (error, event, errorType?) => void; // только для библиотеки, в плагины не передаётся
 }
@@ -272,6 +280,36 @@ initServiceWorker(plugins, {
 initServiceWorker(plugins, {
     version: '1.8.0',
     pingPath: '/internal/sw-ping',
+});
+```
+
+#### `passthroughRequestHeader?: string` (опциональное)
+
+**Проблема.** Когда плагин делает внутренний `fetch()` — например, `staleWhileRevalidate` запрашивает свежую копию для обновления кеша, или плагин аналитики отправляет событие — этот запрос снова попадает в обработчик `fetch` сервис-воркера и проходит через все плагины. Это может привести к бесконечной рекурсии или к тому, что «внутренний» запрос будет обслужен из кеша вместо того, чтобы уйти в сеть.
+
+**Решение.** Плагин помечает свои внутренние запросы специальным заголовком. Библиотека проверяет его в самом начале обработчика `fetch`, до вызова плагинов, и сразу пропускает запрос в браузер как обычный сетевой.
+
+Имя заголовка настраивается. По умолчанию используется `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`) — работает без явной конфигурации.
+
+**Использование в плагине** — берите имя заголовка из `context.passthroughHeader`, чтобы всегда использовалось то имя, которое задано при инициализации SW:
+
+```ts
+fetch: async (event, context) => {
+    const headers = new Headers(event.request.headers);
+    headers.set(context.passthroughHeader, '1');
+    const response = await fetch(new Request(event.request, { headers }));
+    // ...
+}
+```
+
+Встроенные плагины (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) уже делают это — все их внутренние `fetch()` несут passthrough-заголовок, чтобы не попасть обратно в цепочку плагинов.
+
+**Кастомное имя заголовка** (если нужно избежать конфликта с другими заголовками):
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    passthroughRequestHeader: 'X-My-Internal',
 });
 ```
 
@@ -436,8 +474,9 @@ initServiceWorker(
 
 ```ts
 interface PluginContext {
-    logger?: Logger; // Логгер (по умолчанию console).
-    base?: string; // Base path приложения.
+    logger?: Logger;           // Логгер (по умолчанию console).
+    base?: string;             // Base path приложения.
+    passthroughHeader: string; // Имя заголовка для сквозных запросов (всегда заполнено).
 }
 ```
 

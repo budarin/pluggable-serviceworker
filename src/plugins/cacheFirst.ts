@@ -13,7 +13,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
         order,
         name: 'cacheFirst',
 
-        fetch: async (event) => {
+        fetch: async (event, context) => {
             const cache = await caches.open(cacheName);
             const cached = await matchByUrl(cache, event.request);
 
@@ -22,7 +22,9 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
             }
 
             try {
-                const response = await fetch(event.request);
+                const headers = new Headers(event.request.headers);
+                headers.set(context.passthroughHeader, '1');
+                const response = await fetch(new Request(event.request, { headers }));
 
                 if (response.ok) {
                     await cache.put(event.request, response.clone());

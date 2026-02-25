@@ -53,7 +53,9 @@ export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
             }
 
             try {
-                const response = await fetch(event.request);
+                const headers = new Headers(event.request.headers);
+                headers.set(context.passthroughHeader, '1');
+                const response = await fetch(new Request(event.request, { headers }));
                 if (response.ok) {
                     await cache.put(event.request, response.clone());
                 }

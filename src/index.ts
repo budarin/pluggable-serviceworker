@@ -22,6 +22,9 @@ import {
 } from './constants/versionMessages.js';
 
 import { SW_PING_PATH } from './constants/paths.js';
+import { PSW_PASSTHROUGH_HEADER } from './constants/passthroughHeader.js';
+
+export { PSW_PASSTHROUGH_HEADER };
 
 /** Error type identifiers for onError. Use const object instead of enum (see .cursor/rules/types.mdc). */
 export const serviceWorkerErrorTypes = {
@@ -96,6 +99,13 @@ export interface PluginContext {
     logger?: Logger;
     /** Base path приложения, напр. '/' или '/my-app/'. */
     base?: string;
+    /**
+     * Имя заголовка для «сквозных» запросов (passthrough).
+     * Плагины должны добавлять этот заголовок к своим внутренним fetch-запросам,
+     * чтобы они не попадали обратно в цепочку плагинов.
+     * Всегда заполнено (по умолчанию PSW_PASSTHROUGH_HEADER).
+     */
+    passthroughHeader: string;
 }
 
 /** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
@@ -111,6 +121,13 @@ export interface ServiceWorkerInitOptions extends PluginContext {
      * Используется внутренним ping-плагином библиотеки.
      */
     pingPath?: string;
+
+    /**
+     * Имя заголовка, по наличию которого запрос считается «сквозным»:
+     * он не передаётся в плагины и обрабатывается браузером напрямую (сетевой запрос).
+     * По умолчанию — PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough').
+     */
+    passthroughRequestHeader?: string;
 
     onError?: (
         error: Error | unknown,
@@ -288,6 +305,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     const context: PluginContext = {
         logger: options.logger ?? console,
         ...(options.base !== undefined && { base: options.base }),
+        passthroughHeader: options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER,
     };
 
     function runParallelHandlers<E extends ExtendableEvent>(
@@ -424,8 +442,14 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         /** Depth of fallback fetch calls. When > 0, we don't call respondWith so the browser handles the request natively (avoids recursion). */
         let passthroughDepth = 0;
 
+        const passthroughHeader =
+            options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER;
+
         result.fetch = (event: FetchEvent): void => {
             if (passthroughDepth > 0) {
+                return;
+            }
+            if (event.request.headers.has(passthroughHeader)) {
                 return;
             }
             event.respondWith(

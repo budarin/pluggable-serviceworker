@@ -15,10 +15,13 @@ export function staleWhileRevalidate(
         order,
         name: 'staleWhileRevalidate',
 
-        fetch: async (event) => {
+        fetch: async (event, context) => {
             const cache = await caches.open(cacheName);
             const cached = await matchByUrl(cache, event.request);
-            const revalidate = fetch(event.request).then(async (response) => {
+            const headers = new Headers(event.request.headers);
+            headers.set(context.passthroughHeader, '1');
+            const networkRequest = new Request(event.request, { headers });
+            const revalidate = fetch(networkRequest).then(async (response) => {
                 if (response.ok) {
                     await cache.put(event.request, response.clone());
                 }
