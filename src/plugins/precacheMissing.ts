@@ -1,6 +1,7 @@
 import type { Plugin } from '../index.js';
 
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
 
 export interface PrecacheMissingConfig {
     cacheName: string;
@@ -19,12 +20,13 @@ export function precacheMissing(config: PrecacheMissingConfig): Plugin {
         order,
         name: 'precacheMissing',
 
-        install: async () => {
+        install: async (_event, context) => {
+            const resolved = resolveAssetUrls(assets, context.base);
             const cache = await caches.open(cacheName);
             const keys = await cache.keys();
             const cachedHrefs = new Set(keys.map((r) => normalizeUrl(r.url)));
             const hrefToUrl = new Map(
-                assets.map((url) => [normalizeUrl(url), url] as const)
+                resolved.map((url) => [normalizeUrl(url), url] as const)
             );
             const missing = [...hrefToUrl.keys()].filter(
                 (href) => !cachedHrefs.has(href)

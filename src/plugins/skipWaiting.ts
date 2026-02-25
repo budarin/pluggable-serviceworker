@@ -10,7 +10,7 @@ export function skipWaiting(config?: SkipWaitingConfig): Plugin {
         order,
         name: 'skipWaiting',
 
-        install: (_event, _logger) => {
+        install: (_event, _context) => {
             self.skipWaiting();
         },
     };

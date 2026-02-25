@@ -15,39 +15,39 @@ A library for building modular, pluggable Service Workers.
 ## Table of contents
 
 - [Why this package?](#-why-this-package)
-  - [Modular architecture](#-modular-architecture)
-  - [Predictable execution order](#-predictable-execution-order)
-  - [Easy to learn](#-easy-to-learn)
-  - [Small footprint](#-small-footprint)
-  - [Full control](#-full-control)
-  - [Centralized error handling](#-centralized-error-handling)
-  - [Logging](#-logging)
-  - [Ready-made building blocks](#-ready-made-building-blocks)
+    - [Modular architecture](#-modular-architecture)
+    - [Predictable execution order](#-predictable-execution-order)
+    - [Easy to learn](#-easy-to-learn)
+    - [Small footprint](#-small-footprint)
+    - [Full control](#-full-control)
+    - [Centralized error handling](#-centralized-error-handling)
+    - [Logging](#-logging)
+    - [Ready-made building blocks](#-ready-made-building-blocks)
 - [Installation](#-installation)
 - [Quick start](#-quick-start)
-  - [Basic usage](#basic-usage)
+    - [Basic usage](#basic-usage)
 - [Demo](#demo)
 - [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
-- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-logger-onerror)
-  - [Option fields](#option-fields)
-  - [Error handling](#error-handling)
+- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-base-logger-onerror)
+    - [Option fields](#option-fields)
+    - [Error handling](#error-handling)
 - [Plugins](#plugins)
-  - [Plugin interface](#-plugin-interface)
-  - [Method summary](#-method-summary)
-  - [Handler behaviour](#-handler-behaviour)
+    - [Plugin interface](#-plugin-interface)
+    - [Method summary](#-method-summary)
+    - [Handler behaviour](#-handler-behaviour)
 - [Plugin execution order](#-plugin-execution-order)
-  - [Example](#example)
+    - [Example](#example)
 - [Handler execution behaviour](#-handler-execution-behaviour)
-  - [Parallel execution](#-parallel-execution)
-  - [Sequential execution](#️-sequential-execution)
-  - [Summary table](#-summary-table)
+    - [Parallel execution](#-parallel-execution)
+    - [Sequential execution](#️-sequential-execution)
+    - [Summary table](#-summary-table)
 - [Primitives, presets, and ready-made service workers](#primitives-presets-and-ready-made-service-workers)
-  - [Primitives (plugins)](#primitives-plugins)
-  - [Presets](#presets)
-  - [Ready-made service workers](#ready-made-service-workers)
-  - [Published utilities](#published-utilities)
-  - [Recipe: waking up the SW](#-recipe-waking-up-the-sw)
-  - [Note on Chrome claim() workaround](#-note-on-chrome-claim-workaround)
+    - [Primitives (plugins)](#primitives-plugins)
+    - [Presets](#presets)
+    - [Ready-made service workers](#ready-made-service-workers)
+    - [Published utilities](#published-utilities)
+    - [Recipe: waking up the SW](#-recipe-waking-up-the-sw)
+    - [Note on Chrome claim() workaround](#-note-on-chrome-claim-workaround)
 - [Developing a separate plugin package](#developing-a-separate-plugin-package)
 - [Plugins (ready-made)](#plugins-ready-made)
 - [License](#-license)
@@ -96,7 +96,7 @@ Service workers are powerful but easy to get wrong: many event handlers, error p
 ### 📝 **Logging**
 
 - Pluggable logger with levels (`trace`, `debug`, `info`, `warn`, `error`).
-- The same logger instance is passed into every plugin hook, which makes it easier to correlate logs across events.
+- The same context (logger, base) is passed into every plugin hook, which makes it easier to correlate logs and resolve asset paths across events.
 - You can use your own logging infrastructure as long as it matches the expected interface.
 
 ### ✅ **Ready‑made building blocks**
@@ -125,6 +125,7 @@ pnpm add @budarin/pluggable-serviceworker
 ```ts
 // precacheAndServePlugin.js
 import type { Plugin } from '@budarin/pluggable-serviceworker';
+import { matchByUrl } from '@budarin/pluggable-serviceworker/utils';
 
 export function precacheAndServePlugin(config: {
     cacheName: string;
@@ -135,17 +136,17 @@ export function precacheAndServePlugin(config: {
     return {
         name: 'precache-and-serve',
 
-        install: async (_event, logger) => {
+        install: async (_event, context) => {
             const cache = await caches.open(cacheName);
             await cache.addAll(assets);
         },
 
-        fetch: async (event, logger) => {
+        fetch: async (event, context) => {
             const cache = await caches.open(cacheName);
-            const asset = await cache.match(event.request);
+            const asset = await matchByUrl(cache, event.request);
 
             if (!asset) {
-                logger.debug(
+                context.logger?.debug(
                     `precache-and-serve: asset ${event.request.url} not found in cache!`
                 );
             }
@@ -168,11 +169,11 @@ initServiceWorker(
             assets: ['/', '/styles.css', '/script.js'],
         }),
     ],
-    {
-        version: '1.8.0',
-    }
+    { version: '1.8.0' }
 );
 ```
+
+**Why `matchByUrl` instead of `cache.match(event.request)`?** Script requests use `mode: 'script'`; precache stores with a different mode. `cache.match()` requires a full match (URL, mode, credentials) — no match, hence "Failed to fetch". `matchByUrl()` matches by URL only. Use it in the fetch handler when looking up a resource in the cache by request.
 
 ## Demo
 
@@ -183,7 +184,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
 - **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
-- **`options`** — at least `version` (required), and optional `pingPath?`, `logger?`, `onError?`. The **logger** (from options or `console`) is passed as the second argument to plugin handlers.
+- **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
 
 **Example:**
 
@@ -195,21 +196,23 @@ initServiceWorker(
     ],
     {
         version: '1.8.0',
+        base: '/',
         logger: customLogger,
         onError: handleError,
     }
 );
 ```
 
-## ⚙️ initServiceWorker options (version, pingPath, logger, onError)
+## ⚙️ initServiceWorker options (version, pingPath, base, logger, onError)
 
-The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `logger?`, `onError?`. Only **logger** is passed into plugin handlers (second argument); if omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
+The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `onError?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
 
-`PluginContext` in the API is for typing (it has `logger?`); plugins do not receive a richer context.
+`PluginContext` in the API is for typing; plugins receive it as the second argument.
 
 ```ts
 interface PluginContext {
     logger?: Logger; // default: console
+    base?: string; // app base path
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -241,6 +244,23 @@ initServiceWorker(plugins, {
     version: '1.8.0',
 });
 ```
+
+#### `base?: string` (optional)
+
+App base path, e.g. `'/'` or `'/my-app/'`. Used by asset plugins (`precache`, `restoreAssetToCache`, etc.) to resolve asset URLs. When the app is deployed under a subpath, pass the same base as in your build config so cached URLs match incoming requests.
+
+**Example:**
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    base: '/',
+});
+```
+
+For an app under a subpath, use the same base as in your build config.
+
+**Example for Vite:** use `base: import.meta.env.BASE_URL` so it matches `vite.config` → `base`.
 
 #### `pingPath?: string` (optional)
 
@@ -403,7 +423,16 @@ A **plugin factory** is a function that takes config and returns a plugin (e.g. 
 
 ### 🔌 Plugin interface
 
-A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when calling the **factory**. The `_C` type parameter (e.g. `PluginContext`) is for typing; the default context only has `logger`.
+A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when calling the **factory**. The `_C` type parameter is for typing the context.
+
+**Context** (`PluginContext`) — the second argument of every handler. Passed from `initServiceWorker(plugins, options)`; option fields become context:
+
+```ts
+interface PluginContext {
+    logger?: Logger; // Logger (default: console).
+    base?: string; // App base path.
+}
+```
 
 ```ts
 interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
@@ -411,22 +440,28 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
     order?: number;
 
-    install?: (event: ExtendableEvent, logger: Logger) => Promise<void> | void;
+    install?: (
+        event: ExtendableEvent,
+        context: PluginContext
+    ) => Promise<void> | void;
 
-    activate?: (event: ExtendableEvent, logger: Logger) => Promise<void> | void;
+    activate?: (
+        event: ExtendableEvent,
+        context: PluginContext
+    ) => Promise<void> | void;
 
     fetch?: (
         event: FetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<Response | undefined> | Response | undefined;
 
-    message?: (event: SwMessageEvent, logger: Logger) => void;
+    message?: (event: SwMessageEvent, context: PluginContext) => void;
 
-    sync?: (event: SyncEvent, logger: Logger) => Promise<void> | void;
+    sync?: (event: SyncEvent, context: PluginContext) => Promise<void> | void;
 
     push?: (
         event: PushEvent,
-        logger: Logger
+        context: PluginContext
     ) =>
         | Promise<PushNotificationPayload | void>
         | PushNotificationPayload
@@ -434,43 +469,43 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
     periodicsync?: (
         event: PeriodicSyncEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<void> | void;
 
     backgroundfetchsuccess?: (
         event: BackgroundFetchUpdateUIEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<void> | void;
     backgroundfetchfail?: (
         event: BackgroundFetchUpdateUIEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<void> | void;
     backgroundfetchabort?: (
         event: BackgroundFetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<void> | void;
     backgroundfetchclick?: (
         event: BackgroundFetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<void> | void;
 }
 ```
 
 ### 📝 Method summary
 
-| Method         | Event          | Returns                                         | Description                       |
-| -------------- | -------------- | ----------------------------------------------- | --------------------------------- |
-| `install`      | `install`      | `void`                                          | Plugin init on SW install         |
-| `activate`     | `activate`     | `void`                                          | Plugin activation on SW update    |
-| `fetch`        | `fetch`        | `Response \| undefined`                         | Handle network requests           |
-| `message`      | `message`      | `void`                                          | Handle messages from main thread  |
-| `sync`         | `sync`         | `void`                                          | Background sync                   |
-| `push`         | `push`         | `PushNotificationPayload \| false \| undefined` | Handle and show push notification |
-| `periodicsync` | `periodicsync` | `void`                                          | Periodic background tasks         |
-| `backgroundfetchsuccess` | `backgroundfetchsuccess` | `void`                    | [Background Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API): all fetches succeeded |
-| `backgroundfetchfail`    | `backgroundfetchfail`    | `void`                    | Background Fetch: at least one fetch failed      |
-| `backgroundfetchabort`   | `backgroundfetchabort`   | `void`                    | Background Fetch: fetch aborted by user or app   |
-| `backgroundfetchclick`  | `backgroundfetchclick`   | `void`                    | Background Fetch: user clicked download UI       |
+| Method                   | Event                    | Returns                                         | Description                                                                                                      |
+| ------------------------ | ------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `install`                | `install`                | `void`                                          | Plugin init on SW install                                                                                        |
+| `activate`               | `activate`               | `void`                                          | Plugin activation on SW update                                                                                   |
+| `fetch`                  | `fetch`                  | `Response \| undefined`                         | Handle network requests                                                                                          |
+| `message`                | `message`                | `void`                                          | Handle messages from main thread                                                                                 |
+| `sync`                   | `sync`                   | `void`                                          | Background sync                                                                                                  |
+| `push`                   | `push`                   | `PushNotificationPayload \| false \| undefined` | Handle and show push notification                                                                                |
+| `periodicsync`           | `periodicsync`           | `void`                                          | Periodic background tasks                                                                                        |
+| `backgroundfetchsuccess` | `backgroundfetchsuccess` | `void`                                          | [Background Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API): all fetches succeeded |
+| `backgroundfetchfail`    | `backgroundfetchfail`    | `void`                                          | Background Fetch: at least one fetch failed                                                                      |
+| `backgroundfetchabort`   | `backgroundfetchabort`   | `void`                                          | Background Fetch: fetch aborted by user or app                                                                   |
+| `backgroundfetchclick`   | `backgroundfetchclick`   | `void`                                          | Background Fetch: user clicked download UI                                                                       |
 
 How the package works:
 
@@ -484,7 +519,7 @@ How the package works:
 
 ### 🎯 Handler behaviour
 
-- Every method receives `event` as the first argument and **logger** as the second.
+- Every method receives `event` as the first argument and **context** (logger, base) as the second.
 - **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
 - **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called (multiple notifications are shown in parallel). No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
 - **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
@@ -527,6 +562,7 @@ initServiceWorker(
     ],
     {
         version: '1.8.0',
+        base: '/',
     }
 );
 
@@ -584,6 +620,7 @@ initServiceWorker(
     ],
     {
         version: '1.8.0',
+        base: '/',
         logger: customLogger,
     }
 );
@@ -621,12 +658,15 @@ function authPlugin(config: {
         order,
         name: 'auth',
 
-        fetch: async (event, logger) => {
+        fetch: async (event, context) => {
             const path = new URL(event.request.url).pathname;
 
             if (protectedPaths.some((p) => path.startsWith(p))) {
                 if (needsAuth(event.request)) {
-                    logger.warn('auth: unauthorized', event.request.url);
+                    context.logger?.warn(
+                        'auth: unauthorized',
+                        event.request.url
+                    );
 
                     return new Response('Unauthorized', { status: 401 }); // Stops chain
                 }
@@ -647,23 +687,23 @@ function authPlugin(config: {
 
 ### 📋 Summary table
 
-| Event          | Execution  | Short-circuit | Reason                        |
-| -------------- | ---------- | ------------- | ----------------------------- |
-| `install`      | Parallel   | No            | Independent init              |
-| `activate`     | Parallel   | No            | Independent activation        |
-| `fetch`        | Sequential | Yes           | Single response               |
-| `message`      | Parallel   | No            | Independent handlers          |
-| `sync`         | Parallel   | No            | Independent tasks             |
-| `periodicsync` | Parallel   | No            | Independent periodic          |
-| `push`         | Sequential | No            | Show all needed notifications |
-| `backgroundfetchsuccess` / `backgroundfetchfail` / `backgroundfetchabort` / `backgroundfetchclick` | Parallel | No | [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) events |
+| Event                                                                                              | Execution  | Short-circuit | Reason                                                                                               |
+| -------------------------------------------------------------------------------------------------- | ---------- | ------------- | ---------------------------------------------------------------------------------------------------- |
+| `install`                                                                                          | Parallel   | No            | Independent init                                                                                     |
+| `activate`                                                                                         | Parallel   | No            | Independent activation                                                                               |
+| `fetch`                                                                                            | Sequential | Yes           | Single response                                                                                      |
+| `message`                                                                                          | Parallel   | No            | Independent handlers                                                                                 |
+| `sync`                                                                                             | Parallel   | No            | Independent tasks                                                                                    |
+| `periodicsync`                                                                                     | Parallel   | No            | Independent periodic                                                                                 |
+| `push`                                                                                             | Sequential | No            | Show all needed notifications                                                                        |
+| `backgroundfetchsuccess` / `backgroundfetchfail` / `backgroundfetchabort` / `backgroundfetchclick` | Parallel   | No            | [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) events |
 
 ## Primitives, presets, and ready-made service workers
 
 ### Primitives (plugins)
 
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
-All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are only `version` (required), `pingPath?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order.
+All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order.
 
 | Name                               | Event      | Description                                                                                                                                                                  |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -693,9 +733,9 @@ import { reloadClients } from '@budarin/pluggable-serviceworker/plugins';
 const claimPlugin = claim();
 const reloadPlugin = reloadClients();
 
-activate: async (event, logger) => {
-    await claimPlugin.activate?.(event, logger);
-    await reloadPlugin.activate?.(event, logger);
+activate: async (event, context) => {
+    await claimPlugin.activate?.(event, context);
+    await reloadPlugin.activate?.(event, context);
 },
 ```
 
@@ -720,12 +760,12 @@ function postsSwrPlugin(config: {
         order,
         name: 'postsSwr',
 
-        fetch: async (event, logger) => {
+        fetch: async (event, context) => {
             if (!pathPattern.test(new URL(event.request.url).pathname)) {
                 return undefined;
             }
 
-            return swrPlugin.fetch!(event, logger);
+            return swrPlugin.fetch!(event, context);
         },
     };
 }
@@ -751,6 +791,7 @@ initServiceWorker(
     ],
     {
         version: '1.8.0',
+        base: '/my-app/',
         logger: console,
     }
 );
@@ -797,22 +838,26 @@ activateAndUpdateOnNextVisitSW({
 
 ### Published utilities
 
-| Name                                                            | Use in | Description                                                                                                                                                         |
-| --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)` | client | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)).       |
-| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`            | client | Subscribe to new SW version. Returns an unsubscribe function. Callback when new version is installed and there is an active controller (update, not first install). |
-| `onServiceWorkerMessage(messageType, handler)`                  | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. "new version available" banners.                                        |
-| `isServiceWorkerSupported()`                                    | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                            |
-| `postMessageToServiceWorker(message, options?)`                 | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                                  |
-| `getServiceWorkerVersion(options?)`                             | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                               |
-| `pingServiceWorker(options?)`                                   | client | GET /sw-ping (handled by ping plugin). Wakes SW if sleeping, checks fetch availability. Returns `'ok' \| 'no-sw' \| 'error'`.                                       |
-| `isBackgroundFetchSupported()`                                  | client | Check if [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) is available. Returns `Promise<boolean>`.                   |
-| `startBackgroundFetch(registration, id, requests, options?)`     | client | Start a background fetch. Returns `Promise<BackgroundFetchRegistration>`.                                                                                            |
-| `getBackgroundFetchRegistration(registration, id)`              | client | Get background fetch registration by id. Returns `Promise<BackgroundFetchRegistration \| undefined>`.                                                               |
-| `abortBackgroundFetch(registration, id)`                        | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                 |
-| `getBackgroundFetchIds(registration)`                           | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                  |
-| `normalizeUrl(url)`                                             | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                    |
+| Name                                                             | Use in | Description                                                                                                                                                                                 |
+| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registerServiceWorkerWithClaimWorkaround(scriptURL, options?)`  | client | Register SW when activate calls claim(); optional one-time reload on first load (workaround for [browser bug](https://issues.chromium.org/issues/482903583)).                               |
+| `onNewServiceWorkerVersion(regOrHandler, onUpdate?)`             | client | Subscribe to new SW version. Returns an unsubscribe function. Callback when new version is installed and there is an active controller (update, not first install).                         |
+| `onServiceWorkerMessage(messageType, handler)`                   | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. "new version available" banners.                                                                |
+| `isServiceWorkerSupported()`                                     | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                                                    |
+| `postMessageToServiceWorker(message, options?)`                  | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                                                          |
+| `getServiceWorkerVersion(options?)`                              | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                                                       |
+| `pingServiceWorker(options?)`                                    | client | GET /sw-ping (handled by ping plugin). Wakes SW if sleeping, checks fetch availability. Returns `'ok' \| 'no-sw' \| 'error'`.                                                               |
+| `isBackgroundFetchSupported()`                                   | client | Check if [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) is available. Returns `Promise<boolean>`.                                            |
+| `startBackgroundFetch(registration, id, requests, options?)`     | client | Start a background fetch. Returns `Promise<BackgroundFetchRegistration>`.                                                                                                                   |
+| `getBackgroundFetchRegistration(registration, id)`               | client | Get background fetch registration by id. Returns `Promise<BackgroundFetchRegistration \| undefined>`.                                                                                       |
+| `abortBackgroundFetch(registration, id)`                         | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                                       |
+| `getBackgroundFetchIds(registration)`                            | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                                         |
+| `normalizeUrl(url)`                                              | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                                            |
+| `resolveAssetUrls(assets, base?)`                                | SW     | Resolve asset paths with base. Returns full URLs.                                                                                               |
+| `matchByUrl(cache, request)`                                     | SW     | Match cached response by URL only (ignores request mode).                                                                                        |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows controlled by this SW. If `includeUncontrolled = true`, also sends to uncontrolled windows in scope. |
+
+**`matchByUrl` for third-party plugins:** `cache.match(event.request)` matches by full request (URL + mode + credentials). Script requests have `mode: 'script'`; precache stores with a different mode. No match → cache miss. Use `matchByUrl(cache, event.request)` when looking up a resource in the cache by request.
 
 **Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.
 
@@ -910,6 +955,7 @@ Import type **`Plugin`** (alias for `ServiceWorkerPlugin<PluginContext>`); and i
 
 ```typescript
 import type { Plugin } from '@budarin/pluggable-serviceworker';
+import { matchByUrl } from '@budarin/pluggable-serviceworker/utils';
 
 export interface MyPluginConfig {
     cacheName: string;
@@ -923,14 +969,15 @@ export function myPlugin(config: MyPluginConfig): Plugin {
         order,
         name: 'my-plugin',
 
-        install: async (_event, logger) => {
-            logger.info('my-plugin: install');
+        install: async (_event, context) => {
+            context.logger?.info('my-plugin: install');
             const cache = await caches.open(cacheName);
             await cache.add('/offline.html');
         },
 
         fetch: async (event) => {
-            const cached = await caches.match(event.request);
+            const cache = await caches.open(cacheName);
+            const cached = await matchByUrl(cache, event.request);
             return cached ?? undefined;
         },
     };
@@ -941,11 +988,11 @@ export function myPlugin(config: MyPluginConfig): Plugin {
 
 Ready-made plugins are installed as separate dependencies and passed into `initServiceWorker` along with the rest:
 
-| Plugin | Purpose |
-|--------|---------|
-| [**@budarin/psw-plugin-serve-root-from-asset**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-root-from-asset) | Serves a chosen cached HTML asset for root (`/`) navigation — typical SPA setup. |
-| [**@budarin/psw-plugin-serve-range-requests**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-range-requests) | Handles Range requests for cached files (video, audio, PDF): 206 responses, seeking and streaming from cache. |
-| [**@budarin/psw-plugin-opfs-serve-range**](https://www.npmjs.com/package/@budarin/psw-plugin-opfs-serve-range) | Serves HTTP Range requests for files stored in the Origin Private File System (OPFS) — handy for offline storage and large media. |
+| Plugin                                                                                                                   | Purpose                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| [**@budarin/psw-plugin-serve-root-from-asset**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-root-from-asset) | Serves a chosen cached HTML asset for root (`/`) navigation — typical SPA setup.                                                  |
+| [**@budarin/psw-plugin-serve-range-requests**](https://www.npmjs.com/package/@budarin/psw-plugin-serve-range-requests)   | Handles Range requests for cached files (video, audio, PDF): 206 responses, seeking and streaming from cache.                     |
+| [**@budarin/psw-plugin-opfs-serve-range**](https://www.npmjs.com/package/@budarin/psw-plugin-opfs-serve-range)           | Serves HTTP Range requests for files stored in the Origin Private File System (OPFS) — handy for offline storage and large media. |
 
 Install and API details are in each plugin’s README on npm.
 

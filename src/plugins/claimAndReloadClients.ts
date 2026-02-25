@@ -22,9 +22,9 @@ export function claimAndReloadClients(
         order,
         name: 'claimAndReloadClients',
 
-        activate: async (event, logger) => {
-            await claimPlugin.activate?.(event, logger);
-            await reloadPlugin.activate?.(event, logger);
+        activate: async (event, context) => {
+            await claimPlugin.activate?.(event, context);
+            await reloadPlugin.activate?.(event, context);
         },
     };
 }

@@ -67,17 +67,17 @@ export function precacheAndServePlugin(config: {
     return {
         name: 'precache-and-serve',
 
-        install: async () => {
+        install: async (_event, _context) => {
             const cache = await caches.open(cacheName);
             await cache.addAll(assets);
         },
 
-        fetch: async (event, logger) => {
+        fetch: async (event, context) => {
             const cache = await caches.open(cacheName);
-            const asset = await cache.match(event.request);
+            const asset = await cache.match(event.request.url);
 
             if (!asset) {
-                logger.debug(
+                context.logger?.debug(
                     '[SW] cache miss',
                     new URL(event.request.url).pathname
                 );
@@ -156,17 +156,17 @@ function postsSwrPlugin(config: {
     return {
         name: 'posts-swr',
 
-        async fetch(event, logger) {
+        async fetch(event, context) {
             const url = new URL(event.request.url);
 
             if (!pathPattern.test(url.pathname)) {
                 return undefined;
             }
 
-            logger.info('[SW] posts SWR for', url.pathname);
+            context.logger?.info('[SW] posts SWR for', url.pathname);
 
             // вызываем код существующего плагина SWR
-            return swr.fetch!(event, logger);
+            return swr.fetch!(event, context);
         },
     };
 }

@@ -40,9 +40,9 @@ export function precacheWithNotification(
         order,
         name: 'precacheWithNotification',
 
-        install: async (event, logger) => {
+        install: async (event, context) => {
             await notifyClients(startInstallingMessage);
-            await preCachePlugin.install?.(event, logger);
+            await preCachePlugin.install?.(event, context);
             await notifyClients(installedMessage);
         },
     };

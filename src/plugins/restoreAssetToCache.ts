@@ -2,6 +2,7 @@ import type { Plugin } from '../index.js';
 
 import { matchByUrl } from '../utils/matchByUrl.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
 
 export interface RestoreAssetToCacheConfig {
     cacheName: string;
@@ -16,13 +17,14 @@ export interface RestoreAssetToCacheConfig {
  */
 export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
     const { cacheName, assets, order = 0 } = config;
-    const normalizedHrefs = new Set(assets.map((url) => normalizeUrl(url)));
 
     return {
         order,
         name: 'restoreAssetToCache',
 
-        fetch: async (event) => {
+        fetch: async (event, context) => {
+            const resolved = resolveAssetUrls(assets, context.base);
+            const normalizedHrefs = new Set(resolved.map((url) => normalizeUrl(url)));
             if (!normalizedHrefs.has(normalizeUrl(event.request.url))) {
                 return undefined;
             }

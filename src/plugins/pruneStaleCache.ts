@@ -1,6 +1,7 @@
 import type { Plugin } from '../index.js';
 
 import { normalizeUrl } from '../utils/normalizeUrl.js';
+import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
 
 export interface PruneStaleCacheConfig {
     cacheName: string;
@@ -13,13 +14,14 @@ export interface PruneStaleCacheConfig {
  */
 export function pruneStaleCache(config: PruneStaleCacheConfig): Plugin {
     const { cacheName, assets, order = 0 } = config;
-    const assetHrefs = new Set(assets.map((url) => normalizeUrl(url)));
 
     return {
         order,
         name: 'pruneStaleCache',
 
-        activate: async () => {
+        activate: async (_event, context) => {
+            const resolved = resolveAssetUrls(assets, context.base);
+            const assetHrefs = new Set(resolved.map((url) => normalizeUrl(url)));
             const cache = await caches.open(cacheName);
             const keys = await cache.keys();
 

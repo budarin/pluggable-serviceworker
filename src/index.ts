@@ -91,9 +91,11 @@ export interface Logger {
     error: (...data: unknown[]) => void;
 }
 
-/** Опции, доступные плагинам. В обработчики передаётся только logger (второй аргумент). */
+/** Опции, доступные плагинам. В обработчики передаётся context (второй аргумент). */
 export interface PluginContext {
     logger?: Logger;
+    /** Base path приложения, напр. '/' или '/my-app/'. */
+    base?: string;
 }
 
 /** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
@@ -144,18 +146,24 @@ export type RequiredOptions<P extends readonly unknown[]> = UnionToIntersection<
 >;
 
 interface ServiceWorkerEventHandlers {
-    install?: (event: ExtendableEvent, logger: Logger) => void | Promise<void>;
-    activate?: (event: ExtendableEvent, logger: Logger) => void | Promise<void>;
+    install?: (
+        event: ExtendableEvent,
+        context: PluginContext
+    ) => void | Promise<void>;
+    activate?: (
+        event: ExtendableEvent,
+        context: PluginContext
+    ) => void | Promise<void>;
     fetch?: (
         event: FetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => Promise<Response | undefined>;
-    message?: (event: SwMessageEvent, logger: Logger) => void;
-    sync?: (event: SyncEvent, logger: Logger) => Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent, logger: Logger) => Promise<void>;
+    message?: (event: SwMessageEvent, context: PluginContext) => void;
+    sync?: (event: SyncEvent, context: PluginContext) => Promise<void>;
+    periodicsync?: (event: PeriodicSyncEvent, context: PluginContext) => Promise<void>;
     push?: (
         event: PushEvent,
-        logger: Logger
+        context: PluginContext
     ) =>
         | void
         | PushNotificationPayload
@@ -163,19 +171,19 @@ interface ServiceWorkerEventHandlers {
         | Promise<void | PushNotificationPayload | false>;
     backgroundfetchsuccess?: (
         event: BackgroundFetchUpdateUIEvent,
-        logger: Logger
+        context: PluginContext
     ) => void | Promise<void>;
     backgroundfetchfail?: (
         event: BackgroundFetchUpdateUIEvent,
-        logger: Logger
+        context: PluginContext
     ) => void | Promise<void>;
     backgroundfetchabort?: (
         event: BackgroundFetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => void | Promise<void>;
     backgroundfetchclick?: (
         event: BackgroundFetchEvent,
-        logger: Logger
+        context: PluginContext
     ) => void | Promise<void>;
 }
 
@@ -193,22 +201,31 @@ export type FetchResponse = Promise<Response | undefined>;
 
 type InstallHandler = (
     event: ExtendableEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
 type ActivateHandler = (
     event: ExtendableEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
-type FetchHandler = (event: FetchEvent, logger: Logger) => FetchResponse;
-type MessageHandler = (event: SwMessageEvent, logger: Logger) => void;
-type SyncHandler = (event: SyncEvent, logger: Logger) => Promise<void>;
+type FetchHandler = (
+    event: FetchEvent,
+    context: PluginContext
+) => FetchResponse;
+type MessageHandler = (
+    event: SwMessageEvent,
+    context: PluginContext
+) => void;
+type SyncHandler = (
+    event: SyncEvent,
+    context: PluginContext
+) => Promise<void>;
 type PeriodicsyncHandler = (
     event: PeriodicSyncEvent,
-    logger: Logger
+    context: PluginContext
 ) => Promise<void>;
 type PushHandler = (
     event: PushEvent,
-    logger: Logger
+    context: PluginContext
 ) =>
     | void
     | PushNotificationPayload
@@ -216,19 +233,19 @@ type PushHandler = (
     | Promise<void | PushNotificationPayload | false>;
 type BackgroundFetchSuccessHandler = (
     event: BackgroundFetchUpdateUIEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
 type BackgroundFetchFailHandler = (
     event: BackgroundFetchUpdateUIEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
 type BackgroundFetchAbortHandler = (
     event: BackgroundFetchEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
 type BackgroundFetchClickHandler = (
     event: BackgroundFetchEvent,
-    logger: Logger
+    context: PluginContext
 ) => void | Promise<void>;
 
 /** Тип возвращаемых обработчиков: обработчики событий SW добавляются только при наличии плагинов. */
@@ -268,7 +285,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         backgroundfetchclick: [] as BackgroundFetchClickHandler[],
     };
 
-    const logger = options.logger ?? console;
+    const context: PluginContext = {
+        logger: options.logger ?? console,
+        ...(options.base !== undefined && { base: options.base }),
+    };
 
     // Сортировка плагинов по order (по умолчанию 0)
     // Порядок важен для fetch и push (последовательное выполнение)
@@ -319,7 +339,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.ERROR
                 );
             } catch (error) {
-                logger.error('Error in error handler:', error);
+                context.logger?.error('Error in error handler:', error);
             }
         },
 
@@ -331,7 +351,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.MESSAGE_ERROR
                 );
             } catch (error) {
-                logger.error('Error in messageerror handler:', error);
+                context.logger?.error('Error in messageerror handler:', error);
             }
         },
 
@@ -343,7 +363,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                logger.error('Error in unhandledrejection handler:', error);
+                context.logger?.error('Error in unhandledrejection handler:', error);
             }
         },
 
@@ -355,7 +375,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.REJECTION_HANDLED
                 );
             } catch (error) {
-                logger.error('Error in rejectionhandled handler:', error);
+                context.logger?.error('Error in rejectionhandled handler:', error);
             }
         },
     };
@@ -366,7 +386,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.install.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -385,7 +405,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.activate.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -410,7 +430,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 (async (): Promise<Response> => {
                     for (const handler of handlers.fetch) {
                         try {
-                            const res = await handler(event, logger);
+                            const res = await handler(event, context);
 
                             if (res !== undefined) {
                                 return res;
@@ -449,7 +469,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         result.message = (event: SwMessageEvent): void => {
             handlers.message.forEach((handler) => {
                 try {
-                    handler(event, logger);
+                    handler(event, context);
                 } catch (error) {
                     options.onError?.(
                         error as Error,
@@ -466,7 +486,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.sync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -485,7 +505,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.periodicsync.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -511,7 +531,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     for (const handler of handlers.push) {
                         try {
                             const res = await Promise.resolve(
-                                handler(event, logger)
+                                handler(event, context)
                             );
 
                             returns.push(
@@ -618,7 +638,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.backgroundfetchsuccess.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -639,7 +659,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.backgroundfetchfail.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -658,7 +678,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.backgroundfetchabort.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
@@ -677,7 +697,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                 Promise.all(
                     handlers.backgroundfetchclick.map((handler) =>
                         Promise.resolve()
-                            .then(() => handler(event, logger))
+                            .then(() => handler(event, context))
                             .catch((error: unknown) =>
                                 options.onError?.(
                                     error as Error,
