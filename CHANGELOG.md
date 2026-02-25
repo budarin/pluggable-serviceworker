@@ -1,3 +1,8 @@
+## 1.12.1
+
+- **`PluginContext.passthroughHeader`**: Changed from required to optional (`passthroughHeader?: string`). Mock contexts in tests no longer need to include this field.
+- **Built-in plugins**: Removed unnecessary `PSW_PASSTHROUGH_HEADER` imports; plugins now use `context.passthroughHeader!` directly (the library always populates it).
+
 ## 1.12.0
 
 - **passthrough requests**: New mechanism to bypass the plugin chain for "internal" fetch calls made by plugins. Requests carrying the passthrough header are not passed to any plugin — the browser handles them natively (network request).
