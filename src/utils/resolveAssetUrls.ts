@@ -10,7 +10,11 @@ export function resolveAssetUrls(
     base?: string
 ): string[] {
     if (!base || base === '/') {
-        return assets.map((url) => normalizeUrl(url));
+        return assets.map((url) =>
+            url.startsWith('http://') || url.startsWith('https://')
+                ? url
+                : normalizeUrl(url)
+        );
     }
 
     const basePath = base.replace(/\/$/, '') || '';

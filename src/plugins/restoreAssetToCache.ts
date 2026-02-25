@@ -18,14 +18,30 @@ export interface RestoreAssetToCacheConfig {
 export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
     const { cacheName, assets, order = 0 } = config;
 
+    let cachedHrefs: { base: string | undefined; hrefs: Set<string> } | null =
+        null;
+
     return {
         order,
         name: 'restoreAssetToCache',
 
         fetch: async (event, context) => {
-            const resolved = resolveAssetUrls(assets, context.base);
-            const normalizedHrefs = new Set(resolved.map((url) => normalizeUrl(url)));
-            if (!normalizedHrefs.has(normalizeUrl(event.request.url))) {
+            if (
+                !cachedHrefs ||
+                cachedHrefs.base !== context.base
+            ) {
+                cachedHrefs = {
+                    base: context.base,
+                    hrefs: new Set(
+                        resolveAssetUrls(assets, context.base).map((url) =>
+                            normalizeUrl(url)
+                        )
+                    ),
+                };
+            }
+
+            const hrefs = cachedHrefs.hrefs;
+            if (!hrefs.has(normalizeUrl(event.request.url))) {
                 return undefined;
             }
 

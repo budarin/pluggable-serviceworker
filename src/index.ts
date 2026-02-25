@@ -290,6 +290,30 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         ...(options.base !== undefined && { base: options.base }),
     };
 
+    function runParallelHandlers<E extends ExtendableEvent>(
+        handlerList: Array<
+            (event: E, ctx: PluginContext) => void | Promise<void>
+        >,
+        event: E,
+        errorType: ServiceWorkerErrorType
+    ): void {
+        event.waitUntil(
+            Promise.all(
+                handlerList.map((handler) =>
+                    Promise.resolve()
+                        .then(() => handler(event, context))
+                        .catch((error: unknown) =>
+                            options.onError?.(
+                                error as Error,
+                                event,
+                                errorType
+                            )
+                        )
+                )
+            )
+        );
+    }
+
     // Сортировка плагинов по order (по умолчанию 0)
     // Порядок важен для fetch и push (последовательное выполнение)
     // Для остальных событий (install, activate, message, sync, periodicsync) выполнение параллельное,
@@ -381,42 +405,20 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     };
 
     if (handlers.install.length > 0) {
-        result.install = (event: ExtendableEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.install.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.INSTALL_ERROR
-                                )
-                            )
-                    )
-                )
+        result.install = (event: ExtendableEvent): void =>
+            runParallelHandlers(
+                handlers.install,
+                event,
+                serviceWorkerErrorTypes.INSTALL_ERROR
             );
-        };
     }
     if (handlers.activate.length > 0) {
-        result.activate = (event: ExtendableEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.activate.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.ACTIVATE_ERROR
-                                )
-                            )
-                    )
-                )
+        result.activate = (event: ExtendableEvent): void =>
+            runParallelHandlers(
+                handlers.activate,
+                event,
+                serviceWorkerErrorTypes.ACTIVATE_ERROR
             );
-        };
     }
     if (handlers.fetch.length > 0) {
         /** Depth of fallback fetch calls. When > 0, we don't call respondWith so the browser handles the request natively (avoids recursion). */
@@ -481,42 +483,20 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         };
     }
     if (handlers.sync.length > 0) {
-        result.sync = (event: SyncEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.sync.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.SYNC_ERROR
-                                )
-                            )
-                    )
-                )
+        result.sync = (event: SyncEvent): void =>
+            runParallelHandlers(
+                handlers.sync,
+                event,
+                serviceWorkerErrorTypes.SYNC_ERROR
             );
-        };
     }
     if (handlers.periodicsync.length > 0) {
-        result.periodicsync = (event: PeriodicSyncEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.periodicsync.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.PERIODICSYNC_ERROR
-                                )
-                            )
-                    )
-                )
+        result.periodicsync = (event: PeriodicSyncEvent): void =>
+            runParallelHandlers(
+                handlers.periodicsync,
+                event,
+                serviceWorkerErrorTypes.PERIODICSYNC_ERROR
             );
-        };
     }
     if (handlers.push.length > 0) {
         result.push = (event: PushEvent): void => {
@@ -633,82 +613,38 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     if (handlers.backgroundfetchsuccess.length > 0) {
         result.backgroundfetchsuccess = (
             event: BackgroundFetchUpdateUIEvent
-        ): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.backgroundfetchsuccess.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.BACKGROUNDFETCHSUCCESS_ERROR
-                                )
-                            )
-                    )
-                )
+        ): void =>
+            runParallelHandlers(
+                handlers.backgroundfetchsuccess,
+                event,
+                serviceWorkerErrorTypes.BACKGROUNDFETCHSUCCESS_ERROR
             );
-        };
     }
     if (handlers.backgroundfetchfail.length > 0) {
         result.backgroundfetchfail = (
             event: BackgroundFetchUpdateUIEvent
-        ): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.backgroundfetchfail.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.BACKGROUNDFETCHFAIL_ERROR
-                                )
-                            )
-                    )
-                )
+        ): void =>
+            runParallelHandlers(
+                handlers.backgroundfetchfail,
+                event,
+                serviceWorkerErrorTypes.BACKGROUNDFETCHFAIL_ERROR
             );
-        };
     }
     if (handlers.backgroundfetchabort.length > 0) {
-        result.backgroundfetchabort = (event: BackgroundFetchEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.backgroundfetchabort.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.BACKGROUNDFETCHABORT_ERROR
-                                )
-                            )
-                    )
-                )
+        result.backgroundfetchabort = (event: BackgroundFetchEvent): void =>
+            runParallelHandlers(
+                handlers.backgroundfetchabort,
+                event,
+                serviceWorkerErrorTypes.BACKGROUNDFETCHABORT_ERROR
             );
-        };
     }
     if (handlers.backgroundfetchclick.length > 0) {
-        result.backgroundfetchclick = (event: BackgroundFetchEvent): void => {
-            event.waitUntil(
-                Promise.all(
-                    handlers.backgroundfetchclick.map((handler) =>
-                        Promise.resolve()
-                            .then(() => handler(event, context))
-                            .catch((error: unknown) =>
-                                options.onError?.(
-                                    error as Error,
-                                    event,
-                                    serviceWorkerErrorTypes.BACKGROUNDFETCHCLICK_ERROR
-                                )
-                            )
-                    )
-                )
+        result.backgroundfetchclick = (event: BackgroundFetchEvent): void =>
+            runParallelHandlers(
+                handlers.backgroundfetchclick,
+                event,
+                serviceWorkerErrorTypes.BACKGROUNDFETCHCLICK_ERROR
             );
-        };
     }
 
     return result;
@@ -736,9 +672,10 @@ export function initServiceWorker<P extends readonly unknown[]>(
         createPingPlugin(opts.pingPath ?? SW_PING_PATH),
     ];
 
+    const allPlugins = [...internalPlugins, ...filteredPlugins];
     const names = new Set<string>();
 
-    for (const plugin of [...internalPlugins, ...filteredPlugins]) {
+    for (const plugin of allPlugins) {
         if (names.has(plugin.name)) {
             opts.logger.warn(`Duplicate plugin name: "${plugin.name}"`);
         }
@@ -746,10 +683,7 @@ export function initServiceWorker<P extends readonly unknown[]>(
         names.add(plugin.name);
     }
 
-    const handlers = createEventHandlers(
-        [...internalPlugins, ...filteredPlugins],
-        opts
-    );
+    const handlers = createEventHandlers(allPlugins, opts);
 
     // Регистрируем глобальные обработчики ошибок
     self.addEventListener(SW_EVENT_ERROR, handlers.error);

@@ -854,6 +854,7 @@ activateAndUpdateOnNextVisitSW({
 | `getBackgroundFetchIds(registration)`                            | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                                         |
 | `normalizeUrl(url)`                                              | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                                            |
 | `resolveAssetUrls(assets, base?)`                                | SW     | Resolve asset paths with base. Returns full URLs.                                                                                               |
+| `isRequestUrlInAssets(requestUrl, assets)`                        | SW     | Check if request URL is in the asset list (normalized comparison).                                                                                                                          |
 | `matchByUrl(cache, request)`                                     | SW     | Match cached response by URL only (ignores request mode).                                                                                        |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows controlled by this SW. If `includeUncontrolled = true`, also sends to uncontrolled windows in scope. |
 
