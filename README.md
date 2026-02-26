@@ -294,7 +294,10 @@ initServiceWorker(plugins, {
 
 **The problem.** When a plugin makes an internal `fetch()` — for example, `staleWhileRevalidate` fetches a fresh copy to update the cache, or an analytics plugin sends an event — that request re-enters the Service Worker's `fetch` handler and goes through all plugins again. This can cause infinite recursion or an "internal" request being served from cache instead of going to the network.
 
-**The solution.** Use `context.fetchPassthrough(request)` instead of a bare `fetch()`. The library wraps the call with an internal counter (`passthroughDepth`) that tells the `fetch` handler to skip all plugins for this request. The original `Request` object is passed to the network unchanged — no extra headers are added, so there is **no CORS preflight** on cross-origin requests.
+**The solution.** Use `context.fetchPassthrough(request)` instead of a bare `fetch()`. The library routes the request directly to the network, bypassing all plugins, using an origin-aware strategy:
+
+- **cross-origin request** — `fetch(request)` is called without any modification. A SW never intercepts its own cross-origin fetches (they are outside its scope), so there is no re-entry and no CORS preflight.
+- **same-origin request** — the passthrough header is added to a `Request` clone. This prevents re-entry into the SW's `fetch` handler. No CORS issue — same-origin requests never trigger a preflight.
 
 The header `passthroughRequestHeader` is an alternative mechanism for cases where requests arrive **from outside** the SW (e.g. another script) already carrying the marker. Default is `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`).
 

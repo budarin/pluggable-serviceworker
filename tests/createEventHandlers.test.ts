@@ -170,10 +170,10 @@ describe('createEventHandlers', () => {
             expect(globalFetch).toHaveBeenCalledWith(request);
         });
 
-        it('provides fetchPassthrough in plugin context that bypasses plugins', async () => {
-            const fetchResponse = new Response('from network');
-            const globalFetch = vi.fn().mockResolvedValue(fetchResponse);
+        it('fetchPassthrough (cross-origin): calls fetch(request) without modification', async () => {
+            const globalFetch = vi.fn().mockResolvedValue(new Response('ok'));
             vi.stubGlobal('fetch', globalFetch);
+            // self.location is undefined in test env → cross-origin path
 
             let capturedFetchPassthrough: ((r: Request) => Promise<Response>) | undefined;
             const plugins: ServiceWorkerPlugin[] = [
@@ -196,10 +196,81 @@ describe('createEventHandlers', () => {
 
             expect(capturedFetchPassthrough).toBeTypeOf('function');
 
-            // fetchPassthrough должен вызывать fetch напрямую (без модификации запроса)
             const req = new Request('https://example.com/api');
             await capturedFetchPassthrough!(req);
             expect(globalFetch).toHaveBeenCalledWith(req);
+        });
+
+        it('fetchPassthrough (same-origin): adds passthrough header, does not modify original request', async () => {
+            const globalFetch = vi.fn().mockResolvedValue(new Response('ok'));
+            vi.stubGlobal('fetch', globalFetch);
+            // self — объект-заглушка из setup.ts; добавляем location напрямую
+            (self as Record<string, unknown>).location = { origin: 'https://myapp.com' };
+
+            try {
+                let capturedFetchPassthrough: ((r: Request) => Promise<Response>) | undefined;
+                const plugins: ServiceWorkerPlugin[] = [
+                    {
+                        name: 'a',
+                        fetch: async (_event, context) => {
+                            capturedFetchPassthrough = context.fetchPassthrough;
+                            return undefined;
+                        },
+                    },
+                ];
+                const respondWith = vi.fn((p: Promise<unknown>) => p);
+                const event = {
+                    request: new Request('https://myapp.com/page'),
+                    respondWith,
+                };
+                const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+                handlers.fetch(event as unknown as FetchEvent);
+                await respondWith.mock.results[0]?.value;
+
+                const req = new Request('https://myapp.com/api/data');
+                await capturedFetchPassthrough!(req);
+
+                const calledWith = globalFetch.mock.calls.at(-1)?.[0] as Request;
+                expect(calledWith).toBeInstanceOf(Request);
+                expect(calledWith.url).toBe(req.url);
+                expect(calledWith.headers.has(PSW_PASSTHROUGH_HEADER)).toBe(true);
+                expect(req.headers.has(PSW_PASSTHROUGH_HEADER)).toBe(false);
+            } finally {
+                delete (self as Record<string, unknown>).location;
+            }
+        });
+
+        it('fetchPassthrough (same-origin, no-cors): calls fetch(request) without modification', async () => {
+            const globalFetch = vi.fn().mockResolvedValue(new Response('ok'));
+            vi.stubGlobal('fetch', globalFetch);
+            (self as Record<string, unknown>).location = { origin: 'https://myapp.com' };
+
+            try {
+                let capturedFetchPassthrough: ((r: Request) => Promise<Response>) | undefined;
+                const plugins: ServiceWorkerPlugin[] = [
+                    {
+                        name: 'a',
+                        fetch: async (_event, context) => {
+                            capturedFetchPassthrough = context.fetchPassthrough;
+                            return undefined;
+                        },
+                    },
+                ];
+                const respondWith = vi.fn((p: Promise<unknown>) => p);
+                const event = {
+                    request: new Request('https://myapp.com/page'),
+                    respondWith,
+                };
+                const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+                handlers.fetch(event as unknown as FetchEvent);
+                await respondWith.mock.results[0]?.value;
+
+                const req = new Request('https://myapp.com/asset.png', { mode: 'no-cors' });
+                await capturedFetchPassthrough!(req);
+                expect(globalFetch).toHaveBeenCalledWith(req);
+            } finally {
+                delete (self as Record<string, unknown>).location;
+            }
         });
 
         it('passes passthroughHeader to plugin context (default)', () => {

@@ -1,3 +1,11 @@
+## 1.13.1
+
+- **Fix: `fetchPassthrough` / fallback fetch blocking all concurrent requests** — replaced the global `passthroughDepth` counter with an origin-aware header strategy that targets only the specific outgoing request:
+  - **cross-origin**: `fetch(request)` is called directly without any modification. SW does not intercept its own cross-origin fetches (out of scope), so no re-entry is possible and no CORS preflight is triggered.
+  - **same-origin, `mode !== 'no-cors'`**: the passthrough header is added to a new `Request` clone — prevents re-entry in the SW's own `fetch` handler, no CORS issue (same-origin requests have no preflight).
+  - **same-origin, `mode === 'no-cors'`**: `fetch(request)` is called directly — browsers strip custom headers on `no-cors` requests anyway, and same-origin `no-cors` plugin fetches don't occur in practice.
+- **`passthroughDepth` counter removed entirely** — no shared async state that could leak across concurrent fetch events.
+
 ## 1.13.0
 
 - **`context.fetchPassthrough`**: New method `(request: Request) => Promise<Response>` added to `PluginContext`. Sends a fetch request directly to the network, bypassing all plugins and without modifying the `Request` object (no extra headers). Plugins must use `context.fetchPassthrough!` instead of bare `fetch()` for internal requests — this prevents re-entry into the plugin chain and avoids CORS preflight on cross-origin requests.

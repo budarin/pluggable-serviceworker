@@ -307,22 +307,38 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         backgroundfetchclick: [] as BackgroundFetchClickHandler[],
     };
 
-    let passthroughDepth = 0;
     const passthroughHeader =
         options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER;
+
+    /**
+     * Fetch that bypasses the plugin chain without a global counter.
+     * - cross-origin: SW never intercepts its own cross-origin fetches (out of scope),
+     *   so we call fetch() directly — no CORS preflight.
+     * - same-origin, mode !== 'no-cors': add the passthrough header to a new Request —
+     *   header survives re-entry check, no CORS issue (same-origin).
+     * - same-origin, mode === 'no-cors': custom headers are silently stripped by the
+     *   browser on no-cors requests; call fetch() directly — re-entry is theoretically
+     *   possible but same-origin no-cors plugin fetches don't occur in practice.
+     */
+    function passthroughFetch(request: Request): Promise<Response> {
+        const selfOrigin = (self as unknown as ServiceWorkerGlobalScope).location?.origin;
+        const isSameOrigin =
+            selfOrigin !== undefined && new URL(request.url).origin === selfOrigin;
+
+        if (!isSameOrigin || request.mode === 'no-cors') {
+            return fetch(request);
+        }
+
+        const headers = new Headers(request.headers);
+        headers.set(passthroughHeader, '1');
+        return fetch(new Request(request, { headers }));
+    }
 
     const context: PluginContext = {
         logger: options.logger ?? console,
         ...(options.base !== undefined && { base: options.base }),
         passthroughHeader,
-        fetchPassthrough: async (request: Request): Promise<Response> => {
-            passthroughDepth++;
-            try {
-                return await fetch(request);
-            } finally {
-                passthroughDepth--;
-            }
-        },
+        fetchPassthrough: passthroughFetch,
     };
 
     function runParallelHandlers<E extends ExtendableEvent>(
@@ -457,7 +473,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     }
     if (handlers.fetch.length > 0) {
         result.fetch = (event: FetchEvent): void => {
-            if (passthroughDepth > 0 || event.request.headers.has(passthroughHeader)) {
+            if (event.request.headers.has(passthroughHeader)) {
                 return;
             }
             event.respondWith(
@@ -478,12 +494,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
-                        passthroughDepth++;
-                        try {
-                            return await fetch(event.request);
-                        } finally {
-                            passthroughDepth--;
-                        }
+                        return await passthroughFetch(event.request);
                     } catch (error) {
                         options.onError?.(
                             error as Error,
