@@ -1,3 +1,7 @@
+## 1.12.2
+
+- **fetch fallback**: The library's own fallback `fetch()` (when all plugins return `undefined`) now adds the passthrough header to the request — same mechanism as plugin internal fetches. Removed the `passthroughDepth` counter that was previously used to prevent re-entry.
+
 ## 1.12.1
 
 - **`PluginContext.passthroughHeader`**: Changed from required to optional (`passthroughHeader?: string`). Mock contexts in tests no longer need to include this field.

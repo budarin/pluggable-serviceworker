@@ -167,7 +167,11 @@ describe('createEventHandlers', () => {
 
             const result = await respondWith.mock.calls[0]?.[0];
             expect(result).toBe(fetchResponse);
-            expect(globalFetch).toHaveBeenCalledWith(request);
+
+            const calledWith = globalFetch.mock.calls[0]?.[0] as Request;
+            expect(calledWith).toBeInstanceOf(Request);
+            expect(calledWith.url).toBe(request.url);
+            expect(calledWith.headers.has(PSW_PASSTHROUGH_HEADER)).toBe(true);
         });
 
         it('passes passthroughHeader to plugin context (default)', () => {

@@ -439,16 +439,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
             );
     }
     if (handlers.fetch.length > 0) {
-        /** Depth of fallback fetch calls. When > 0, we don't call respondWith so the browser handles the request natively (avoids recursion). */
-        let passthroughDepth = 0;
-
         const passthroughHeader =
             options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER;
 
         result.fetch = (event: FetchEvent): void => {
-            if (passthroughDepth > 0) {
-                return;
-            }
             if (event.request.headers.has(passthroughHeader)) {
                 return;
             }
@@ -470,12 +464,9 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
-                        passthroughDepth++;
-                        try {
-                            return await fetch(event.request);
-                        } finally {
-                            passthroughDepth--;
-                        }
+                        const headers = new Headers(event.request.headers);
+                        headers.set(passthroughHeader, '1');
+                        return await fetch(new Request(event.request, { headers }));
                     } catch (error) {
                         options.onError?.(
                             error as Error,
