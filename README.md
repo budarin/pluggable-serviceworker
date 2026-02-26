@@ -173,7 +173,7 @@ initServiceWorker(
 );
 ```
 
-**Why `matchByUrl` instead of `cache.match(event.request)`?** Script requests use `mode: 'script'`; precache stores with a different mode. `cache.match()` requires a full match (URL, mode, credentials) — no match, hence "Failed to fetch". `matchByUrl()` matches by URL only. Use it in the fetch handler when looking up a resource in the cache by request.
+**Why `matchByUrl` instead of `cache.match(event.request)`?** The browser sends requests with different `mode` (scripts, styles, images, etc. each have their own); precache stores with a different mode. `cache.match()` requires a full match (URL, mode, credentials) — no match, hence "Failed to fetch". `matchByUrl()` matches by URL path only (and by default ignores query string, so `/a.js?v=1` finds the entry for `/a.js`). Use it in the fetch handler when looking up any resource in the cache by request.
 
 ## Demo
 
@@ -907,10 +907,10 @@ activateAndUpdateOnNextVisitSW({
 | `normalizeUrl(url)`                                              | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                                            |
 | `resolveAssetUrls(assets, base?)`                                | SW     | Resolve asset paths with base. Returns full URLs.                                                                                               |
 | `isRequestUrlInAssets(requestUrl, assets)`                        | SW     | Check if request URL is in the asset list (normalized comparison).                                                                                                                          |
-| `matchByUrl(cache, request)`                                     | SW     | Match cached response by URL only (ignores request mode).                                                                                        |
+| `matchByUrl(cache, request, options?)`                          | SW     | Match cached response by URL path. Ignores request mode; by default ignores query (`ignoreSearch: true`) and Vary (`ignoreVary: true`), so e.g. `/a.js?v=1` finds `/a.js`. See below. |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows controlled by this SW. If `includeUncontrolled = true`, also sends to uncontrolled windows in scope. |
 
-**`matchByUrl` for third-party plugins:** `cache.match(event.request)` matches by full request (URL + mode + credentials). Script requests have `mode: 'script'`; precache stores with a different mode. No match → cache miss. Use `matchByUrl(cache, event.request)` when looking up a resource in the cache by request.
+**`matchByUrl` for third-party plugins:** `cache.match(event.request)` matches by full request (URL + mode + credentials). Page requests have their own mode (scripts, styles, images, etc.); precache stores with a different mode. No match → cache miss. Use `matchByUrl(cache, event.request)` when looking up any resource in the cache by request. Optional third argument: `{ ignoreSearch?: boolean; ignoreVary?: boolean }` (both default `true`) — `ignoreSearch` ignores the query string; `ignoreVary` returns cached responses even when the response's `Vary` header would otherwise require matching request headers (e.g. `Vary: Origin`). Set to `false` for strict matching.
 
 **Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.
 

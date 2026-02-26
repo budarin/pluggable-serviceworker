@@ -167,7 +167,7 @@ initServiceWorker(
 );
 ```
 
-**Почему `matchByUrl`, а не `cache.match(event.request)`?** Запрос скрипта браузер отправляет с `mode: 'script'`, а в кэш при precache запись попадает с другим mode. `cache.match()` требует полного совпадения (URL, mode, credentials) — не находит, в итоге «Failed to fetch». `matchByUrl()` ищет только по URL. Используйте его в fetch-обработчике, когда ищете в кэше ресурс по запросу.
+**Почему `matchByUrl`, а не `cache.match(event.request)`?** Браузер отправляет запросы с разным `mode` (скрипт — `script`, стили, картинки и т.д. — свои варианты), а в кэш при precache запись попадает с другим mode. `cache.match()` требует полного совпадения (URL, mode, credentials) — не находит, в итоге «Failed to fetch». `matchByUrl()` ищет только по URL (path); по умолчанию игнорирует query, так что `/a.js?v=1` находит запись для `/a.js`. Используйте его в fetch-обработчике при поиске в кэше по запросу для любых ресурсов.
 
 ## Демо
 
@@ -914,10 +914,10 @@ activateAndUpdateOnNextVisitSW({
 | `normalizeUrl(url)`                                              | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения.                                                                                                                                                    |
 | `resolveAssetUrls(assets, base?)`                                | SW               | Разрешает пути ассетов с учётом base. Возвращает полные URL.                                                                                                     |
 | `isRequestUrlInAssets(requestUrl, assets)`                        | SW               | Проверяет, входит ли URL запроса в список assets (сравнение по нормализованным URL).                                                                                                              |
-| `matchByUrl(cache, request)`                                     | SW               | Ищет ответ в кэше только по URL (игнорирует mode запроса).                                                                                                                   |
+| `matchByUrl(cache, request, options?)`                          | SW               | Ищет ответ в кэше по URL (path). Игнорирует mode; по умолчанию игнорирует query (`ignoreSearch: true`) и Vary (`ignoreVary: true`), напр. `/a.js?v=1` находит `/a.js`. См. ниже.                                                                 |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW               | Отправляет `{ type: messageType }` или `{ type: messageType, ...data }` всем окнам-клиентам, контролируемым данным SW. Если `includeUncontrolled = true`, дополнительно шлёт сообщение и неконтролируемым вкладкам в scope. |
 
-**`matchByUrl` для сторонних плагинов:** `cache.match(event.request)` сопоставляет по полному запросу (URL + mode + credentials). Запросы скриптов имеют `mode: 'script'`; precache кладёт в кэш с другим mode. Совпадения нет → промах. Используйте `matchByUrl(cache, event.request)` при поиске в кэше по запросу.
+**`matchByUrl` для сторонних плагинов:** `cache.match(event.request)` сопоставляет по полному запросу (URL + mode + credentials). У запросов с страницы свой mode (скрипты, стили, изображения и т.д.); precache кладёт в кэш с другим mode. Совпадения нет → промах. Используйте `matchByUrl(cache, event.request)` при поиске в кэше по запросу для любых типов ресурсов. Третий аргумент (опционально): `{ ignoreSearch?: boolean; ignoreVary?: boolean }` (оба по умолчанию `true`) — `ignoreSearch` игнорирует query; `ignoreVary` возвращает ответ из кэша даже если у него заголовок `Vary` (напр. `Vary: Origin`), иначе требующий совпадения заголовков запроса. Для строгого совпадения передайте `false`.
 
 **Клиентские подпути (для меньшего бандла):** можно импортировать из `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health` или `.../client/background-fetch` вместо `.../client`, чтобы подтянуть только нужные утилиты.
 

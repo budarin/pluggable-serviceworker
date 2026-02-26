@@ -1,3 +1,9 @@
+## 1.14.0
+
+- **`matchByUrl(cache, request, options?)`**: Optional third argument `MatchByUrlOptions` with `ignoreSearch?: boolean` (default `true`). When true, the query string is ignored when matching — e.g. request to `/assets/main.js?v=123` finds the cache entry for `/assets/main.js`. Use `{ ignoreSearch: false }` for strict full-URL matching.
+- **`MatchByUrlOptions`**: Type exported from `@budarin/pluggable-serviceworker/utils`.
+- **Docs**: README and README.ru updated for `matchByUrl` — why it exists (request mode mismatch for any resource type), `ignoreSearch` option and default; table and "for third-party plugins" sections; wording made generic (scripts, styles, images, etc.). reference.mdc updated.
+
 ## 1.13.1
 
 - **Fix: `fetchPassthrough` / fallback fetch blocking all concurrent requests** — replaced the global `passthroughDepth` counter with an origin-aware header strategy that targets only the specific outgoing request:
