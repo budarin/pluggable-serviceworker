@@ -1,3 +1,7 @@
+## 1.15.0
+
+- **`sendSkipWaitingSignal()`**: New client utility (no parameters) that sends the skip-waiting message to the **waiting** Service Worker (`registration.waiting`), not to the active one. Use with the `skipWaitingOnMessage` plugin when activating an update on user action (e.g. "Update" button). Exported from `@budarin/pluggable-serviceworker/client` and `.../client/messaging`. Docs: messaging README (EN/RU), main README and README.ru tables.
+
 ## 1.14.0
 
 - **`matchByUrl(cache, request, options?)`**: Optional third argument `MatchByUrlOptions` with `ignoreSearch?: boolean` (default `true`). When true, the query string is ignored when matching — e.g. request to `/assets/main.js?v=123` finds the cache entry for `/assets/main.js`. Use `{ ignoreSearch: false }` for strict full-URL matching.

@@ -12,6 +12,7 @@
 |-----|----------|
 | `onServiceWorkerMessage` | Подписка на сообщения от SW с заданным `data.type`. Возвращает функцию отписки. |
 | `postMessageToServiceWorker` | Отправка сообщения в активный Service Worker. |
+| `sendSkipWaitingSignal` | Отправка сигнала skip-waiting **ожидающему** SW (активация по сигналу). |
 | `getServiceWorkerVersion` | Запрос версии активного SW (из опций `initServiceWorker`). |
 | `PostMessageToServiceWorkerOptions` | Тип опций для `postMessageToServiceWorker`. |
 | `GetServiceWorkerVersionOptions` | Тип опций для `getServiceWorkerVersion`. |
@@ -133,7 +134,33 @@ await postMessageToServiceWorker({
 
 ---
 
-## 3. `getServiceWorkerVersion(options?)`
+## 3. `sendSkipWaitingSignal()`
+
+Отправляет сигнал skip-waiting **ожидающему** Service Worker (тому, что ждёт активации), а не активному. Используйте, когда SW использует `skipWaitingOnMessage` и вы хотите активировать новую версию по действию пользователя (кнопка «Обновить»). **Не** используйте для этого `postMessageToServiceWorker` — он шлёт в активный SW, который не может вызвать `skipWaiting()` за ожидающий.
+
+Параметров нет. Использует `navigator.serviceWorker.ready` и шлёт в `registration.waiting`, если он есть.
+
+- **Возвращает:** `Promise<boolean>` — `true`, если сообщение отправлено ожидающему воркеру, `false` если SW не поддерживается, регистрация не готова или нет ожидающего воркера.
+
+Если после вызова активация не происходит, обработчик сообщений у ожидающего воркера может ещё не быть готов (например, сразу после install). Вызывайте `sendSkipWaitingSignal()` когда приложение уже знает об ожидающем воркере (например, после появления `registration.waiting` в обработчике `updatefound`) или повторите вызов с небольшой задержкой.
+
+**Пример — кнопка «Обновить» при появлении новой версии:**
+
+```typescript
+import { sendSkipWaitingSignal } from '@budarin/pluggable-serviceworker/client/messaging';
+
+async function onUpdateClick() {
+    const sent = await sendSkipWaitingSignal();
+    if (!sent) {
+        console.warn('Нет ожидающего воркера (или SW не поддерживается)');
+    }
+    // После skipWaiting сработает controllerchange; можно перезагрузить страницу.
+}
+```
+
+---
+
+## 4. `getServiceWorkerVersion(options?)`
 
 Запрашивает **строку версии** у активного Service Worker (значение `version`, переданное в `initServiceWorker`). Использует внутренний протокол библиотеки: отправляет `{ type: PLUGGABLE_SW_GET_VERSION }` и ждёт `{ type: PLUGGABLE_SW_VERSION, version: string }`. Дополнительный код в SW не нужен.
 
@@ -182,6 +209,7 @@ console.log('Версия SW:', version ?? 'неизвестно');
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
@@ -191,15 +219,18 @@ const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) =
     showBanner('Новая версия ' + (data.version ?? '') + ' — перезагрузите страницу');
 });
 
-// 2) Отправка своего сообщения в SW
+// 2) Отправка своего сообщения в активный SW
 const sent = await postMessageToServiceWorker({ type: 'PING', id: 1 });
 if (!sent) console.warn('Сообщение не отправлено');
 
-// 3) Получение версии SW (протокол библиотеки)
+// 3) Сигнал ожидающему SW активироваться (используйте sendSkipWaitingSignal, не postMessageToServiceWorker)
+await sendSkipWaitingSignal();
+
+// 4) Получение версии SW (протокол библиотеки)
 const version = await getServiceWorkerVersion({ timeoutMs: 5000 });
 console.log('Версия Service Worker:', version ?? 'н/д');
 
-// 4) Отписка при необходимости
+// 5) Отписка при необходимости
 unsubscribe();
 ```
 
@@ -213,6 +244,7 @@ unsubscribe();
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 ```
@@ -223,6 +255,7 @@ import {
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client';
 ```

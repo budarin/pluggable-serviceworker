@@ -12,6 +12,7 @@ Utilities for sending messages to the Service Worker and subscribing to messages
 |------|--------------|
 | `onServiceWorkerMessage` | Subscribe to messages from SW with a given `data.type`. Returns unsubscribe. |
 | `postMessageToServiceWorker` | Send a message to the active Service Worker. |
+| `sendSkipWaitingSignal` | Send skip-waiting message to the **waiting** SW (for activation on signal). |
 | `getServiceWorkerVersion` | Request the active SW version (from `initServiceWorker` options). |
 | `PostMessageToServiceWorkerOptions` | Options type for `postMessageToServiceWorker`. |
 | `GetServiceWorkerVersionOptions` | Options type for `getServiceWorkerVersion`. |
@@ -133,7 +134,33 @@ await postMessageToServiceWorker({
 
 ---
 
-## 3. `getServiceWorkerVersion(options?)`
+## 3. `sendSkipWaitingSignal()`
+
+Sends the skip-waiting signal to the **waiting** Service Worker (the one pending activation), not to the active one. Use this when your SW uses `skipWaitingOnMessage` and you want the new version to activate on user action (e.g. “Update” button). **Do not** use `postMessageToServiceWorker` for this — that sends to the active SW, which cannot call `skipWaiting()` for the waiting one.
+
+No parameters. Uses `navigator.serviceWorker.ready` and sends to `registration.waiting` if present.
+
+- **Returns:** `Promise<boolean>` — `true` if the message was sent to a waiting worker, `false` if SW is not supported, registration is not ready, or there is no waiting worker.
+
+If activation does not happen after calling this, the waiting worker may not have its message handler ready yet (e.g. right after install). Call `sendSkipWaitingSignal()` when your app already knows there is a waiting worker (e.g. after `registration.waiting` is set in an `updatefound` handler), or retry after a short delay.
+
+**Example — “Update” button when a new version is waiting:**
+
+```typescript
+import { sendSkipWaitingSignal } from '@budarin/pluggable-serviceworker/client/messaging';
+
+async function onUpdateClick() {
+    const sent = await sendSkipWaitingSignal();
+    if (!sent) {
+        console.warn('No waiting worker (or SW not supported)');
+    }
+    // After skipWaiting, controllerchange will fire; you may reload the page.
+}
+```
+
+---
+
+## 4. `getServiceWorkerVersion(options?)`
 
 Requests the **version string** from the active Service Worker (the `version` passed to `initServiceWorker`). Uses the library’s internal protocol: sends `{ type: PLUGGABLE_SW_GET_VERSION }` and waits for `{ type: PLUGGABLE_SW_VERSION, version: string }`. No extra SW code needed.
 
@@ -182,6 +209,7 @@ console.log('SW version:', version ?? 'unknown');
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
@@ -191,15 +219,18 @@ const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) =
     showBanner('New version ' + (data.version ?? '') + ' — please reload');
 });
 
-// 2) Send a custom message to the SW
+// 2) Send a custom message to the active SW
 const sent = await postMessageToServiceWorker({ type: 'PING', id: 1 });
 if (!sent) console.warn('Message not sent');
 
-// 3) Get SW version (library protocol)
+// 3) Tell waiting SW to activate (use sendSkipWaitingSignal, not postMessageToServiceWorker)
+await sendSkipWaitingSignal();
+
+// 4) Get SW version (library protocol)
 const version = await getServiceWorkerVersion({ timeoutMs: 5000 });
 console.log('Service Worker version:', version ?? 'n/a');
 
-// 4) Cleanup when done
+// 5) Cleanup when done
 unsubscribe();
 ```
 
@@ -213,6 +244,7 @@ unsubscribe();
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 ```
@@ -223,6 +255,7 @@ import {
 import {
     onServiceWorkerMessage,
     postMessageToServiceWorker,
+    sendSkipWaitingSignal,
     getServiceWorkerVersion,
 } from '@budarin/pluggable-serviceworker/client';
 ```

@@ -12,6 +12,7 @@ export {
     getServiceWorkerVersion,
     type GetServiceWorkerVersionOptions,
 } from './messaging/index.js';
+export { sendSkipWaitingSignal } from './messaging/index.js';
 
 // Доступность / ping
 export { isServiceWorkerSupported } from './health/index.js';

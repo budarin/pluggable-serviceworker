@@ -7,3 +7,4 @@ export {
     getServiceWorkerVersion,
     type GetServiceWorkerVersionOptions,
 } from './getServiceWorkerVersion.js';
+export { sendSkipWaitingSignal } from './sendSkipWaitingSignal.js';
