@@ -1,3 +1,10 @@
+## 1.13.0
+
+- **`context.fetchPassthrough`**: New method `(request: Request) => Promise<Response>` added to `PluginContext`. Sends a fetch request directly to the network, bypassing all plugins and without modifying the `Request` object (no extra headers). Plugins must use `context.fetchPassthrough!` instead of bare `fetch()` for internal requests — this prevents re-entry into the plugin chain and avoids CORS preflight on cross-origin requests.
+- **`passthroughDepth` counter restored**: The library's own fallback `fetch()` (when all plugins return `undefined`) now uses `passthroughDepth` again instead of adding a passthrough header to the request. The original `Request` object is passed to the network unchanged — no CORS issues.
+- **Built-in plugins**: `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache` migrated from manual header injection (`headers.set(context.passthroughHeader!, '1')`) to `context.fetchPassthrough!(request)`.
+- **Docs**: README and README.ru updated with guidance on how to implement internal `fetch()` calls in custom plugins (✅ use `context.fetchPassthrough`, ❌ never call bare `fetch()`).
+
 ## 1.12.2
 
 - **fetch fallback**: The library's own fallback `fetch()` (when all plugins return `undefined`) now adds the passthrough header to the request — same mechanism as plugin internal fetches. Removed the `passthroughDepth` counter that was previously used to prevent re-entry.

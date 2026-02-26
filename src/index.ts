@@ -101,11 +101,16 @@ export interface PluginContext {
     base?: string;
     /**
      * Имя заголовка для «сквозных» запросов (passthrough).
-     * Плагины должны добавлять этот заголовок к своим внутренним fetch-запросам,
-     * чтобы они не попадали обратно в цепочку плагинов.
+     * Используется для идентификации входящих passthrough-запросов на уровне SW.
      * По умолчанию PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough').
      */
     passthroughHeader?: string;
+    /**
+     * Выполняет fetch-запрос в обход цепочки плагинов без модификации заголовков запроса.
+     * Используйте вместо прямого вызова fetch() для внутренних запросов плагина —
+     * запрос уйдёт напрямую в сеть, не вызывая рекурсию и не нарушая CORS.
+     */
+    fetchPassthrough?: (request: Request) => Promise<Response>;
 }
 
 /** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
@@ -302,10 +307,22 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         backgroundfetchclick: [] as BackgroundFetchClickHandler[],
     };
 
+    let passthroughDepth = 0;
+    const passthroughHeader =
+        options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER;
+
     const context: PluginContext = {
         logger: options.logger ?? console,
         ...(options.base !== undefined && { base: options.base }),
-        passthroughHeader: options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER,
+        passthroughHeader,
+        fetchPassthrough: async (request: Request): Promise<Response> => {
+            passthroughDepth++;
+            try {
+                return await fetch(request);
+            } finally {
+                passthroughDepth--;
+            }
+        },
     };
 
     function runParallelHandlers<E extends ExtendableEvent>(
@@ -439,11 +456,8 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
             );
     }
     if (handlers.fetch.length > 0) {
-        const passthroughHeader =
-            options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER;
-
         result.fetch = (event: FetchEvent): void => {
-            if (event.request.headers.has(passthroughHeader)) {
+            if (passthroughDepth > 0 || event.request.headers.has(passthroughHeader)) {
                 return;
             }
             event.respondWith(
@@ -464,9 +478,12 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
-                        const headers = new Headers(event.request.headers);
-                        headers.set(passthroughHeader, '1');
-                        return await fetch(new Request(event.request, { headers }));
+                        passthroughDepth++;
+                        try {
+                            return await fetch(event.request);
+                        } finally {
+                            passthroughDepth--;
+                        }
                     } catch (error) {
                         options.onError?.(
                             error as Error,

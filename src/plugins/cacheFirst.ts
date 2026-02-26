@@ -22,9 +22,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
             }
 
             try {
-                const headers = new Headers(event.request.headers);
-                headers.set(context.passthroughHeader!, '1');
-                const response = await fetch(new Request(event.request, { headers }));
+                const response = await context.fetchPassthrough!(event.request);
 
                 if (response.ok) {
                     await cache.put(event.request, response.clone());

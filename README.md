@@ -211,9 +211,10 @@ The second parameter `options` is of type `ServiceWorkerInitOptions`: required `
 
 ```ts
 interface PluginContext {
-    logger?: Logger;   // default: console
-    base?: string;     // app base path
+    logger?: Logger;            // default: console
+    base?: string;              // app base path
     passthroughHeader?: string; // header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER)
+    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch that bypasses all plugins
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -293,22 +294,30 @@ initServiceWorker(plugins, {
 
 **The problem.** When a plugin makes an internal `fetch()` — for example, `staleWhileRevalidate` fetches a fresh copy to update the cache, or an analytics plugin sends an event — that request re-enters the Service Worker's `fetch` handler and goes through all plugins again. This can cause infinite recursion or an "internal" request being served from cache instead of going to the network.
 
-**The solution.** A plugin marks its internal requests with a special header. The library detects it at the very start of the `fetch` handler, before any plugins are invoked, and lets the browser handle the request as a plain network request.
+**The solution.** Use `context.fetchPassthrough(request)` instead of a bare `fetch()`. The library wraps the call with an internal counter (`passthroughDepth`) that tells the `fetch` handler to skip all plugins for this request. The original `Request` object is passed to the network unchanged — no extra headers are added, so there is **no CORS preflight** on cross-origin requests.
 
-The header name is configurable. Default is `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`), active without any explicit configuration.
+The header `passthroughRequestHeader` is an alternative mechanism for cases where requests arrive **from outside** the SW (e.g. another script) already carrying the marker. Default is `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`).
 
-**Usage in a plugin** — use `context.passthroughHeader` so the correct header name is always used regardless of what the SW was configured with:
+**How to make a network request inside your plugin** — always call `context.fetchPassthrough`:
 
 ```ts
 fetch: async (event, context) => {
-    const headers = new Headers(event.request.headers);
-    headers.set(context.passthroughHeader, '1');
-    const response = await fetch(new Request(event.request, { headers }));
+    // ✅ correct — bypasses the plugin chain, no CORS issues
+    const response = await context.fetchPassthrough!(event.request);
     // ...
 }
 ```
 
-The built-in plugins (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) already do this internally — all their outbound `fetch()` calls carry the passthrough header to avoid re-entering the plugin chain.
+**Never** call bare `fetch()` for internal requests — the response will re-enter the handler and loop through all plugins again:
+
+```ts
+fetch: async (event, context) => {
+    // ❌ wrong — re-enters the plugin chain
+    const response = await fetch(event.request);
+}
+```
+
+The built-in plugins (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) all use `context.fetchPassthrough` internally.
 
 **Custom header name** (useful to avoid clashes with other headers):
 
@@ -467,9 +476,10 @@ A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when ca
 
 ```ts
 interface PluginContext {
-    logger?: Logger;         // Logger (default: console).
-    base?: string;           // App base path.
+    logger?: Logger;            // Logger (default: console).
+    base?: string;              // App base path.
     passthroughHeader?: string; // Header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER).
+    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, no CORS issues.
 }
 ```
 

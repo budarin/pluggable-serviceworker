@@ -205,9 +205,10 @@ initServiceWorker(
 
 ```ts
 interface PluginContext {
-    logger?: Logger;           // по умолчанию console
-    base?: string;             // base path приложения, напр. '/' или '/my-app/'
+    logger?: Logger;            // по умолчанию console
+    base?: string;              // base path приложения, напр. '/' или '/my-app/'
     passthroughHeader?: string; // имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER)
+    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -287,22 +288,30 @@ initServiceWorker(plugins, {
 
 **Проблема.** Когда плагин делает внутренний `fetch()` — например, `staleWhileRevalidate` запрашивает свежую копию для обновления кеша, или плагин аналитики отправляет событие — этот запрос снова попадает в обработчик `fetch` сервис-воркера и проходит через все плагины. Это может привести к бесконечной рекурсии или к тому, что «внутренний» запрос будет обслужен из кеша вместо того, чтобы уйти в сеть.
 
-**Решение.** Плагин помечает свои внутренние запросы специальным заголовком. Библиотека проверяет его в самом начале обработчика `fetch`, до вызова плагинов, и сразу пропускает запрос в браузер как обычный сетевой.
+**Решение.** Используйте `context.fetchPassthrough(request)` вместо голого `fetch()`. Библиотека оборачивает вызов внутренним счётчиком (`passthroughDepth`), который сигнализирует обработчику `fetch` пропустить все плагины для данного запроса. Оригинальный объект `Request` уходит в сеть **без изменений** — лишние заголовки не добавляются, поэтому **CORS preflight не возникает** даже для кросс-доменных запросов.
 
-Имя заголовка настраивается. По умолчанию используется `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`) — работает без явной конфигурации.
+Заголовок `passthroughRequestHeader` — альтернативный механизм: он срабатывает, когда запрос с маркером приходит **снаружи** SW (например, из другого скрипта). По умолчанию — `PSW_PASSTHROUGH_HEADER` (`'X-PSW-Passthrough'`).
 
-**Использование в плагине** — берите имя заголовка из `context.passthroughHeader`, чтобы всегда использовалось то имя, которое задано при инициализации SW:
+**Как делать сетевой запрос внутри плагина** — всегда используйте `context.fetchPassthrough`:
 
 ```ts
 fetch: async (event, context) => {
-    const headers = new Headers(event.request.headers);
-    headers.set(context.passthroughHeader, '1');
-    const response = await fetch(new Request(event.request, { headers }));
+    // ✅ правильно — обходит цепочку плагинов, не нарушает CORS
+    const response = await context.fetchPassthrough!(event.request);
     // ...
 }
 ```
 
-Встроенные плагины (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) уже делают это — все их внутренние `fetch()` несут passthrough-заголовок, чтобы не попасть обратно в цепочку плагинов.
+**Никогда** не вызывайте голый `fetch()` для внутренних запросов — ответ снова попадёт в обработчик и пройдёт через все плагины:
+
+```ts
+fetch: async (event, context) => {
+    // ❌ неправильно — запрос снова войдёт в цепочку плагинов
+    const response = await fetch(event.request);
+}
+```
+
+Встроенные плагины (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) уже используют `context.fetchPassthrough` внутри.
 
 **Кастомное имя заголовка** (если нужно избежать конфликта с другими заголовками):
 

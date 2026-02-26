@@ -167,11 +167,39 @@ describe('createEventHandlers', () => {
 
             const result = await respondWith.mock.calls[0]?.[0];
             expect(result).toBe(fetchResponse);
+            expect(globalFetch).toHaveBeenCalledWith(request);
+        });
 
-            const calledWith = globalFetch.mock.calls[0]?.[0] as Request;
-            expect(calledWith).toBeInstanceOf(Request);
-            expect(calledWith.url).toBe(request.url);
-            expect(calledWith.headers.has(PSW_PASSTHROUGH_HEADER)).toBe(true);
+        it('provides fetchPassthrough in plugin context that bypasses plugins', async () => {
+            const fetchResponse = new Response('from network');
+            const globalFetch = vi.fn().mockResolvedValue(fetchResponse);
+            vi.stubGlobal('fetch', globalFetch);
+
+            let capturedFetchPassthrough: ((r: Request) => Promise<Response>) | undefined;
+            const plugins: ServiceWorkerPlugin[] = [
+                {
+                    name: 'a',
+                    fetch: async (_event, context) => {
+                        capturedFetchPassthrough = context.fetchPassthrough;
+                        return undefined;
+                    },
+                },
+            ];
+            const respondWith = vi.fn((p: Promise<unknown>) => p);
+            const event = {
+                request: new Request('https://example.com/'),
+                respondWith,
+            };
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+            handlers.fetch(event as unknown as FetchEvent);
+            await respondWith.mock.results[0]?.value;
+
+            expect(capturedFetchPassthrough).toBeTypeOf('function');
+
+            // fetchPassthrough должен вызывать fetch напрямую (без модификации запроса)
+            const req = new Request('https://example.com/api');
+            await capturedFetchPassthrough!(req);
+            expect(globalFetch).toHaveBeenCalledWith(req);
         });
 
         it('passes passthroughHeader to plugin context (default)', () => {
