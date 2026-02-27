@@ -32,7 +32,7 @@
         "./utils": "./dist/utils/index.js"
     },
     "devDependencies": {
-        "@types/node": "^25.3.1",
+        "@types/node": "^25.3.2",
         "@types/serviceworker": "^0.0.192",
         "@types/web": "^0.0.338",
         "prettier": "^3.8.1",

@@ -1,6 +1,7 @@
 ## 1.17.0
 
 - **`ServiceWorkerInitOptions`** no longer extends `PluginContext`. Init options are now only: `version`, `base?`, `logger?`, `pingPath?`, `passthroughRequestHeader?`, `onError?`. Internal fields `fetchPassthrough` and `passthroughHeader` are **only** in the plugin context (second argument to handlers); they are not part of init options and must not be passed to `initServiceWorker`. `RequiredOptions<P>` uses a cleaned plugin context (omits `fetchPassthrough` and `passthroughHeader`), so callers are not required to provide them. Docs: README and README.ru updated — `ServiceWorkerInitOptions` interface and plugin-context vs options separation clarified.
+- **`serveRangePassthrough(config?)`**: New plugin (fetch). For requests with a `Range` header, passes through to the server via `context.fetchPassthrough(request)`. Optional config: `order?`. Exported from `@budarin/pluggable-serviceworker/plugins`. Docs: README and README.ru — Primitives table.
 
 ## 1.16.0
 

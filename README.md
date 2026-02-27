@@ -772,6 +772,7 @@ All primitives are **plugin factories**: config (if any) is passed at the call s
 | `networkFirst(config)`             | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
 | `restoreAssetToCache(config)`      | `fetch`    | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                                                |
 | `serveFromCache(config)`           | `fetch`    | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                                                         |
+| `serveRangePassthrough(config?)`   | `fetch`    | For requests with a `Range` header: sends the request to the server. |
 | `staleWhileRevalidate(config)`     | `fetch`    | Serve from cache, revalidate in background.                                                                                                                                  |
 | `precache(config)`                 | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
 | `precacheWithNotification(config)` | `install`  | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
