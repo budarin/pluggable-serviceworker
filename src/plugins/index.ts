@@ -5,6 +5,7 @@ export { skipWaiting } from './skipWaiting.js';
 export { networkFirst } from './networkFirst.js';
 export { reloadClients } from './reloadClients.js';
 export { serveFromCache } from './serveFromCache.js';
+export { serveRangePassthrough } from './serveRangePassthrough.js';
 export { precacheMissing } from './precacheMissing.js';
 export { pruneStaleCache } from './pruneStaleCache.js';
 export { precacheWithNotification } from './precacheAndNotify.js';

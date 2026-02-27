@@ -1,3 +1,7 @@
+## 1.17.0
+
+- **`serveRangePassthrough(config?)`**: New plugin (fetch). For requests with a `Range` header, passes through to the server via `context.fetchPassthrough(request)`. Optional config: `order?`. Exported from `@budarin/pluggable-serviceworker/plugins`. Docs: README and README.ru — Primitives table.
+
 ## 1.16.0
 
 - **`PluginContext.fetchPassthrough`**: Now required (was optional). The library always provided it; the type now reflects that. Built-in plugins and docs use `context.fetchPassthrough(request)` without non-null assertion. If you have test mocks that omit `fetchPassthrough`, add a stub function.
