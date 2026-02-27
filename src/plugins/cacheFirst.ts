@@ -22,7 +22,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
             }
 
             try {
-                const response = await context.fetchPassthrough!(event.request);
+                const response = await context.fetchPassthrough(event.request);
 
                 if (response.ok) {
                     await cache.put(event.request, response.clone());

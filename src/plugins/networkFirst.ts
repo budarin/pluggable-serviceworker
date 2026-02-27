@@ -17,7 +17,7 @@ export function networkFirst(config: NetworkFirstConfig): Plugin {
             const cache = await caches.open(cacheName);
 
             try {
-                const response = await context.fetchPassthrough!(event.request);
+                const response = await context.fetchPassthrough(event.request);
 
                 if (response.ok) {
                     await cache.put(event.request, response.clone());

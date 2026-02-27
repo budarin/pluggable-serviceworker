@@ -18,7 +18,7 @@ export function staleWhileRevalidate(
         fetch: async (event, context) => {
             const cache = await caches.open(cacheName);
             const cached = await matchByUrl(cache, event.request);
-            const revalidate = context.fetchPassthrough!(event.request).then(async (response) => {
+            const revalidate = context.fetchPassthrough(event.request).then(async (response) => {
                 if (response.ok) {
                     await cache.put(event.request, response.clone());
                 }

@@ -1,3 +1,7 @@
+## 1.16.0
+
+- **`PluginContext.fetchPassthrough`**: Now required (was optional). The library always provided it; the type now reflects that. Built-in plugins and docs use `context.fetchPassthrough(request)` without non-null assertion. If you have test mocks that omit `fetchPassthrough`, add a stub function.
+
 ## 1.15.0
 
 - **`sendSkipWaitingSignal()`**: New client utility (no parameters) that sends the skip-waiting message to the **waiting** Service Worker (`registration.waiting`), not to the active one. Use with the `skipWaitingOnMessage` plugin when activating an update on user action (e.g. "Update" button). Exported from `@budarin/pluggable-serviceworker/client` and `.../client/messaging`. Docs: messaging README (EN/RU), main README and README.ru tables.
@@ -18,9 +22,9 @@
 
 ## 1.13.0
 
-- **`context.fetchPassthrough`**: New method `(request: Request) => Promise<Response>` added to `PluginContext`. Sends a fetch request directly to the network, bypassing all plugins and without modifying the `Request` object (no extra headers). Plugins must use `context.fetchPassthrough!` instead of bare `fetch()` for internal requests — this prevents re-entry into the plugin chain and avoids CORS preflight on cross-origin requests.
+- **`context.fetchPassthrough`**: New method `(request: Request) => Promise<Response>` added to `PluginContext`. Sends a fetch request directly to the network, bypassing all plugins and without modifying the `Request` object (no extra headers). Plugins must use `context.fetchPassthrough` instead of bare `fetch()` for internal requests — this prevents re-entry into the plugin chain and avoids CORS preflight on cross-origin requests.
 - **`passthroughDepth` counter restored**: The library's own fallback `fetch()` (when all plugins return `undefined`) now uses `passthroughDepth` again instead of adding a passthrough header to the request. The original `Request` object is passed to the network unchanged — no CORS issues.
-- **Built-in plugins**: `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache` migrated from manual header injection (`headers.set(context.passthroughHeader!, '1')`) to `context.fetchPassthrough!(request)`.
+- **Built-in plugins**: `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache` migrated from manual header injection (`headers.set(context.passthroughHeader!, '1')`) to `context.fetchPassthrough(request)`.
 - **Docs**: README and README.ru updated with guidance on how to implement internal `fetch()` calls in custom plugins (✅ use `context.fetchPassthrough`, ❌ never call bare `fetch()`).
 
 ## 1.12.2

@@ -208,7 +208,7 @@ interface PluginContext {
     logger?: Logger;            // по умолчанию console
     base?: string;              // base path приложения, напр. '/' или '/my-app/'
     passthroughHeader?: string; // имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER)
-    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений
+    fetchPassthrough: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -300,7 +300,7 @@ initServiceWorker(plugins, {
 ```ts
 fetch: async (event, context) => {
     // ✅ правильно — обходит цепочку плагинов, не нарушает CORS
-    const response = await context.fetchPassthrough!(event.request);
+    const response = await context.fetchPassthrough(event.request);
     // ...
 }
 ```

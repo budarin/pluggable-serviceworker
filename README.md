@@ -214,7 +214,7 @@ interface PluginContext {
     logger?: Logger;            // default: console
     base?: string;              // app base path
     passthroughHeader?: string; // header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER)
-    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch that bypasses all plugins
+    fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins
 }
 
 interface ServiceWorkerInitOptions extends PluginContext {
@@ -306,7 +306,7 @@ The header `passthroughRequestHeader` is an alternative mechanism for cases wher
 ```ts
 fetch: async (event, context) => {
     // ✅ correct — bypasses the plugin chain, no CORS issues
-    const response = await context.fetchPassthrough!(event.request);
+    const response = await context.fetchPassthrough(event.request);
     // ...
 }
 ```
@@ -482,7 +482,7 @@ interface PluginContext {
     logger?: Logger;            // Logger (default: console).
     base?: string;              // App base path.
     passthroughHeader?: string; // Header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER).
-    fetchPassthrough?: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, no CORS issues.
+    fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, no CORS issues.
 }
 ```
 

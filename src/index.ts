@@ -110,7 +110,7 @@ export interface PluginContext {
      * Используйте вместо прямого вызова fetch() для внутренних запросов плагина —
      * запрос уйдёт напрямую в сеть, не вызывая рекурсию и не нарушая CORS.
      */
-    fetchPassthrough?: (request: Request) => Promise<Response>;
+    fetchPassthrough: (request: Request) => Promise<Response>;
 }
 
 /** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
