@@ -109,17 +109,29 @@ export interface PluginContext {
      * Выполняет fetch-запрос в обход цепочки плагинов без модификации заголовков запроса.
      * Используйте вместо прямого вызова fetch() для внутренних запросов плагина —
      * запрос уйдёт напрямую в сеть, не вызывая рекурсию и не нарушая CORS.
+     *
+     * Это поле доступно только в context плагинов и не должно передаваться
+     * в initServiceWorker через options.
      */
     fetchPassthrough: (request: Request) => Promise<Response>;
 }
 
-/** Опции инициализации: версия SW, контекст для плагинов + onError для библиотеки (в плагины не передаётся). */
-export interface ServiceWorkerInitOptions extends PluginContext {
+/**
+ * Опции инициализации сервис-воркера.
+ * Содержат публичный конфиг (version, base, logger, pingPath, passthroughRequestHeader, onError),
+ * но не включают внутренние поля PluginContext вроде fetchPassthrough/passthroughHeader.
+ */
+export interface ServiceWorkerInitOptions {
     /**
      * Версия сервис-воркера / приложения.
      * Используется для ответов на запрос версии и логирования.
      */
     version: string;
+
+    /** Base path приложения, напр. '/' или '/my-app/'. */
+    base?: string;
+
+    logger?: Logger;
 
     /**
      * Путь для ping-запроса (по умолчанию SW_PING_PATH, т.е. '/sw-ping').
@@ -162,9 +174,17 @@ export type UnionToIntersection<U> = (
     ? I
     : never;
 
+/**
+ * Контекст плагина, очищенный от внутренних полей, которые не должны
+ * требоваться в options initServiceWorker.
+ */
+type CleanPluginContext<C> = C extends PluginContext
+    ? Omit<C, 'fetchPassthrough' | 'passthroughHeader'>
+    : C;
+
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). P — кортеж плагинов, контекст выводится из каждого. */
 export type RequiredOptions<P extends readonly unknown[]> = UnionToIntersection<
-    ContextOfPlugin<P[number]>
+    CleanPluginContext<ContextOfPlugin<P[number]>>
 >;
 
 interface ServiceWorkerEventHandlers {
@@ -291,7 +311,7 @@ export interface CreateEventHandlersResult {
 
 export function createEventHandlers<_C extends PluginContext = PluginContext>(
     plugins: readonly ServiceWorkerPlugin<_C>[],
-    options: _C & ServiceWorkerInitOptions
+    options: ServiceWorkerInitOptions & CleanPluginContext<_C>
 ): CreateEventHandlersResult {
     const handlers = {
         install: [] as InstallHandler[],

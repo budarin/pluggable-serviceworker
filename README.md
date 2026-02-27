@@ -214,12 +214,17 @@ interface PluginContext {
     logger?: Logger;            // default: console
     base?: string;              // app base path
     passthroughHeader?: string; // header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER)
-    fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins
+    fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, available only in plugin context
 }
 
-interface ServiceWorkerInitOptions extends PluginContext {
+interface ServiceWorkerInitOptions {
     /** Service worker / app version string (e.g. '1.8.0'). */
     version: string;
+
+    /** App base path, e.g. '/' or '/my-app/'. */
+    base?: string;
+
+    logger?: Logger;
 
     /** Optional path for ping requests (default '/sw-ping'). */
     pingPath?: string;

@@ -208,12 +208,17 @@ interface PluginContext {
     logger?: Logger;            // по умолчанию console
     base?: string;              // base path приложения, напр. '/' или '/my-app/'
     passthroughHeader?: string; // имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER)
-    fetchPassthrough: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений
+    fetchPassthrough: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений; доступен только в контексте плагинов
 }
 
-interface ServiceWorkerInitOptions extends PluginContext {
+interface ServiceWorkerInitOptions {
     /** Версия сервис-воркера / приложения (строка, например '1.8.0'). */
     version: string;
+
+    /** Base path приложения, напр. '/' или '/my-app/'. */
+    base?: string;
+
+    logger?: Logger;
 
     /** Необязательный путь для ping-запроса (по умолчанию '/sw-ping'). */
     pingPath?: string;

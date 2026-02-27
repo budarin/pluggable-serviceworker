@@ -1,3 +1,7 @@
+## 1.17.0
+
+- **`ServiceWorkerInitOptions`** no longer extends `PluginContext`. Init options are now only: `version`, `base?`, `logger?`, `pingPath?`, `passthroughRequestHeader?`, `onError?`. Internal fields `fetchPassthrough` and `passthroughHeader` are **only** in the plugin context (second argument to handlers); they are not part of init options and must not be passed to `initServiceWorker`. `RequiredOptions<P>` uses a cleaned plugin context (omits `fetchPassthrough` and `passthroughHeader`), so callers are not required to provide them. Docs: README and README.ru updated — `ServiceWorkerInitOptions` interface and plugin-context vs options separation clarified.
+
 ## 1.16.0
 
 - **`PluginContext.fetchPassthrough`**: Now required (was optional). The library always provided it; the type now reflects that. Built-in plugins and docs use `context.fetchPassthrough(request)` without non-null assertion. If you have test mocks that omit `fetchPassthrough`, add a stub function.
