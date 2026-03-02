@@ -207,7 +207,7 @@ initServiceWorker(
 interface PluginContext {
     logger?: Logger;            // по умолчанию console
     base?: string;              // base path приложения, напр. '/' или '/my-app/'
-    passthroughHeader?: string; // имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER)
+    passthroughHeader: string; // имя заголовка для сквозных запросов (задаётся библиотекой из опции passthroughRequestHeader или PSW_PASSTHROUGH_HEADER)
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений; доступен только в контексте плагинов
 }
 
@@ -493,7 +493,7 @@ initServiceWorker(
 interface PluginContext {
     logger?: Logger;           // Логгер (по умолчанию console).
     base?: string;             // Base path приложения.
-    passthroughHeader?: string; // Имя заголовка для сквозных запросов (по умолчанию PSW_PASSTHROUGH_HEADER).
+    passthroughHeader: string; // Имя заголовка для сквозных запросов (задаётся библиотекой).
 }
 ```
 

@@ -213,7 +213,7 @@ The second parameter `options` is of type `ServiceWorkerInitOptions`: required `
 interface PluginContext {
     logger?: Logger;            // default: console
     base?: string;              // app base path
-    passthroughHeader?: string; // header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER)
+    passthroughHeader: string; // header name for passthrough requests (set by library from passthroughRequestHeader option or PSW_PASSTHROUGH_HEADER)
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, available only in plugin context
 }
 
@@ -486,7 +486,7 @@ A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when ca
 interface PluginContext {
     logger?: Logger;            // Logger (default: console).
     base?: string;              // App base path.
-    passthroughHeader?: string; // Header name for passthrough requests (default: PSW_PASSTHROUGH_HEADER).
+    passthroughHeader: string; // Header name for passthrough requests (set by library).
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, no CORS issues.
 }
 ```

@@ -102,9 +102,9 @@ export interface PluginContext {
     /**
      * Имя заголовка для «сквозных» запросов (passthrough).
      * Используется для идентификации входящих passthrough-запросов на уровне SW.
-     * По умолчанию PSW_PASSTHROUGH_HEADER ('X-PSW-Passthrough').
+     * Всегда задаётся библиотекой (options.passthroughRequestHeader ?? PSW_PASSTHROUGH_HEADER).
      */
-    passthroughHeader?: string;
+    passthroughHeader: string;
     /**
      * Выполняет fetch-запрос в обход цепочки плагинов без модификации заголовков запроса.
      * Используйте вместо прямого вызова fetch() для внутренних запросов плагина —

@@ -1,3 +1,7 @@
+## 1.17.2
+
+- **`PluginContext.passthroughHeader`**: Restored as required (`passthroughHeader: string`). The library always sets it (from `passthroughRequestHeader` option or `PSW_PASSTHROUGH_HEADER`). It was previously made optional only for test mocks; the contract is defined by the code, tests should provide the field in mock contexts. Docs: README and README.ru updated.
+
 ## 1.17.1
 
 - **`ServiceWorkerInitOptions`** no longer extends `PluginContext`. Init options are now only: `version`, `base?`, `logger?`, `pingPath?`, `passthroughRequestHeader?`, `onError?`. Internal fields `fetchPassthrough` and `passthroughHeader` are **only** in the plugin context (second argument to handlers); they are not part of init options and must not be passed to `initServiceWorker`. `RequiredOptions<P>` uses a cleaned plugin context (omits `fetchPassthrough` and `passthroughHeader`), so callers are not required to provide them. Docs: README and README.ru updated — `ServiceWorkerInitOptions` interface and plugin-context vs options separation clarified.
