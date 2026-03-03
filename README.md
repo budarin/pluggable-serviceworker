@@ -263,6 +263,8 @@ initServiceWorker(plugins, {
 
 App base path, e.g. `'/'` or `'/my-app/'`. Used by asset plugins (`precache`, `restoreAssetToCache`, etc.) to resolve asset URLs. When the app is deployed under a subpath, pass the same base as in your build config so cached URLs match incoming requests.
 
+**Asset parameters are pathnames.** All options that refer to assets (e.g. `assets` in plugin configs, the first argument of `resolveAssetUrls` and `isRequestUrlInAssets`) must be the path part of the URL — e.g. `'/'`, `'/main.js'`. Do not pass absolute filesystem paths or full URLs: the real origin and deployment path are not known at build time; the service worker builds full URLs from these pathnames and `base` when it runs.
+
 **Example:**
 
 ```ts
@@ -760,7 +762,7 @@ function authPlugin(config: {
 ### Primitives (plugins)
 
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
-All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order.
+All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
 
 | Name                               | Event      | Description                                                                                                                                                                  |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -912,8 +914,8 @@ activateAndUpdateOnNextVisitSW({
 | `abortBackgroundFetch(registration, id)`                         | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                                       |
 | `getBackgroundFetchIds(registration)`                            | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                                         |
 | `normalizeUrl(url)`                                              | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                                            |
-| `resolveAssetUrls(assets, base?)`                                | SW     | Resolve asset paths with base. Returns full URLs.                                                                                               |
-| `isRequestUrlInAssets(requestUrl, assets)`                        | SW     | Check if request URL is in the asset list (normalized comparison).                                                                                                                          |
+| `resolveAssetUrls(assets, base?)`                                | SW     | Build full URLs from asset pathnames and base. `assets` are the path part of the URL only (see above).                                                                                        |
+| `isRequestUrlInAssets(requestUrl, assets)`                        | SW     | Check if request URL is in the asset list (path part of URL; normalized comparison).                                                                                                                  |
 | `matchByUrl(cache, request, options?)`                          | SW     | Match cached response by URL path. Ignores request mode; by default ignores query (`ignoreSearch: true`) and Vary (`ignoreVary: true`), so e.g. `/a.js?v=1` finds `/a.js`. See below. |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows controlled by this SW. If `includeUncontrolled = true`, also sends to uncontrolled windows in scope. |
 
