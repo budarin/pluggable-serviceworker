@@ -1,3 +1,7 @@
+## 1.17.3
+
+- **`serveRangePassthrough`**: Removed. Unhandled fetch requests (including those with a `Range` header) already go through `passthroughFetch(event.request)` in the core fallback, so the plugin was redundant.
+
 ## 1.17.2
 
 - **`PluginContext.passthroughHeader`**: Restored as required (`passthroughHeader: string`). The library always sets it (from `passthroughRequestHeader` option or `PSW_PASSTHROUGH_HEADER`). It was previously made optional only for test mocks; the contract is defined by the code, tests should provide the field in mock contexts. Docs: README and README.ru updated.
