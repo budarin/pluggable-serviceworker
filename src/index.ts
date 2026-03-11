@@ -797,9 +797,11 @@ export function initServiceWorker<P extends readonly unknown[]>(
     }
 
     const filteredPlugins: readonly Plugin[] = Array.isArray(plugins)
-        ? (plugins as readonly (Plugin | null | undefined)[]).filter(
-              (p): p is Plugin => p != null
+        ? (
+              plugins as readonly (Plugin | readonly Plugin[] | null | undefined)[]
           )
+              .flat()
+              .filter((p): p is Plugin => p != null)
         : [];
 
     const internalPlugins: Plugin[] = [

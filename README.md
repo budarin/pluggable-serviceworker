@@ -183,7 +183,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
-- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
+- **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). If a factory returns an array of plugins, you can pass it as-is — the list is flattened (one level), so no need to spread. Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
 - **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
 
 **Example:**
@@ -584,6 +584,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 
 How the package works:
 
+- The plugins array is flattened (one level), so you can pass factory results that return arrays without spreading (e.g. `[offlineFirst(options), claim()]`).
 - `null` and `undefined` entries in the plugins array are ignored (e.g. when a factory returns `undefined` when an API is unavailable). No need to filter manually
 - Arrays are created for each event type: install, activate, fetch, message, sync, periodicsync, push, backgroundfetchsuccess, backgroundfetchfail, backgroundfetchabort, backgroundfetchclick
 - Plugins are sorted by `order` (ascending, default 0)
