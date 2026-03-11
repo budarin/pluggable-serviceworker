@@ -184,7 +184,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
 - **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
-- **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
+- **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
 
 **Example:**
 
@@ -203,9 +203,9 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ initServiceWorker options (version, pingPath, base, logger, onError, passthroughRequestHeader)
+## ⚙️ initServiceWorker options (version, pingPath, base, logger, debug, onError, passthroughRequestHeader)
 
-The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `onError?`, `passthroughRequestHeader?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
+The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`, `passthroughRequestHeader?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
 
 `PluginContext` in the API is for typing; plugins receive it as the second argument.
 
@@ -225,6 +225,9 @@ interface ServiceWorkerInitOptions {
     base?: string;
 
     logger?: Logger;
+
+    /** Enable verbose debug logging (SW events, message flow, fetch outcomes). Default: false. */
+    debug?: boolean;
 
     /** Optional path for ping requests (default '/sw-ping'). */
     pingPath?: string;
@@ -277,6 +280,19 @@ initServiceWorker(plugins, {
 For an app under a subpath, use the same base as in your build config.
 
 **Example for Vite:** use `base: import.meta.env.BASE_URL` so it matches `vite.config` → `base`.
+
+#### `debug?: boolean` (optional)
+
+When `true`, the library logs debug messages so you can see what the service worker is doing: install/activate, incoming messages (type, source), outgoing `notifyClients` (message type, client count), and fetch outcomes (passthrough skip, handled by plugin, network fallback, or 503). Uses `logger` (or `console`) at `debug` level. Off by default; turn on during development.
+
+**Example:**
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    debug: true,
+});
+```
 
 #### `pingPath?: string` (optional)
 
@@ -762,7 +778,7 @@ function authPlugin(config: {
 ### Primitives (plugins)
 
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
-All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
+All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
 
 | Name                               | Event      | Description                                                                                                                                                                  |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

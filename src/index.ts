@@ -134,6 +134,12 @@ export interface ServiceWorkerInitOptions {
     logger?: Logger;
 
     /**
+     * Включает расширенное логирование для отладки (внутренние события SW, message flow, важные ветки fetch).
+     * По умолчанию выключено.
+     */
+    debug?: boolean;
+
+    /**
      * Путь для ping-запроса (по умолчанию SW_PING_PATH, т.е. '/sw-ping').
      * Используется внутренним ping-плагином библиотеки.
      */
@@ -313,6 +319,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     plugins: readonly ServiceWorkerPlugin<_C>[],
     options: ServiceWorkerInitOptions & CleanPluginContext<_C>
 ): CreateEventHandlersResult {
+    const debug = options.debug === true;
     const handlers = {
         install: [] as InstallHandler[],
         activate: [] as ActivateHandler[],
@@ -476,24 +483,38 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     };
 
     if (handlers.install.length > 0) {
-        result.install = (event: ExtendableEvent): void =>
+        result.install = (event: ExtendableEvent): void => {
+            if (debug) {
+                context.logger?.debug('[psw]', 'install');
+            }
             runParallelHandlers(
                 handlers.install,
                 event,
                 serviceWorkerErrorTypes.INSTALL_ERROR
             );
+        };
     }
     if (handlers.activate.length > 0) {
-        result.activate = (event: ExtendableEvent): void =>
+        result.activate = (event: ExtendableEvent): void => {
+            if (debug) {
+                context.logger?.debug('[psw]', 'activate');
+            }
             runParallelHandlers(
                 handlers.activate,
                 event,
                 serviceWorkerErrorTypes.ACTIVATE_ERROR
             );
+        };
     }
     if (handlers.fetch.length > 0) {
         result.fetch = (event: FetchEvent): void => {
             if (event.request.headers.has(passthroughHeader)) {
+                if (debug) {
+                    context.logger?.debug('[psw]', 'fetch passthrough-header', {
+                        method: event.request.method,
+                        url: event.request.url,
+                    });
+                }
                 return;
             }
             event.respondWith(
@@ -503,6 +524,17 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             const res = await handler(event, context);
 
                             if (res !== undefined) {
+                                if (debug) {
+                                    context.logger?.debug(
+                                        '[psw]',
+                                        'fetch handled by plugin',
+                                        {
+                                            method: event.request.method,
+                                            url: event.request.url,
+                                            status: res.status,
+                                        }
+                                    );
+                                }
                                 return res;
                             }
                         } catch (error) {
@@ -514,6 +546,16 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
+                        if (debug) {
+                            context.logger?.debug(
+                                '[psw]',
+                                'fetch fallback network',
+                                {
+                                    method: event.request.method,
+                                    url: event.request.url,
+                                }
+                            );
+                        }
                         return await passthroughFetch(event.request);
                     } catch (error) {
                         options.onError?.(
@@ -521,6 +563,16 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             event,
                             serviceWorkerErrorTypes.FETCH_ERROR
                         );
+                        if (debug) {
+                            context.logger?.debug(
+                                '[psw]',
+                                'fetch network error -> 503',
+                                {
+                                    method: event.request.method,
+                                    url: event.request.url,
+                                }
+                            );
+                        }
                         return new Response('', {
                             status: 503,
                             statusText: 'Service Unavailable',
@@ -532,6 +584,17 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     }
     if (handlers.message.length > 0) {
         result.message = (event: SwMessageEvent): void => {
+            if (debug) {
+                const sourceId =
+                    typeof (event.source as { id?: unknown } | null)?.id ===
+                    'string'
+                        ? ((event.source as { id?: unknown }).id as string)
+                        : undefined;
+                context.logger?.debug('[psw]', 'message', {
+                    type: event.data?.type,
+                    sourceId,
+                });
+            }
             handlers.message.forEach((handler) => {
                 try {
                     handler(event, context);
@@ -563,6 +626,9 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     }
     if (handlers.push.length > 0) {
         result.push = (event: PushEvent): void => {
+            if (debug) {
+                context.logger?.debug('[psw]', 'push');
+            }
             event.waitUntil(
                 (async (): Promise<void> => {
                     const returns: (
@@ -723,6 +789,12 @@ export function initServiceWorker<P extends readonly unknown[]>(
     serviceWorkerInitialized = true;
 
     const opts = { ...options, logger: options.logger ?? console };
+    if (opts.debug === true) {
+        (self as unknown as Record<string, unknown>)['__PSW_DEBUG__'] = true;
+        (self as unknown as Record<string, unknown>)['__PSW_DEBUG_LOGGER__'] =
+            opts.logger;
+        opts.logger.debug('[psw]', 'debug enabled', { version: opts.version });
+    }
 
     const filteredPlugins: readonly Plugin[] = Array.isArray(plugins)
         ? (plugins as readonly (Plugin | null | undefined)[]).filter(

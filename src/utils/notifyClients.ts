@@ -1,3 +1,5 @@
+import type { Logger } from '../index.js';
+
 /**
  * Утилита: отправляет сообщение с указанным type всем окнам-клиентам.
  * @param messageType — тип сообщения (поле `type` в объекте, уходящем в postMessage).
@@ -19,4 +21,18 @@ export async function notifyClients(
             : { type: messageType, ...data };
 
     list.forEach((client) => client.postMessage(payload));
+
+    const debugEnabled = (self as unknown as Record<string, unknown>)[
+        '__PSW_DEBUG__'
+    ] as unknown;
+    if (debugEnabled === true) {
+        const logger = (self as unknown as Record<string, unknown>)[
+            '__PSW_DEBUG_LOGGER__'
+        ] as Logger;
+        logger.debug('[psw]', 'notifyClients', {
+            type: messageType,
+            clients: list.length,
+            includeUncontrolled,
+        });
+    }
 }

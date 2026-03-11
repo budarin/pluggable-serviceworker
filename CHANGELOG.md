@@ -1,3 +1,7 @@
+## 1.17.4
+
+- **`ServiceWorkerInitOptions.debug?: boolean`**: New option. When `true`, enables verbose logging for development: SW lifecycle events (install, activate, message, push), message flow (incoming message type/sourceId, outgoing `notifyClients` with client count), and fetch outcomes (passthrough-header skip, handled by plugin, fallback network, network error → 503). Off by default. Uses `context.logger` (or `console`); log level `debug`. Docs: README, README.ru, reference.mdc.
+
 ## 1.17.3
 
 - **`serveRangePassthrough`**: Removed. Unhandled fetch requests (including those with a `Range` header) already go through `passthroughFetch(event.request)` in the core fallback, so the plugin was redundant.
