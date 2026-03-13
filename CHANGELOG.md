@@ -1,3 +1,7 @@
+## 1.17.6
+
+- **`PluginContext.logger`**: Now required (was optional). The library always sets it to `options.logger ?? console` when building the context, so plugins can use `context.logger` without checks. Optional chaining (`context.logger?.`) removed in core.
+
 ## 1.17.5
 
 - **Plugins array normalization**: The `plugins` argument to `initServiceWorker` is now flattened (one level) before use. You can pass factory results without spreading: e.g. `initServiceWorker([offlineFirst(options), claim()], options)` works even when `offlineFirst(options)` returns an array of plugins. `null`/`undefined` entries are still filtered out. Docs: README, README.ru (initServiceWorker params and "How the package works"); reference.mdc.

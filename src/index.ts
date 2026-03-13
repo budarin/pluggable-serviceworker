@@ -96,7 +96,8 @@ export interface Logger {
 
 /** Опции, доступные плагинам. В обработчики передаётся context (второй аргумент). */
 export interface PluginContext {
-    logger?: Logger;
+    /** Логгер (если не передан в options — по умолчанию console). */
+    logger: Logger;
     /** Base path приложения, напр. '/' или '/my-app/'. */
     base?: string;
     /**
@@ -441,7 +442,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.ERROR
                 );
             } catch (error) {
-                context.logger?.error('Error in error handler:', error);
+                context.logger.error('Error in error handler:', error);
             }
         },
 
@@ -453,7 +454,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.MESSAGE_ERROR
                 );
             } catch (error) {
-                context.logger?.error('Error in messageerror handler:', error);
+                context.logger.error('Error in messageerror handler:', error);
             }
         },
 
@@ -465,7 +466,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                context.logger?.error('Error in unhandledrejection handler:', error);
+                context.logger.error('Error in unhandledrejection handler:', error);
             }
         },
 
@@ -477,7 +478,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.REJECTION_HANDLED
                 );
             } catch (error) {
-                context.logger?.error('Error in rejectionhandled handler:', error);
+                context.logger.error('Error in rejectionhandled handler:', error);
             }
         },
     };
@@ -485,7 +486,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     if (handlers.install.length > 0) {
         result.install = (event: ExtendableEvent): void => {
             if (debug) {
-                context.logger?.debug('[psw]', 'install');
+                context.logger.debug('[psw]', 'install');
             }
             runParallelHandlers(
                 handlers.install,
@@ -497,7 +498,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     if (handlers.activate.length > 0) {
         result.activate = (event: ExtendableEvent): void => {
             if (debug) {
-                context.logger?.debug('[psw]', 'activate');
+                context.logger.debug('[psw]', 'activate');
             }
             runParallelHandlers(
                 handlers.activate,
@@ -510,7 +511,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
         result.fetch = (event: FetchEvent): void => {
             if (event.request.headers.has(passthroughHeader)) {
                 if (debug) {
-                    context.logger?.debug('[psw]', 'fetch passthrough-header', {
+                    context.logger.debug('[psw]', 'fetch passthrough-header', {
                         method: event.request.method,
                         url: event.request.url,
                     });
@@ -525,7 +526,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
 
                             if (res !== undefined) {
                                 if (debug) {
-                                    context.logger?.debug(
+                                    context.logger.debug(
                                         '[psw]',
                                         'fetch handled by plugin',
                                         {
@@ -547,7 +548,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     }
                     try {
                         if (debug) {
-                            context.logger?.debug(
+                            context.logger.debug(
                                 '[psw]',
                                 'fetch fallback network',
                                 {
@@ -564,7 +565,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             serviceWorkerErrorTypes.FETCH_ERROR
                         );
                         if (debug) {
-                            context.logger?.debug(
+                            context.logger.debug(
                                 '[psw]',
                                 'fetch network error -> 503',
                                 {
@@ -590,7 +591,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     'string'
                         ? ((event.source as { id?: unknown }).id as string)
                         : undefined;
-                context.logger?.debug('[psw]', 'message', {
+                context.logger.debug('[psw]', 'message', {
                     type: event.data?.type,
                     sourceId,
                 });
@@ -627,7 +628,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     if (handlers.push.length > 0) {
         result.push = (event: PushEvent): void => {
             if (debug) {
-                context.logger?.debug('[psw]', 'push');
+                context.logger.debug('[psw]', 'push');
             }
             event.waitUntil(
                 (async (): Promise<void> => {
