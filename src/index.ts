@@ -186,7 +186,13 @@ export type UnionToIntersection<U> = (
  * требоваться в options initServiceWorker.
  */
 type CleanPluginContext<C> = C extends PluginContext
-    ? Omit<C, 'fetchPassthrough' | 'passthroughHeader'>
+    ? (Omit<C, 'fetchPassthrough' | 'passthroughHeader' | 'logger'> & {
+          /**
+           * В options initServiceWorker логгер опциональный:
+           * если не передан — используется console.
+           */
+          logger?: Logger;
+      })
     : C;
 
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). P — кортеж плагинов, контекст выводится из каждого. */
