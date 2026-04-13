@@ -930,7 +930,7 @@ function createPingPlugin(path: string): Plugin {
                 return undefined;
             }
 
-            return new Response('', { status: 204 });
+            return new Response(null, { status: 204 });
         },
     };
 }
