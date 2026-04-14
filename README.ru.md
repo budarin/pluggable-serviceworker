@@ -808,7 +808,7 @@ function authPlugin(config: {
 | `precacheMissing(config)`          | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
 | `skipWaiting()`                    | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
 | `skipWaitingOnMessage(config?)`    | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                            |
-| `skipWaitingAndNotifyPageReload(config?)` | `message`  | По сообщению `messageType` (по умолчанию `SW_MSG_SKIP_WAITING`) вызывает `skipWaiting()` и рассылает клиентам `{ type: pageReloadMessageType }` (по умолчанию `PAGE RELOAD`). |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | По сообщению `messageType` (по умолчанию `SW_MSG_SKIP_WAITING`) вызывает `skipWaiting()` и рассылает клиентам `{ type: pageReloadMessageType }` (по умолчанию `SW_MSG_PAGE_RELOAD`). |
 
 #### Композиция примитивов
 

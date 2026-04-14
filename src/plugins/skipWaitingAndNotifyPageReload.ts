@@ -1,6 +1,9 @@
 import type { Plugin, SwMessageEvent } from '../index.js';
 
-import { SW_MSG_SKIP_WAITING } from '@budarin/http-constants/service-worker';
+import {
+    SW_MSG_SKIP_WAITING,
+    SW_MSG_PAGE_RELOAD,
+} from '@budarin/http-constants/service-worker';
 
 import { notifyClients } from '../utils/notifyClients.js';
 import { skipWaitingOnMessage } from './skipWaitingOnMessage.js';
@@ -21,7 +24,7 @@ export function skipWaitingAndNotifyPageReload(
 ): Plugin {
     const {
         messageType = SW_MSG_SKIP_WAITING,
-        pageReloadMessageType = 'PAGE RELOAD',
+        pageReloadMessageType = SW_MSG_PAGE_RELOAD,
         includeUncontrolled = false,
         order = 0,
     } = config;

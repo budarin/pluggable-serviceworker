@@ -802,7 +802,7 @@ All primitives are **plugin factories**: config (if any) is passed at the call s
 | `precacheMissing(config)`          | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
 | `skipWaiting()`                    | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
 | `skipWaitingOnMessage(config?)`    | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
-| `skipWaitingAndNotifyPageReload(config?)` | `message`  | On `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `PAGE RELOAD`).                      |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | On `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `SW_MSG_PAGE_RELOAD`).               |
 
 #### Composing primitives
 

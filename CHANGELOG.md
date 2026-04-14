@@ -1,3 +1,9 @@
+## 1.17.9
+
+- **`skipWaitingAndNotifyPageReload(config?)` default message type**: replaced string literal default (`'PAGE RELOAD'`) with constant `SW_MSG_PAGE_RELOAD` from `@budarin/http-constants/service-worker` to follow project constants policy and keep SW message types consistent.
+- **Docs alignment**: README and README.ru updated to document `SW_MSG_PAGE_RELOAD` as the default for `pageReloadMessageType`.
+- **Rules update**: `reference.mdc` now explicitly requires using `@budarin/http-constants/service-worker` constants for SW message/event types when available (no hardcoded literals).
+
 ## 1.17.8
 
 - **`message` handler lifecycle**: `ServiceWorkerPlugin.message` now supports async return (`void | Promise<void>`). The framework orchestrates message-handler lifecycle centrally: when `event.waitUntil` is available, one combined promise is attached; when it is absent (minimal mocks/tests), handlers still run and async errors are routed to `onError`.
