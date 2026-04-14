@@ -474,6 +474,27 @@ describe('createEventHandlers', () => {
             expect(calls).toEqual(['a:start', 'b:start', 'a:end', 'b:end']);
         });
 
+        it('calls waitUntil as a method on the event (correct this binding)', async () => {
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', message: async () => undefined },
+            ];
+            let passedPromise: Promise<unknown> | undefined;
+            const event = {
+                data: { type: 'test' },
+                waitUntil(this: unknown, p: Promise<unknown>) {
+                    expect(this).toBe(event);
+                    passedPromise = p;
+                    return p;
+                },
+            } as unknown as Parameters<ReturnType<typeof createEventHandlers>['message']>[0];
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+
+            handlers.message(event);
+
+            expect(passedPromise).toBeDefined();
+            await passedPromise;
+        });
+
         it('calls onError when a message handler throws', () => {
             const onError = vi.fn();
             const plugins: ServiceWorkerPlugin[] = [

@@ -418,14 +418,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
             }
         });
         const combined = Promise.all(tasks).then(() => undefined);
-        const maybeWaitUntil = (
-            event as unknown as {
-                waitUntil?: (promise: Promise<unknown>) => void;
-            }
-        ).waitUntil;
-
-        if (typeof maybeWaitUntil === 'function') {
-            maybeWaitUntil(combined);
+        // Must call as a method on `event`; extracting `waitUntil` loses `this` and throws
+        // TypeError: Illegal invocation in real browsers.
+        if (typeof event.waitUntil === 'function') {
+            event.waitUntil(combined);
             return;
         }
 

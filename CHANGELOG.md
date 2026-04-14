@@ -1,3 +1,7 @@
+## 1.17.10
+
+- **Fix: `message` + `waitUntil` Illegal invocation**: `runMessageHandlers` now calls `event.waitUntil(combined)` as a method on the event. Extracting `waitUntil` into a local variable and calling it unbound caused `TypeError: Illegal invocation` in real Service Workers.
+
 ## 1.17.9
 
 - **`skipWaitingAndNotifyPageReload(config?)` default message type**: replaced string literal default (`'PAGE RELOAD'`) with constant `SW_MSG_PAGE_RELOAD` from `@budarin/http-constants/service-worker` to follow project constants policy and keep SW message types consistent.
@@ -7,7 +11,7 @@
 ## 1.17.8
 
 - **`message` handler lifecycle**: `ServiceWorkerPlugin.message` now supports async return (`void | Promise<void>`). The framework orchestrates message-handler lifecycle centrally: when `event.waitUntil` is available, one combined promise is attached; when it is absent (minimal mocks/tests), handlers still run and async errors are routed to `onError`.
-- **New plugin: `skipWaitingAndNotifyPageReload(config?)`** (`@budarin/pluggable-serviceworker/plugins`): on `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `PAGE RELOAD`), with optional `includeUncontrolled`.
+- **New plugin: `skipWaitingAndNotifyPageReload(config?)`** (`@budarin/pluggable-serviceworker/plugins`): on `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `SW_MSG_PAGE_RELOAD`), with optional `includeUncontrolled`.
 - **Docs sync**: README and README.ru aligned for message-handler contract and lifecycle rule (plugin code must not call `event.waitUntil(...)`), plus primitives table updated with `skipWaitingAndNotifyPageReload`.
 
 ## 1.17.6
