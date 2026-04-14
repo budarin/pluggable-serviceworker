@@ -536,7 +536,10 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
         context: PluginContext
     ) => Promise<Response | undefined> | Response | undefined;
 
-    message?: (event: SwMessageEvent, context: PluginContext) => void;
+    message?: (
+        event: SwMessageEvent,
+        context: PluginContext
+    ) => Promise<void> | void;
 
     sync?: (event: SyncEvent, context: PluginContext) => Promise<void> | void;
 
@@ -579,7 +582,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 | `install`                | `install`                | `void`                                          | Инициализация плагина при установке SW                                                                              |
 | `activate`               | `activate`               | `void`                                          | Активация плагина при обновлении SW                                                                                 |
 | `fetch`                  | `fetch`                  | `Response \| undefined`                         | Обработка сетевых запросов                                                                                          |
-| `message`                | `message`                | `void`                                          | Обработка сообщений от основного потока                                                                             |
+| `message`                | `message`                | `Promise<void> \| void`                         | Обработка сообщений от основного потока                                                                             |
 | `sync`                   | `sync`                   | `void`                                          | Синхронизация данных в фоне                                                                                         |
 | `push`                   | `push`                   | `PushNotificationPayload \| false \| undefined` | Обработка и отображение сетевой нотификации                                                                         |
 | `periodicsync`           | `periodicsync`           | `void`                                          | Периодические фоновые задачи                                                                                        |
@@ -604,7 +607,8 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 - Во все методы первым аргументом передаётся объект `event` и вторым аргументом — **context** (logger, base).
 - **`fetch`**: может вернуть `Response` для завершения цепочки или `undefined` для передачи следующему плагину. Если все плагины вернули `undefined`, фреймворк вызывает `fetch(event.request)`.
 - **`push`**: может вернуть `PushNotificationPayload` (объект для [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (не отображать уведомление) или `undefined` (решение об отображении отдаётся библиотеке). Вызываются все плагины с `push`. Для каждого результата типа `PushNotificationPayload` вызывается `showNotification` (несколько уведомлений показываются параллельно). Уведомление не показывается, если все вернули `false` или смесь `undefined` и `false` без payload. Библиотека отображает одно уведомление **только когда все** плагины вернули `undefined` (и в данных есть что показывать).
-- **Остальные обработчики** (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): возвращаемое значение не используется; фреймворк вызывает метод каждого плагина по очереди, цепочка не прерывается.
+- **`message`**: плагин может вернуть `void` или `Promise<void>`. Жизненным циклом события (`waitUntil`) централизованно управляет библиотека. Внутри плагина `event.waitUntil(...)` вызывать не нужно.
+- **Остальные обработчики** (`install`, `activate`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): возвращаемое значение не используется; фреймворк вызывает метод каждого плагина по очереди, цепочка не прерывается.
 - **Все обработчики опциональны** — реализуйте только нужные события. Если ни один плагин не реализует событие, сервис-воркер не подписывается на него.
 
 ## 🎯 Порядок выполнения плагинов
@@ -712,6 +716,7 @@ initServiceWorker(
 
 - **install/activate**: Все плагины должны инициализироваться независимо
 - **message**: Все плагины должны получить сообщение одновременно
+- **lifecycle для message**: `waitUntil` централизованно вызывает библиотека. В коде плагинов `event.waitUntil(...)` вызывать не нужно
 - **sync**: Разные задачи синхронизации независимы (синхронизация данных + кеша)
 - **periodicsync**: Периодические задачи независимы друг от друга
 
@@ -803,6 +808,7 @@ function authPlugin(config: {
 | `precacheMissing(config)`          | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
 | `skipWaiting()`                    | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
 | `skipWaitingOnMessage(config?)`    | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                            |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | По сообщению `messageType` (по умолчанию `SW_MSG_SKIP_WAITING`) вызывает `skipWaiting()` и рассылает клиентам `{ type: pageReloadMessageType }` (по умолчанию `PAGE RELOAD`). |
 
 #### Композиция примитивов
 

@@ -1,3 +1,9 @@
+## 1.17.8
+
+- **`message` handler lifecycle**: `ServiceWorkerPlugin.message` now supports async return (`void | Promise<void>`). The framework orchestrates message-handler lifecycle centrally: when `event.waitUntil` is available, one combined promise is attached; when it is absent (minimal mocks/tests), handlers still run and async errors are routed to `onError`.
+- **New plugin: `skipWaitingAndNotifyPageReload(config?)`** (`@budarin/pluggable-serviceworker/plugins`): on `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `PAGE RELOAD`), with optional `includeUncontrolled`.
+- **Docs sync**: README and README.ru aligned for message-handler contract and lifecycle rule (plugin code must not call `event.waitUntil(...)`), plus primitives table updated with `skipWaitingAndNotifyPageReload`.
+
 ## 1.17.6
 
 - **`PluginContext.logger`**: Now required (was optional). The library always sets it to `options.logger ?? console` when building the context, so plugins can use `context.logger` without checks. Optional chaining (`context.logger?.`) removed in core.

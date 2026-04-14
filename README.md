@@ -530,7 +530,10 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
         context: PluginContext
     ) => Promise<Response | undefined> | Response | undefined;
 
-    message?: (event: SwMessageEvent, context: PluginContext) => void;
+    message?: (
+        event: SwMessageEvent,
+        context: PluginContext
+    ) => Promise<void> | void;
 
     sync?: (event: SyncEvent, context: PluginContext) => Promise<void> | void;
 
@@ -573,7 +576,7 @@ interface ServiceWorkerPlugin<_C extends PluginContext = PluginContext> {
 | `install`                | `install`                | `void`                                          | Plugin init on SW install                                                                                        |
 | `activate`               | `activate`               | `void`                                          | Plugin activation on SW update                                                                                   |
 | `fetch`                  | `fetch`                  | `Response \| undefined`                         | Handle network requests                                                                                          |
-| `message`                | `message`                | `void`                                          | Handle messages from main thread                                                                                 |
+| `message`                | `message`                | `Promise<void> \| void`                         | Handle messages from main thread                                                                                 |
 | `sync`                   | `sync`                   | `void`                                          | Background sync                                                                                                  |
 | `push`                   | `push`                   | `PushNotificationPayload \| false \| undefined` | Handle and show push notification                                                                                |
 | `periodicsync`           | `periodicsync`           | `void`                                          | Periodic background tasks                                                                                        |
@@ -598,7 +601,8 @@ How the package works:
 - Every method receives `event` as the first argument and **context** (logger, base) as the second.
 - **`fetch`**: return `Response` to end the chain or `undefined` to pass to the next plugin. If all return `undefined`, the framework calls `fetch(event.request)`.
 - **`push`**: may return `PushNotificationPayload` (for [Notification API](https://developer.mozilla.org/en-US/docs/Web/API/Notification)), `false` (do not show), or `undefined` (library decides). All `push` handlers run. For each `PushNotificationPayload` result, `showNotification` is called (multiple notifications are shown in parallel). No notification if all return `false` or only `undefined`/`false` without payload. The library shows one notification **only when all** plugins return `undefined` (and there is payload to show).
-- **Other handlers** (`install`, `activate`, `message`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
+- **`message`**: plugins may return `void` or `Promise<void>`. The framework controls event lifetime (`waitUntil`) centrally. Do not call `event.waitUntil(...)` inside plugin code.
+- **Other handlers** (`install`, `activate`, `sync`, `periodicsync`, `backgroundfetchsuccess`, `backgroundfetchfail`, `backgroundfetchabort`, `backgroundfetchclick`): return value is ignored; the framework calls each plugin's method in order; the chain does not short-circuit.
 - **All handlers are optional** — implement only the events you need. If no plugin implements a given event, that event is not listened for in the service worker.
 
 ## 🎯 Plugin execution order
@@ -706,6 +710,7 @@ initServiceWorker(
 
 - **install/activate**: All plugins initialize independently
 - **message**: All plugins receive the message
+- **message lifecycle**: the framework manages `waitUntil` centrally for message handlers. Plugin code should not call `event.waitUntil(...)`
 - **sync**: Independent sync tasks
 - **periodicsync**: Independent periodic tasks
 
@@ -797,6 +802,7 @@ All primitives are **plugin factories**: config (if any) is passed at the call s
 | `precacheMissing(config)`          | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
 | `skipWaiting()`                    | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
 | `skipWaitingOnMessage(config?)`    | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | On `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `PAGE RELOAD`).                      |
 
 #### Composing primitives
 

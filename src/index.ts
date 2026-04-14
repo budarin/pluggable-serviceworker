@@ -186,13 +186,13 @@ export type UnionToIntersection<U> = (
  * требоваться в options initServiceWorker.
  */
 type CleanPluginContext<C> = C extends PluginContext
-    ? (Omit<C, 'fetchPassthrough' | 'passthroughHeader' | 'logger'> & {
+    ? Omit<C, 'fetchPassthrough' | 'passthroughHeader' | 'logger'> & {
           /**
            * В options initServiceWorker логгер опциональный:
            * если не передан — используется console.
            */
           logger?: Logger;
-      })
+      }
     : C;
 
 /** Требуемый тип options по массиву плагинов (пересечение контекстов). P — кортеж плагинов, контекст выводится из каждого. */
@@ -213,9 +213,15 @@ interface ServiceWorkerEventHandlers {
         event: FetchEvent,
         context: PluginContext
     ) => Promise<Response | undefined>;
-    message?: (event: SwMessageEvent, context: PluginContext) => void;
+    message?: (
+        event: SwMessageEvent,
+        context: PluginContext
+    ) => void | Promise<void>;
     sync?: (event: SyncEvent, context: PluginContext) => Promise<void>;
-    periodicsync?: (event: PeriodicSyncEvent, context: PluginContext) => Promise<void>;
+    periodicsync?: (
+        event: PeriodicSyncEvent,
+        context: PluginContext
+    ) => Promise<void>;
     push?: (
         event: PushEvent,
         context: PluginContext
@@ -269,11 +275,8 @@ type FetchHandler = (
 type MessageHandler = (
     event: SwMessageEvent,
     context: PluginContext
-) => void;
-type SyncHandler = (
-    event: SyncEvent,
-    context: PluginContext
-) => Promise<void>;
+) => void | Promise<void>;
+type SyncHandler = (event: SyncEvent, context: PluginContext) => Promise<void>;
 type PeriodicsyncHandler = (
     event: PeriodicSyncEvent,
     context: PluginContext
@@ -355,9 +358,11 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
      *   possible but same-origin no-cors plugin fetches don't occur in practice.
      */
     function passthroughFetch(request: Request): Promise<Response> {
-        const selfOrigin = (self as unknown as ServiceWorkerGlobalScope).location?.origin;
+        const selfOrigin = (self as unknown as ServiceWorkerGlobalScope)
+            .location?.origin;
         const isSameOrigin =
-            selfOrigin !== undefined && new URL(request.url).origin === selfOrigin;
+            selfOrigin !== undefined &&
+            new URL(request.url).origin === selfOrigin;
 
         if (!isSameOrigin || request.mode === 'no-cors') {
             return fetch(request);
@@ -388,15 +393,43 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     Promise.resolve()
                         .then(() => handler(event, context))
                         .catch((error: unknown) =>
-                            options.onError?.(
-                                error as Error,
-                                event,
-                                errorType
-                            )
+                            options.onError?.(error as Error, event, errorType)
                         )
                 )
             )
         );
+    }
+
+    function runMessageHandlers(
+        handlerList: MessageHandler[],
+        event: SwMessageEvent,
+        errorType: ServiceWorkerErrorType
+    ): void {
+        const tasks = handlerList.map(async (handler) => {
+            try {
+                try {
+                    return await Promise.resolve(handler(event, context));
+                } catch (error) {
+                    return options.onError?.(error as Error, event, errorType);
+                }
+            } catch (error) {
+                options.onError?.(error as Error, event, errorType);
+                return Promise.resolve();
+            }
+        });
+        const combined = Promise.all(tasks).then(() => undefined);
+        const maybeWaitUntil = (
+            event as unknown as {
+                waitUntil?: (promise: Promise<unknown>) => void;
+            }
+        ).waitUntil;
+
+        if (typeof maybeWaitUntil === 'function') {
+            maybeWaitUntil(combined);
+            return;
+        }
+
+        void combined;
     }
 
     // Сортировка плагинов по order (по умолчанию 0)
@@ -472,7 +505,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.UNHANDLED_REJECTION
                 );
             } catch (error) {
-                context.logger.error('Error in unhandledrejection handler:', error);
+                context.logger.error(
+                    'Error in unhandledrejection handler:',
+                    error
+                );
             }
         },
 
@@ -484,7 +520,10 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     serviceWorkerErrorTypes.REJECTION_HANDLED
                 );
             } catch (error) {
-                context.logger.error('Error in rejectionhandled handler:', error);
+                context.logger.error(
+                    'Error in rejectionhandled handler:',
+                    error
+                );
             }
         },
     };
@@ -602,17 +641,11 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                     sourceId,
                 });
             }
-            handlers.message.forEach((handler) => {
-                try {
-                    handler(event, context);
-                } catch (error) {
-                    options.onError?.(
-                        error as Error,
-                        event,
-                        serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER
-                    );
-                }
-            });
+            runMessageHandlers(
+                handlers.message,
+                event,
+                serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER
+            );
         };
     }
     if (handlers.sync.length > 0) {
@@ -805,7 +838,12 @@ export function initServiceWorker<P extends readonly unknown[]>(
 
     const filteredPlugins: readonly Plugin[] = Array.isArray(plugins)
         ? (
-              plugins as readonly (Plugin | readonly Plugin[] | null | undefined)[]
+              plugins as readonly (
+                  | Plugin
+                  | readonly Plugin[]
+                  | null
+                  | undefined
+              )[]
           )
               .flat()
               .filter((p): p is Plugin => p != null)

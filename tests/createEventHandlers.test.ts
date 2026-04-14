@@ -440,6 +440,40 @@ describe('createEventHandlers', () => {
             expect(calls[1]).toEqual(['b', event]);
         });
 
+        it('uses waitUntil once for async message handlers when available', async () => {
+            const calls: string[] = [];
+            const plugins: ServiceWorkerPlugin[] = [
+                {
+                    name: 'a',
+                    message: async () => {
+                        calls.push('a:start');
+                        await Promise.resolve();
+                        calls.push('a:end');
+                    },
+                },
+                {
+                    name: 'b',
+                    message: async () => {
+                        calls.push('b:start');
+                        await Promise.resolve();
+                        calls.push('b:end');
+                    },
+                },
+            ];
+            const waitUntil = vi.fn((p: Promise<unknown>) => p);
+            const event = {
+                data: { type: 'test' },
+                waitUntil,
+            } as unknown as Parameters<ReturnType<typeof createEventHandlers>['message']>[0];
+            const handlers = createEventHandlers(plugins, { version: '1.0.0' });
+
+            handlers.message(event);
+            await waitUntil.mock.results[0]?.value;
+
+            expect(waitUntil).toHaveBeenCalledTimes(1);
+            expect(calls).toEqual(['a:start', 'b:start', 'a:end', 'b:end']);
+        });
+
         it('calls onError when a message handler throws', () => {
             const onError = vi.fn();
             const plugins: ServiceWorkerPlugin[] = [
@@ -456,6 +490,32 @@ describe('createEventHandlers', () => {
             const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
 
             handlers.message(event);
+
+            expect(onError).toHaveBeenCalledWith(
+                expect.any(Error),
+                event,
+                serviceWorkerErrorTypes.MESSAGE_ERROR_HANDLER
+            );
+        });
+
+        it('handles async message rejections without event.waitUntil', async () => {
+            const onError = vi.fn();
+            const plugins: ServiceWorkerPlugin[] = [
+                {
+                    name: 'rejects',
+                    message: async () => {
+                        throw new Error('async message error');
+                    },
+                },
+            ];
+            const event = { data: { type: 'test' } } as unknown as Parameters<
+                ReturnType<typeof createEventHandlers>['message']
+            >[0];
+            const handlers = createEventHandlers(plugins, { version: '1.0.0', onError });
+
+            handlers.message(event);
+            await Promise.resolve();
+            await Promise.resolve();
 
             expect(onError).toHaveBeenCalledWith(
                 expect.any(Error),
