@@ -28,7 +28,7 @@ A library for building modular, pluggable Service Workers.
     - [Basic usage](#basic-usage)
 - [Demo](#demo)
 - [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
-- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-base-logger-onerror-passthroughrequestheader)
+- [initServiceWorker options](#️-initserviceworker-options-version-pingpath-base-logger-debug-logfetchindebug-onerror-passthroughrequestheader)
     - [Option fields](#option-fields)
     - [Error handling](#error-handling)
 - [Plugins](#plugins)
@@ -184,7 +184,7 @@ The [demo/](demo/) folder contains a **React + Vite** app with the **offlineFirs
 `initServiceWorker` is the entry point: it registers Service Worker event handlers (`install`, `activate`, `fetch`, …) and runs them through the plugin list. **Only events that have at least one plugin handler are registered** — if no plugin implements e.g. `sync`, the service worker will not listen for `sync` events.
 
 - **`plugins`** — array of plugin objects. Plugins with config come from **factory** calls at the call site (see "Plugin factory"). If a factory returns an array of plugins, you can pass it as-is — the list is flattened (one level), so no need to spread. Entries that are `null` or `undefined` (e.g. when a factory returns `undefined` because an API is unavailable) are ignored; no need to filter the array yourself.
-- **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
+- **`options`** — at least `version` (required), and optional `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?`. The **context** (logger, base) is passed as the second argument to plugin handlers.
 
 **Example:**
 
@@ -203,9 +203,9 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ initServiceWorker options (version, pingPath, base, logger, debug, onError, passthroughRequestHeader)
+## ⚙️ initServiceWorker options (version, pingPath, base, logger, debug, logFetchInDebug, onError, passthroughRequestHeader)
 
-The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`, `passthroughRequestHeader?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
+The second parameter `options` is of type `ServiceWorkerInitOptions`: required `version` and optional `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?`, `passthroughRequestHeader?`. The **context** (logger, base) is passed into plugin handlers (second argument); if logger is omitted, `console` is used. `onError` is used only by the library, not passed to plugins.
 
 `PluginContext` in the API is for typing; plugins receive it as the second argument.
 
@@ -228,6 +228,13 @@ interface ServiceWorkerInitOptions {
 
     /** Enable verbose debug logging (SW events, message flow, fetch outcomes). Default: false. */
     debug?: boolean;
+
+    /**
+     * Controls fetch debug logs when debug=true.
+     * - true/undefined: log fetch branches
+     * - false: suppress fetch debug logs only (other debug logs stay enabled)
+     */
+    logFetchInDebug?: boolean;
 
     /** Optional path for ping requests (default '/sw-ping'). */
     pingPath?: string;
@@ -291,6 +298,23 @@ When `true`, the library logs debug messages so you can see what the service wor
 initServiceWorker(plugins, {
     version: '1.8.0',
     debug: true,
+});
+```
+
+#### `logFetchInDebug?: boolean` (optional)
+
+Controls only fetch-related debug logs when `debug` is enabled.
+
+- `true` or `undefined` (default): fetch debug logs are enabled.
+- `false`: fetch debug logs are suppressed, while other debug logs (`install`, `activate`, `message`, etc.) remain enabled.
+
+**Example:**
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    debug: true,
+    logFetchInDebug: false,
 });
 ```
 
@@ -784,7 +808,7 @@ function authPlugin(config: {
 ### Primitives (plugins)
 
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
-All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
+All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
 
 | Name                               | Event      | Description                                                                                                                                                                  |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

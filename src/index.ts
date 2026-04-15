@@ -139,6 +139,12 @@ export interface ServiceWorkerInitOptions {
      * По умолчанию выключено.
      */
     debug?: boolean;
+    /**
+     * Управляет fetch-логами при debug=true.
+     * - true/undefined: логировать fetch-ветки (поведение по умолчанию)
+     * - false: не писать fetch debug-логи (install/activate/message и другие debug-логи остаются)
+     */
+    logFetchInDebug?: boolean;
 
     /**
      * Путь для ping-запроса (по умолчанию SW_PING_PATH, т.е. '/sw-ping').
@@ -330,6 +336,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     options: ServiceWorkerInitOptions & CleanPluginContext<_C>
 ): CreateEventHandlersResult {
     const debug = options.debug === true;
+    const logFetchInDebug = debug && options.logFetchInDebug !== false;
     const handlers = {
         install: [] as InstallHandler[],
         activate: [] as ActivateHandler[],
@@ -551,7 +558,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
     if (handlers.fetch.length > 0) {
         result.fetch = (event: FetchEvent): void => {
             if (event.request.headers.has(passthroughHeader)) {
-                if (debug) {
+                if (logFetchInDebug) {
                     context.logger.debug('[psw]', 'fetch passthrough-header', {
                         method: event.request.method,
                         url: event.request.url,
@@ -566,7 +573,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             const res = await handler(event, context);
 
                             if (res !== undefined) {
-                                if (debug) {
+                                if (logFetchInDebug) {
                                     context.logger.debug(
                                         '[psw]',
                                         'fetch handled by plugin',
@@ -588,7 +595,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                         }
                     }
                     try {
-                        if (debug) {
+                        if (logFetchInDebug) {
                             context.logger.debug(
                                 '[psw]',
                                 'fetch fallback network',
@@ -605,7 +612,7 @@ export function createEventHandlers<_C extends PluginContext = PluginContext>(
                             event,
                             serviceWorkerErrorTypes.FETCH_ERROR
                         );
-                        if (debug) {
+                        if (logFetchInDebug) {
                             context.logger.debug(
                                 '[psw]',
                                 'fetch network error -> 503',

@@ -127,6 +127,93 @@ describe('createEventHandlers', () => {
             vi.restoreAllMocks();
         });
 
+        it('writes fetch debug logs by default when debug=true', async () => {
+            const fetchResponse = new Response('from network');
+            const globalFetch = vi.fn().mockResolvedValue(fetchResponse);
+            vi.stubGlobal('fetch', globalFetch);
+            const logger = {
+                trace: vi.fn(),
+                debug: vi.fn(),
+                info: vi.fn(),
+                warn: vi.fn(),
+                error: vi.fn(),
+            };
+
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', fetch: async () => undefined },
+            ];
+            const request = new Request('https://example.com/');
+            const respondWith = vi.fn();
+            const event = { request, respondWith };
+            const handlers = createEventHandlers(plugins, {
+                version: '1.0.0',
+                debug: true,
+                logger,
+            });
+
+            handlers.fetch(event as unknown as FetchEvent);
+            await respondWith.mock.calls[0]?.[0];
+
+            expect(logger.debug).toHaveBeenCalledWith(
+                '[psw]',
+                'fetch fallback network',
+                {
+                    method: request.method,
+                    url: request.url,
+                }
+            );
+        });
+
+        it('does not write fetch debug logs when logFetchInDebug=false', async () => {
+            const fetchResponse = new Response('from network');
+            const globalFetch = vi.fn().mockResolvedValue(fetchResponse);
+            vi.stubGlobal('fetch', globalFetch);
+            const logger = {
+                trace: vi.fn(),
+                debug: vi.fn(),
+                info: vi.fn(),
+                warn: vi.fn(),
+                error: vi.fn(),
+            };
+
+            const plugins: ServiceWorkerPlugin[] = [
+                { name: 'a', fetch: async () => undefined },
+            ];
+            const request = new Request('https://example.com/');
+            const respondWith = vi.fn();
+            const event = { request, respondWith };
+            const handlers = createEventHandlers(plugins, {
+                version: '1.0.0',
+                debug: true,
+                logFetchInDebug: false,
+                logger,
+            });
+
+            handlers.fetch(event as unknown as FetchEvent);
+            await respondWith.mock.calls[0]?.[0];
+
+            expect(logger.debug).not.toHaveBeenCalledWith(
+                '[psw]',
+                'fetch fallback network',
+                expect.any(Object)
+            );
+            expect(logger.debug).not.toHaveBeenCalledWith(
+                '[psw]',
+                'fetch handled by plugin',
+                expect.any(Object)
+            );
+            expect(logger.debug).not.toHaveBeenCalledWith(
+                '[psw]',
+                'fetch passthrough-header',
+                expect.any(Object)
+            );
+            expect(logger.debug).not.toHaveBeenCalledWith(
+                '[psw]',
+                'fetch network error -> 503',
+                expect.any(Object)
+            );
+        });
+
         it('returns first non-undefined Response from a plugin', async () => {
             const response = new Response('ok');
             const plugins: ServiceWorkerPlugin[] = [

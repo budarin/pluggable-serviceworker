@@ -22,7 +22,7 @@
     - [Базовое использование](#базовое-использование)
 - [Демо](#демо)
 - [initServiceWorker(plugins, options)](#initserviceworkerplugins-options)
-- [Опции initServiceWorker](#️-опции-initserviceworker-version-pingpath-base-logger-onerror-passthroughrequestheader)
+- [Опции initServiceWorker](#️-опции-initserviceworker-version-pingpath-base-logger-debug-logfetchindebug-onerror-passthroughrequestheader)
     - [Поля options](#поля-options)
     - [Обработка ошибок](#обработка-ошибок)
 - [Плагины](#плагины)
@@ -178,7 +178,7 @@ initServiceWorker(
 `initServiceWorker` — точка входа: регистрирует обработчики событий Service Worker (`install`, `activate`, `fetch`, …) и прогоняет их через список плагинов. **Регистрируются только те события, для которых есть хотя бы один плагин** — если ни один плагин не реализует, например, `sync`, сервис-воркер не будет подписываться на `sync`.
 
 - **`plugins`** — массив плагинов (объектов). Плагины с конфигом получаются вызовом **фабрик** по месту использования (см. раздел «Фабрика плагинов»). Если фабрика возвращает массив плагинов, его можно передать как есть — список нормализуется (один уровень вложенности), спред не обязателен. Элементы `null` и `undefined` (например, когда фабрика возвращает `undefined` из‑за недоступности API) игнорируются; вручную фильтровать массив не нужно.
-- **`options`** — минимум `version` (обязательный), а также опциональные `pingPath?`, `base?`, `logger?`, `debug?`, `onError?`. В обработчики плагинов вторым аргументом передаётся **context** (logger, base).
+- **`options`** — минимум `version` (обязательный), а также опциональные `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?`. В обработчики плагинов вторым аргументом передаётся **context** (logger, base).
 
 **Пример:**
 
@@ -197,9 +197,9 @@ initServiceWorker(
 );
 ```
 
-## ⚙️ Опции initServiceWorker (version, pingPath, base, logger, debug, onError, passthroughRequestHeader)
+## ⚙️ Опции initServiceWorker (version, pingPath, base, logger, debug, logFetchInDebug, onError, passthroughRequestHeader)
 
-Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `pingPath?`, `base?`, `logger?`, `debug?`, `onError?` и `passthroughRequestHeader?`. В обработчики плагинов передаётся **context** (logger, base); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
+Второй параметр `options` типа `ServiceWorkerInitOptions`: в нём обязательное поле `version` и опциональные `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?` и `passthroughRequestHeader?`. В обработчики плагинов передаётся **context** (logger, base); если `logger` не указан, используется `console`. Поле `onError` нужно только библиотеке, в плагины не передаётся.
 
 Тип `PluginContext` в API используется для типизации; плагины получают его вторым аргументом.
 
@@ -222,6 +222,13 @@ interface ServiceWorkerInitOptions {
 
     /** Включить подробное отладочное логирование (события SW, message flow, исход fetch). По умолчанию: false. */
     debug?: boolean;
+
+    /**
+     * Управляет fetch-логами при debug=true.
+     * true/undefined — fetch-логи включены (по умолчанию), false — fetch-логи отключены.
+     * Остальные debug-логи остаются включенными.
+     */
+    logFetchInDebug?: boolean;
 
     /** Необязательный путь для ping-запроса (по умолчанию '/sw-ping'). */
     pingPath?: string;
@@ -285,6 +292,23 @@ initServiceWorker(plugins, {
 initServiceWorker(plugins, {
     version: '1.8.0',
     debug: true,
+});
+```
+
+#### `logFetchInDebug?: boolean` (опциональное)
+
+Управляет только fetch-логами при включённом `debug`.
+
+- `true` или `undefined` (по умолчанию): fetch-логи включены.
+- `false`: fetch-логи отключены, при этом остальные debug-логи (`install`, `activate`, `message` и т.д.) остаются.
+
+**Пример:**
+
+```ts
+initServiceWorker(plugins, {
+    version: '1.8.0',
+    debug: true,
+    logFetchInDebug: false,
 });
 ```
 
@@ -790,7 +814,7 @@ function authPlugin(config: {
 ### Примитивы (плагины)
 
 Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
-Все примитивы — **фабрики плагинов**: конфиг (если есть) передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают `version` (обязательно), `pingPath?`, `base?`, `logger?`, `debug?` и `onError?`. Используйте `order` в конфиге плагина для управления порядком выполнения. В конфигах с полем `assets` — пути к ресурсам относительно корня приложения (см. блок про ассеты в описании `base` выше).
+Все примитивы — **фабрики плагинов**: конфиг (если есть) передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают `version` (обязательно), `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?` и `onError?`. Используйте `order` в конфиге плагина для управления порядком выполнения. В конфигах с полем `assets` — пути к ресурсам относительно корня приложения (см. блок про ассеты в описании `base` выше).
 
 | Название                           | Событие    | Описание                                                                                                                                                                                                                                                                     |
 | ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

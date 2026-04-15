@@ -1,3 +1,9 @@
+## 1.17.11
+
+- **`logFetchInDebug?: boolean`**: New `ServiceWorkerInitOptions` flag to control fetch debug noise when `debug` is enabled. Default behavior is unchanged (`true`/`undefined` keeps fetch debug logs). Set `logFetchInDebug: false` to suppress only fetch-related debug logs from the default loader (`fetch passthrough-header`, `fetch handled by plugin`, `fetch fallback network`, `fetch network error -> 503`) while keeping other debug logs (`install`, `activate`, `message`, etc.) enabled.
+- **Tests**: Added coverage for fetch debug logging behavior with `debug: true` and with `logFetchInDebug: false`.
+- **Docs**: README and README.ru updated (options list, `ServiceWorkerInitOptions` interface, and usage examples).
+
 ## 1.17.10
 
 - **Fix: `message` + `waitUntil` Illegal invocation**: `runMessageHandlers` now calls `event.waitUntil(combined)` as a method on the event. Extracting `waitUntil` into a local variable and calling it unbound caused `TypeError: Illegal invocation` in real Service Workers.
