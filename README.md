@@ -339,7 +339,7 @@ initServiceWorker(plugins, {
 
 #### `passthroughRequestHeader?: string` (optional)
 
-**The problem.** When a plugin makes an internal `fetch()` — for example, `staleWhileRevalidate` fetches a fresh copy to update the cache, or an analytics plugin sends an event — that request re-enters the Service Worker's `fetch` handler and goes through all plugins again. This can cause infinite recursion or an "internal" request being served from cache instead of going to the network.
+**The problem.** When a plugin performs an internal `fetch()` — for example, `staleWhileRevalidate` fetching a fresh copy to update the cache, or an analytics plugin sending an event — that request may be processed by the plugin pipeline again. Without a way to identify internal requests, plugins can unintentionally re-apply caching, analytics, or other behaviors to requests they initiated themselves. In some cases this can lead to recursive plugin execution or incorrect cache usage.
 
 **The solution.** Use `context.fetchPassthrough(request)` instead of a bare `fetch()`. The library routes the request directly to the network, bypassing all plugins, using an origin-aware strategy:
 
