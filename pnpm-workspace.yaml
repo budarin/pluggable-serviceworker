@@ -1,5 +1,7 @@
 packages:
   - '.'
   - 'demo'
+allowBuilds:
+  esbuild: true
 onlyBuiltDependencies:
   - esbuild
