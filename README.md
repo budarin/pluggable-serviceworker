@@ -504,12 +504,7 @@ const options = {
     },
 };
 
-initServiceWorker(
-    [
-        /* your plugins */
-    ],
-    options
-);
+initServiceWorker([/* your plugins */], options);
 ```
 
 ## Plugins
@@ -975,33 +970,30 @@ activateAndUpdateOnNextVisitSW({
 
 When the browser cannot write to Cache Storage (`QuotaExceededError` — typically not enough disk space), the page needs to hear about it even during the first install, when this worker does not control any tab yet.
 
-Built-in plugins that write to the cache (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the service worker sends `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` via `notifyClients` with `includeUncontrolled: true`.
+Built-in plugins that write to the cache (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the service worker sends `{ type: SW_QUOTA_EXCEEDED, phase }` via `notifyClients` with `includeUncontrolled: true`.
 
 - `phase: 'install'` (`QuotaExceededPhase.INSTALL`) — precache `addAll` failed. The error is rethrown, so install does not complete and `precacheWithNotification` does not send the installed message.
 - `phase: 'runtime'` (`QuotaExceededPhase.RUNTIME`) — a `put` during fetch failed. The network response is still returned; only the cache write is skipped.
 
-Subscribe on the page with `onServiceWorkerMessage`. Import `PLUGGABLE_SW_QUOTA_EXCEEDED` from `@budarin/pluggable-serviceworker` or `@budarin/pluggable-serviceworker/client`.
+Subscribe on the page with `onServiceWorkerMessage`. Import `SW_QUOTA_EXCEEDED` from `@budarin/pluggable-serviceworker` or `@budarin/pluggable-serviceworker/client`.
 
 ```ts
 import {
     onServiceWorkerMessage,
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     QuotaExceededPhase,
     type QuotaExceededMessage,
 } from '@budarin/pluggable-serviceworker/client';
 
-const unsubscribeQuota = onServiceWorkerMessage(
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
-    (event) => {
-        const { phase } = event.data as QuotaExceededMessage;
+const unsubscribeQuota = onServiceWorkerMessage(SW_QUOTA_EXCEEDED, (event) => {
+    const { phase } = event.data as QuotaExceededMessage;
 
-        if (phase === QuotaExceededPhase.INSTALL) {
-            // first install or update could not cache assets
-        } else {
-            // a later cache write failed; the page still got the network response
-        }
+    if (phase === QuotaExceededPhase.INSTALL) {
+        // first install or update could not cache assets
+    } else {
+        // a later cache write failed; the page still got the network response
     }
-);
+});
 ```
 
 **Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.

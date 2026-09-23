@@ -1,5 +1,5 @@
 /** Message type: SW reports that a cache write failed due to insufficient storage. */
-export const PLUGGABLE_SW_QUOTA_EXCEEDED = 'SW_QUOTA_EXCEEDED';
+export const SW_QUOTA_EXCEEDED = 'SW_QUOTA_EXCEEDED';
 
 export const QuotaExceededPhase = {
     INSTALL: 'install',
@@ -9,6 +9,6 @@ export type QuotaExceededPhase =
     (typeof QuotaExceededPhase)[keyof typeof QuotaExceededPhase];
 
 export interface QuotaExceededMessage {
-    type: typeof PLUGGABLE_SW_QUOTA_EXCEEDED;
+    type: typeof SW_QUOTA_EXCEEDED;
     phase: QuotaExceededPhase;
 }

@@ -1,5 +1,5 @@
 import {
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     type QuotaExceededPhase,
 } from '../constants/quotaMessages.js';
 
@@ -12,5 +12,5 @@ import { notifyClients } from './notifyClients.js';
 export async function notifyQuotaExceeded(
     phase: QuotaExceededPhase
 ): Promise<void> {
-    await notifyClients(PLUGGABLE_SW_QUOTA_EXCEEDED, { phase }, true);
+    await notifyClients(SW_QUOTA_EXCEEDED, { phase }, true);
 }

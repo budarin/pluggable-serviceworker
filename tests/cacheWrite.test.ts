@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import {
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     QuotaExceededPhase,
 } from '../src/constants/quotaMessages.ts';
 import { cacheAddAll } from '../src/utils/cacheAddAll.ts';
@@ -57,7 +57,7 @@ describe('cachePut / cacheAddAll', () => {
                 includeUncontrolled: true,
             });
             expect(postMessage).toHaveBeenCalledWith({
-                type: PLUGGABLE_SW_QUOTA_EXCEEDED,
+                type: SW_QUOTA_EXCEEDED,
                 phase: QuotaExceededPhase.RUNTIME,
             });
         });
@@ -103,7 +103,7 @@ describe('cachePut / cacheAddAll', () => {
                 includeUncontrolled: true,
             });
             expect(postMessage).toHaveBeenCalledWith({
-                type: PLUGGABLE_SW_QUOTA_EXCEEDED,
+                type: SW_QUOTA_EXCEEDED,
                 phase: QuotaExceededPhase.INSTALL,
             });
         });

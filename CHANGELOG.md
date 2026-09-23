@@ -1,7 +1,7 @@
 ## 1.18.0
 
-- **Quota exceeded notification**: Built-in cache writes (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the SW sends `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` to all window clients, including uncontrolled ones, so the page can hear it during the first install. Install/`addAll` rethrows (install fails); runtime/`put` returns `false` (network response is still returned).
-- **Public API**: `PLUGGABLE_SW_QUOTA_EXCEEDED`, `QuotaExceededPhase`, `QuotaExceededMessage` exported from the main package and from `./client` / `./client/messaging`. `cachePut` and `cacheAddAll` exported from `./utils`.
+- **Quota exceeded notification**: Built-in cache writes (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the SW sends `{ type: SW_QUOTA_EXCEEDED, phase }` to all window clients, including uncontrolled ones, so the page can hear it during the first install. Install/`addAll` rethrows (install fails); runtime/`put` returns `false` (network response is still returned).
+- **Public API**: `SW_QUOTA_EXCEEDED`, `QuotaExceededPhase`, `QuotaExceededMessage` exported from the main package and from `./client` / `./client/messaging`. `cachePut` and `cacheAddAll` exported from `./utils`.
 - **Docs**: README, README.ru, client messaging docs, and reference.mdc updated.
 
 ## 1.17.11

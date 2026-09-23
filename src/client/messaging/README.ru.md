@@ -14,7 +14,7 @@
 | `postMessageToServiceWorker`        | Отправка сообщения в активный Service Worker.                                       |
 | `sendSkipWaitingSignal`             | Отправка сигнала skip-waiting **ожидающему** SW (активация по сигналу).             |
 | `getServiceWorkerVersion`           | Запрос версии активного SW (из опций `initServiceWorker`).                          |
-| `PLUGGABLE_SW_QUOTA_EXCEEDED`       | Тип сообщения, которое SW шлёт, когда запись в кэш не удалась из‑за нехватки места. |
+| `SW_QUOTA_EXCEEDED`                 | Тип сообщения, которое SW шлёт, когда запись в кэш не удалась из‑за нехватки места. |
 | `QuotaExceededPhase`                | `install` или `runtime` — какая запись в кэш не удалась.                            |
 | `QuotaExceededMessage`              | Тип payload: `{ type, phase }`.                                                     |
 | `PostMessageToServiceWorkerOptions` | Тип опций для `postMessageToServiceWorker`.                                         |
@@ -85,28 +85,25 @@ unsub2();
 
 **Пример — нехватка места на диске:**
 
-Встроенные плагины, которые пишут в кэш, шлют `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }`, когда Cache Storage бросает `QuotaExceededError`. Страница получает сообщение и при первой установке (`includeUncontrolled: true`). `phase` равен `'install'`, если не удался precache (install не завершается), или `'runtime'`, если не удался поздний `put` (сетевой ответ всё равно отдаётся).
+Встроенные плагины, которые пишут в кэш, шлют `{ type: SW_QUOTA_EXCEEDED, phase }`, когда Cache Storage бросает `QuotaExceededError`. Страница получает сообщение и при первой установке (`includeUncontrolled: true`). `phase` равен `'install'`, если не удался precache (install не завершается), или `'runtime'`, если не удался поздний `put` (сетевой ответ всё равно отдаётся).
 
 ```typescript
 import {
     onServiceWorkerMessage,
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     QuotaExceededPhase,
     type QuotaExceededMessage,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
-const unsubscribeQuota = onServiceWorkerMessage(
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
-    (event) => {
-        const { phase } = event.data as QuotaExceededMessage;
+const unsubscribeQuota = onServiceWorkerMessage(SW_QUOTA_EXCEEDED, (event) => {
+    const { phase } = event.data as QuotaExceededMessage;
 
-        if (phase === QuotaExceededPhase.INSTALL) {
-            showStorageError('Не удалось установить офлайн-кэш');
-        } else {
-            showStorageError('Не удалось сохранить ответ для офлайна');
-        }
+    if (phase === QuotaExceededPhase.INSTALL) {
+        showStorageError('Не удалось установить офлайн-кэш');
+    } else {
+        showStorageError('Не удалось сохранить ответ для офлайна');
     }
-);
+});
 ```
 
 ---

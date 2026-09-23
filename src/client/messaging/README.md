@@ -14,7 +14,7 @@ Utilities for sending messages to the Service Worker and subscribing to messages
 | `postMessageToServiceWorker`        | Send a message to the active Service Worker.                                    |
 | `sendSkipWaitingSignal`             | Send skip-waiting message to the **waiting** SW (for activation on signal).     |
 | `getServiceWorkerVersion`           | Request the active SW version (from `initServiceWorker` options).               |
-| `PLUGGABLE_SW_QUOTA_EXCEEDED`       | Message type the SW sends when a cache write fails due to insufficient storage. |
+| `SW_QUOTA_EXCEEDED`                 | Message type the SW sends when a cache write fails due to insufficient storage. |
 | `QuotaExceededPhase`                | `install` or `runtime` — which cache write failed.                              |
 | `QuotaExceededMessage`              | Payload type: `{ type, phase }`.                                                |
 | `PostMessageToServiceWorkerOptions` | Options type for `postMessageToServiceWorker`.                                  |
@@ -85,28 +85,25 @@ unsub2();
 
 **Example — not enough disk space:**
 
-Built-in cache-writing plugins send `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` when Cache Storage throws `QuotaExceededError`. The page receives it during the first install as well (`includeUncontrolled: true`). `phase` is `'install'` if precache failed (install does not complete) or `'runtime'` if a later `put` failed (the network response is still returned).
+Built-in cache-writing plugins send `{ type: SW_QUOTA_EXCEEDED, phase }` when Cache Storage throws `QuotaExceededError`. The page receives it during the first install as well (`includeUncontrolled: true`). `phase` is `'install'` if precache failed (install does not complete) or `'runtime'` if a later `put` failed (the network response is still returned).
 
 ```typescript
 import {
     onServiceWorkerMessage,
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     QuotaExceededPhase,
     type QuotaExceededMessage,
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
-const unsubscribeQuota = onServiceWorkerMessage(
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
-    (event) => {
-        const { phase } = event.data as QuotaExceededMessage;
+const unsubscribeQuota = onServiceWorkerMessage(SW_QUOTA_EXCEEDED, (event) => {
+    const { phase } = event.data as QuotaExceededMessage;
 
-        if (phase === QuotaExceededPhase.INSTALL) {
-            showStorageError('Could not install the offline cache');
-        } else {
-            showStorageError('Could not save the response for offline use');
-        }
+    if (phase === QuotaExceededPhase.INSTALL) {
+        showStorageError('Could not install the offline cache');
+    } else {
+        showStorageError('Could not save the response for offline use');
     }
-);
+});
 ```
 
 ---

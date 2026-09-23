@@ -511,12 +511,7 @@ const options = {
     },
 };
 
-initServiceWorker(
-    [
-        /* ваши плагины */
-    ],
-    options
-);
+initServiceWorker([/* ваши плагины */], options);
 ```
 
 ## Плагины
@@ -982,33 +977,30 @@ activateAndUpdateOnNextVisitSW({
 
 Когда браузер не может записать ответ в Cache Storage (`QuotaExceededError` — обычно закончилось место), странице нужно об этом узнать даже при первой установке, когда этот воркер ещё никого не контролирует.
 
-Встроенные плагины, которые пишут в кэш (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`), идут через `cacheAddAll` / `cachePut`. При `QuotaExceededError` сервис-воркер шлёт `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` через `notifyClients` с `includeUncontrolled: true`.
+Встроенные плагины, которые пишут в кэш (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`), идут через `cacheAddAll` / `cachePut`. При `QuotaExceededError` сервис-воркер шлёт `{ type: SW_QUOTA_EXCEEDED, phase }` через `notifyClients` с `includeUncontrolled: true`.
 
 - `phase: 'install'` (`QuotaExceededPhase.INSTALL`) — не удалось `addAll` при precache. Ошибка пробрасывается, install не завершается, `precacheWithNotification` не отправляет сообщение об успешной установке.
 - `phase: 'runtime'` (`QuotaExceededPhase.RUNTIME`) — не удалось `put` во время fetch. Сетевой ответ всё равно отдаётся странице, в кэш он не попадает.
 
-Подпишитесь на странице через `onServiceWorkerMessage`. Константу `PLUGGABLE_SW_QUOTA_EXCEEDED` можно взять из `@budarin/pluggable-serviceworker` или `@budarin/pluggable-serviceworker/client`.
+Подпишитесь на странице через `onServiceWorkerMessage`. Константу `SW_QUOTA_EXCEEDED` можно взять из `@budarin/pluggable-serviceworker` или `@budarin/pluggable-serviceworker/client`.
 
 ```ts
 import {
     onServiceWorkerMessage,
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    SW_QUOTA_EXCEEDED,
     QuotaExceededPhase,
     type QuotaExceededMessage,
 } from '@budarin/pluggable-serviceworker/client';
 
-const unsubscribeQuota = onServiceWorkerMessage(
-    PLUGGABLE_SW_QUOTA_EXCEEDED,
-    (event) => {
-        const { phase } = event.data as QuotaExceededMessage;
+const unsubscribeQuota = onServiceWorkerMessage(SW_QUOTA_EXCEEDED, (event) => {
+    const { phase } = event.data as QuotaExceededMessage;
 
-        if (phase === QuotaExceededPhase.INSTALL) {
-            // первая установка или обновление не смогли закэшировать ассеты
-        } else {
-            // поздняя запись в кэш не удалась; страница всё равно получила ответ сети
-        }
+    if (phase === QuotaExceededPhase.INSTALL) {
+        // первая установка или обновление не смогли закэшировать ассеты
+    } else {
+        // поздняя запись в кэш не удалась; страница всё равно получила ответ сети
     }
-);
+});
 ```
 
 **Клиентские подпути (для меньшего бандла):** можно импортировать из `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health` или `.../client/background-fetch` вместо `.../client`, чтобы подтянуть только нужные утилиты.
