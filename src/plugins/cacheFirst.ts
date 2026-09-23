@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { cachePut } from '../utils/cachePut.js';
 import { matchByUrl } from '../utils/matchByUrl.js';
 
 export interface CacheFirstConfig {
@@ -25,7 +26,7 @@ export function cacheFirst(config: CacheFirstConfig): Plugin {
                 const response = await context.fetchPassthrough(event.request);
 
                 if (response.ok) {
-                    await cache.put(event.request, response.clone());
+                    await cachePut(cache, event.request, response.clone());
                 }
 
                 return response;

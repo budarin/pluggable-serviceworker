@@ -8,14 +8,17 @@ Utilities for sending messages to the Service Worker and subscribing to messages
 
 ## Exports
 
-| Name | Description |
-|------|--------------|
-| `onServiceWorkerMessage` | Subscribe to messages from SW with a given `data.type`. Returns unsubscribe. |
-| `postMessageToServiceWorker` | Send a message to the active Service Worker. |
-| `sendSkipWaitingSignal` | Send skip-waiting message to the **waiting** SW (for activation on signal). |
-| `getServiceWorkerVersion` | Request the active SW version (from `initServiceWorker` options). |
-| `PostMessageToServiceWorkerOptions` | Options type for `postMessageToServiceWorker`. |
-| `GetServiceWorkerVersionOptions` | Options type for `getServiceWorkerVersion`. |
+| Name                                | Description                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------- |
+| `onServiceWorkerMessage`            | Subscribe to messages from SW with a given `data.type`. Returns unsubscribe.    |
+| `postMessageToServiceWorker`        | Send a message to the active Service Worker.                                    |
+| `sendSkipWaitingSignal`             | Send skip-waiting message to the **waiting** SW (for activation on signal).     |
+| `getServiceWorkerVersion`           | Request the active SW version (from `initServiceWorker` options).               |
+| `PLUGGABLE_SW_QUOTA_EXCEEDED`       | Message type the SW sends when a cache write fails due to insufficient storage. |
+| `QuotaExceededPhase`                | `install` or `runtime` — which cache write failed.                              |
+| `QuotaExceededMessage`              | Payload type: `{ type, phase }`.                                                |
+| `PostMessageToServiceWorkerOptions` | Options type for `postMessageToServiceWorker`.                                  |
+| `GetServiceWorkerVersionOptions`    | Options type for `getServiceWorkerVersion`.                                     |
 
 ---
 
@@ -31,10 +34,10 @@ Subscribes to messages from the Service Worker where `event.data.type === messag
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|------------|------|-------------|
-| `messageType` | `string` | Exact type to listen for (e.g. `'SW_MSG_NEW_VERSION_READY'`). |
-| `handler` | `(event: MessageEvent) => void` | Called when a message with this type is received. |
+| Parameter     | Type                            | Description                                                   |
+| ------------- | ------------------------------- | ------------------------------------------------------------- |
+| `messageType` | `string`                        | Exact type to listen for (e.g. `'SW_MSG_NEW_VERSION_READY'`). |
+| `handler`     | `(event: MessageEvent) => void` | Called when a message with this type is received.             |
 
 - **Returns:** `() => void` — call to unsubscribe (removes the listener). If Service Worker is not supported, returns a no-op function.
 
@@ -49,11 +52,14 @@ Subscribes to messages from the Service Worker where `event.data.type === messag
 ```typescript
 import { onServiceWorkerMessage } from '@budarin/pluggable-serviceworker/client/messaging';
 
-const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) => {
-    const data = event.data as { type: string; version?: string };
-    console.log('New version ready', data.version);
-    showReloadBanner();
-});
+const unsubscribe = onServiceWorkerMessage(
+    'SW_MSG_NEW_VERSION_READY',
+    (event) => {
+        const data = event.data as { type: string; version?: string };
+        console.log('New version ready', data.version);
+        showReloadBanner();
+    }
+);
 
 // When the component unmounts or you no longer need it:
 unsubscribe();
@@ -77,6 +83,32 @@ unsub1();
 unsub2();
 ```
 
+**Example — not enough disk space:**
+
+Built-in cache-writing plugins send `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` when Cache Storage throws `QuotaExceededError`. The page receives it during the first install as well (`includeUncontrolled: true`). `phase` is `'install'` if precache failed (install does not complete) or `'runtime'` if a later `put` failed (the network response is still returned).
+
+```typescript
+import {
+    onServiceWorkerMessage,
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    QuotaExceededPhase,
+    type QuotaExceededMessage,
+} from '@budarin/pluggable-serviceworker/client/messaging';
+
+const unsubscribeQuota = onServiceWorkerMessage(
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    (event) => {
+        const { phase } = event.data as QuotaExceededMessage;
+
+        if (phase === QuotaExceededPhase.INSTALL) {
+            showStorageError('Could not install the offline cache');
+        } else {
+            showStorageError('Could not save the response for offline use');
+        }
+    }
+);
+```
+
 ---
 
 ## 2. `postMessageToServiceWorker(message, options?)`
@@ -85,16 +117,16 @@ Sends a **serializable** message to the active Service Worker (either `navigator
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|------------|------|-------------|
-| `message` | `unknown` | Any [structured-cloneable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) value (e.g. `{ type: 'PING', id: 1 }`). |
-| `options` | `PostMessageToServiceWorkerOptions` (optional) | See below. |
+| Parameter | Type                                           | Description                                                                                                                                                     |
+| --------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message` | `unknown`                                      | Any [structured-cloneable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) value (e.g. `{ type: 'PING', id: 1 }`). |
+| `options` | `PostMessageToServiceWorkerOptions` (optional) | See below.                                                                                                                                                      |
 
 **`PostMessageToServiceWorkerOptions`:**
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `waitForReady` | `boolean` | `true` | If there is no `controller` yet: when `true`, waits for `navigator.serviceWorker.ready` and sends via `registration.active` if present; when `false`, returns `false` immediately. |
+| Property       | Type      | Default | Description                                                                                                                                                                        |
+| -------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waitForReady` | `boolean` | `true`  | If there is no `controller` yet: when `true`, waits for `navigator.serviceWorker.ready` and sends via `registration.active` if present; when `false`, returns `false` immediately. |
 
 - **Returns:** `Promise<boolean>` — `true` if the message was sent (controller or active worker found), `false` if Service Worker is not supported or no active worker (and, when `waitForReady === false`, when there is no controller yet).
 
@@ -166,20 +198,20 @@ Requests the **version string** from the active Service Worker (the `version` pa
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|------------|------|-------------|
-| `options` | `GetServiceWorkerVersionOptions` (optional) | See below. |
+| Parameter | Type                                        | Description |
+| --------- | ------------------------------------------- | ----------- |
+| `options` | `GetServiceWorkerVersionOptions` (optional) | See below.  |
 
 **`GetServiceWorkerVersionOptions`:**
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `timeoutMs` | `number` | `5000` | Max time to wait for the version response, in ms. |
+| Property    | Type     | Default | Description                                       |
+| ----------- | -------- | ------- | ------------------------------------------------- |
+| `timeoutMs` | `number` | `5000`  | Max time to wait for the version response, in ms. |
 
 - **Returns:** `Promise<string | null>` — the version string, or `null` if:
-  - Service Worker is not supported, or
-  - No active worker (message not sent), or
-  - No response within `timeoutMs`.
+    - Service Worker is not supported, or
+    - No active worker (message not sent), or
+    - No response within `timeoutMs`.
 
 **Example — show version in UI:**
 
@@ -190,7 +222,9 @@ const version = await getServiceWorkerVersion({ timeoutMs: 3000 });
 if (version != null) {
     document.getElementById('sw-version').textContent = version;
 } else {
-    console.warn('Could not get SW version (unsupported, no worker, or timeout)');
+    console.warn(
+        'Could not get SW version (unsupported, no worker, or timeout)'
+    );
 }
 ```
 
@@ -214,10 +248,13 @@ import {
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
 // 1) Subscribe to SW messages by type
-const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) => {
-    const data = event.data as { type: string; version?: string };
-    showBanner('New version ' + (data.version ?? '') + ' — please reload');
-});
+const unsubscribe = onServiceWorkerMessage(
+    'SW_MSG_NEW_VERSION_READY',
+    (event) => {
+        const data = event.data as { type: string; version?: string };
+        showBanner('New version ' + (data.version ?? '') + ' — please reload');
+    }
+);
 
 // 2) Send a custom message to the active SW
 const sent = await postMessageToServiceWorker({ type: 'PING', id: 1 });

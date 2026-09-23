@@ -1,3 +1,9 @@
+## 1.18.0
+
+- **Quota exceeded notification**: Built-in cache writes (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the SW sends `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` to all window clients, including uncontrolled ones, so the page can hear it during the first install. Install/`addAll` rethrows (install fails); runtime/`put` returns `false` (network response is still returned).
+- **Public API**: `PLUGGABLE_SW_QUOTA_EXCEEDED`, `QuotaExceededPhase`, `QuotaExceededMessage` exported from the main package and from `./client` / `./client/messaging`. `cachePut` and `cacheAddAll` exported from `./utils`.
+- **Docs**: README, README.ru, client messaging docs, and reference.mdc updated.
+
 ## 1.17.11
 
 - **`logFetchInDebug?: boolean`**: New `ServiceWorkerInitOptions` flag to control fetch debug noise when `debug` is enabled. Default behavior is unchanged (`true`/`undefined` keeps fetch debug logs). Set `logFetchInDebug: false` to suppress only fetch-related debug logs from the default loader (`fetch passthrough-header`, `fetch handled by plugin`, `fetch fallback network`, `fetch network error -> 503`) while keeping other debug logs (`install`, `activate`, `message`, etc.) enabled.
@@ -62,9 +68,9 @@
 ## 1.13.1
 
 - **Fix: `fetchPassthrough` / fallback fetch blocking all concurrent requests** — replaced the global `passthroughDepth` counter with an origin-aware header strategy that targets only the specific outgoing request:
-  - **cross-origin**: `fetch(request)` is called directly without any modification. SW does not intercept its own cross-origin fetches (out of scope), so no re-entry is possible and no CORS preflight is triggered.
-  - **same-origin, `mode !== 'no-cors'`**: the passthrough header is added to a new `Request` clone — prevents re-entry in the SW's own `fetch` handler, no CORS issue (same-origin requests have no preflight).
-  - **same-origin, `mode === 'no-cors'`**: `fetch(request)` is called directly — browsers strip custom headers on `no-cors` requests anyway, and same-origin `no-cors` plugin fetches don't occur in practice.
+    - **cross-origin**: `fetch(request)` is called directly without any modification. SW does not intercept its own cross-origin fetches (out of scope), so no re-entry is possible and no CORS preflight is triggered.
+    - **same-origin, `mode !== 'no-cors'`**: the passthrough header is added to a new `Request` clone — prevents re-entry in the SW's own `fetch` handler, no CORS issue (same-origin requests have no preflight).
+    - **same-origin, `mode === 'no-cors'`**: `fetch(request)` is called directly — browsers strip custom headers on `no-cors` requests anyway, and same-origin `no-cors` plugin fetches don't occur in practice.
 - **`passthroughDepth` counter removed entirely** — no shared async state that could leak across concurrent fetch events.
 
 ## 1.13.0
@@ -100,7 +106,7 @@
 - **Utils**: Exported `isRequestUrlInAssets(requestUrl, assets)`. Added to README, README.ru, reference.mdc.
 - **restoreAssetToCache**: Memoize resolved asset URLs per `context.base`; avoid recomputing on every fetch.
 - **initServiceWorker**: Single `allPlugins` array instead of creating it twice.
-- **createEventHandlers**: Extracted `runParallelHandlers` helper for install, activate, sync, periodicsync, backgroundfetch* handlers.
+- **createEventHandlers**: Extracted `runParallelHandlers` helper for install, activate, sync, periodicsync, backgroundfetch\* handlers.
 - **fetch**: Passthrough depth tracking to prevent recursion when fallback `fetch()` triggers the SW's own fetch handler.
 
 ## 1.10.9

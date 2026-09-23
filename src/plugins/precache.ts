@@ -1,5 +1,6 @@
 import type { Plugin } from '../index.js';
 
+import { cacheAddAll } from '../utils/cacheAddAll.js';
 import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
 
 export interface PrecacheConfig {
@@ -18,7 +19,8 @@ export function precache(config: PrecacheConfig): Plugin {
         install: async (_event, context) => {
             const resolved = resolveAssetUrls(assets, context.base);
             const cache = await caches.open(cacheName);
-            await cache.addAll(resolved);
+
+            await cacheAddAll(cache, resolved);
         },
     };
 }

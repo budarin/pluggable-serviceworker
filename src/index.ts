@@ -25,6 +25,7 @@ import { SW_PING_PATH } from './constants/paths.js';
 import { PSW_PASSTHROUGH_HEADER } from './constants/passthroughHeader.js';
 
 export { PSW_PASSTHROUGH_HEADER };
+export * from './constants/quotaMessages.js';
 
 /** Error type identifiers for onError. Use const object instead of enum (see .cursor/rules/types.mdc). */
 export const serviceWorkerErrorTypes = {

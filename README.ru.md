@@ -205,8 +205,8 @@ initServiceWorker(
 
 ```ts
 interface PluginContext {
-    logger?: Logger;            // по умолчанию console
-    base?: string;              // base path приложения, напр. '/' или '/my-app/'
+    logger?: Logger; // по умолчанию console
+    base?: string; // base path приложения, напр. '/' или '/my-app/'
     passthroughHeader: string; // имя заголовка для сквозных запросов (задаётся библиотекой из опции passthroughRequestHeader или PSW_PASSTHROUGH_HEADER)
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch в обход плагинов, без CORS-нарушений; доступен только в контексте плагинов
 }
@@ -349,7 +349,7 @@ fetch: async (event, context) => {
     // ✅ правильно — обходит цепочку плагинов, не нарушает CORS
     const response = await context.fetchPassthrough(event.request);
     // ...
-}
+};
 ```
 
 **Никогда** не вызывайте голый `fetch()` для внутренних запросов — ответ снова попадёт в обработчик и пройдёт через все плагины:
@@ -358,7 +358,7 @@ fetch: async (event, context) => {
 fetch: async (event, context) => {
     // ❌ неправильно — запрос снова войдёт в цепочку плагинов
     const response = await fetch(event.request);
-}
+};
 ```
 
 Встроенные плагины (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) уже используют `context.fetchPassthrough` внутри.
@@ -533,8 +533,8 @@ initServiceWorker(
 
 ```ts
 interface PluginContext {
-    logger?: Logger;           // Логгер (по умолчанию console).
-    base?: string;             // Base path приложения.
+    logger?: Logger; // Логгер (по умолчанию console).
+    base?: string; // Base path приложения.
     passthroughHeader: string; // Имя заголовка для сквозных запросов (задаётся библиотекой).
 }
 ```
@@ -816,23 +816,23 @@ function authPlugin(config: {
 Один примитив — одна операция. Импорт: `@budarin/pluggable-serviceworker/plugins`.
 Все примитивы — **фабрики плагинов**: конфиг (если есть) передаётся при вызове по месту использования; в `options` в `initServiceWorker` попадают `version` (обязательно), `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?` и `onError?`. Используйте `order` в конфиге плагина для управления порядком выполнения. В конфигах с полем `assets` — пути к ресурсам относительно корня приложения (см. блок про ассеты в описании `base` выше).
 
-| Название                           | Событие    | Описание                                                                                                                                                                                                                                                                     |
-| ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claim()`                          | `activate` | Вызывает `clients.claim()`.                                                                                                                                                                                                                                                  |
-| `claimAndReloadClients()`          | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка.                                                                                                                                                            |
-| `reloadClients()`                  | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                          |
-| `pruneStaleCache(config)`          | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                                                                                                                                 |
-| `cacheFirst(config)`               | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                    |
-| `networkFirst(config)`             | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кеш. При ошибке — отдаем из кеша. Иначе - `undefined`.                                                                                                                                                                    |
-| `restoreAssetToCache(config)`      | `fetch`    | Для URL из `config.assets`: отдаёт ресурс из кеша или запрашивает по сети, затем кладёт в кеш. Иначе — undefined.                                                                                                                                                       |
-| `serveFromCache(config)`           | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                             |
-| `staleWhileRevalidate(config)`     | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                        |
-| `precache(config)`                 | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                        |
-| `precacheWithNotification(config)` | `install`  | Выполняет ту же работу что и **precache** плагин, но сначала отправляет активным клиентам сообщение `startInstallingMessage (по-умолчанию SW_MSG_START_INSTALLING)`, затем кэширует ресурсы и после отправляет сообщение `installedMessage (по-умолчанию SW_MSG_INSTALLED)`. |
-| `precacheMissing(config)`          | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
-| `skipWaiting()`                    | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
-| `skipWaitingOnMessage(config?)`    | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                            |
-| `skipWaitingAndNotifyPageReload(config?)` | `message`  | По сообщению `messageType` (по умолчанию `SW_MSG_SKIP_WAITING`) вызывает `skipWaiting()` и рассылает клиентам `{ type: pageReloadMessageType }` (по умолчанию `SW_MSG_PAGE_RELOAD`). |
+| Название                                  | Событие    | Описание                                                                                                                                                                                                                                                                     |
+| ----------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claim()`                                 | `activate` | Вызывает `clients.claim()`.                                                                                                                                                                                                                                                  |
+| `claimAndReloadClients()`                 | `activate` | Композиция **claim** + **reloadClients**: сначала claim, затем перезагрузка.                                                                                                                                                                                                 |
+| `reloadClients()`                         | `activate` | Перезагружает все окна-клиенты через `client.navigate(client.url)`.                                                                                                                                                                                                          |
+| `pruneStaleCache(config)`                 | `activate` | Удаляет из кеша записи, чей URL не входит в `config.assets`.                                                                                                                                                                                                                 |
+| `cacheFirst(config)`                      | `fetch`    | Отдаем ресурс из кэша `config.cacheName`: при отсутствии его в кэше — делаем запрос на сервер и затем кладем ответ в кэш.                                                                                                                                                    |
+| `networkFirst(config)`                    | `fetch`    | Делаем запрос на сервер, при успехе — кладем его в кеш. При ошибке — отдаем из кеша. Иначе - `undefined`.                                                                                                                                                                    |
+| `restoreAssetToCache(config)`             | `fetch`    | Для URL из `config.assets`: отдаёт ресурс из кеша или запрашивает по сети, затем кладёт в кеш. Иначе — undefined.                                                                                                                                                            |
+| `serveFromCache(config)`                  | `fetch`    | Отдаёт ресурс из кеша `config.cacheName`; при отсутствии его в кэше — undefined.                                                                                                                                                                                             |
+| `staleWhileRevalidate(config)`            | `fetch`    | Отдаёт из кэша, в фоне обновляет кэш.                                                                                                                                                                                                                                        |
+| `precache(config)`                        | `install`  | Кеширует список ресурсов из `config.assets` в кеш `config.cacheName`.                                                                                                                                                                                                        |
+| `precacheWithNotification(config)`        | `install`  | Выполняет ту же работу что и **precache** плагин, но сначала отправляет активным клиентам сообщение `startInstallingMessage (по-умолчанию SW_MSG_START_INSTALLING)`, затем кэширует ресурсы и после отправляет сообщение `installedMessage (по-умолчанию SW_MSG_INSTALLED)`. |
+| `precacheMissing(config)`                 | `install`  | Добавляет в кеш только те ресурсы из `config.assets`, которых ещё нет в кеше.                                                                                                                                                                                                |
+| `skipWaiting()`                           | `install`  | Вызывает `skipWaiting()`.                                                                                                                                                                                                                                                    |
+| `skipWaitingOnMessage(config?)`           | `message`  | Вступает в силу при получении сообщения с типом messageType (по умолчанию `SW_MSG_SKIP_WAITING`).                                                                                                                                                                            |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | По сообщению `messageType` (по умолчанию `SW_MSG_SKIP_WAITING`) вызывает `skipWaiting()` и рассылает клиентам `{ type: pageReloadMessageType }` (по умолчанию `SW_MSG_PAGE_RELOAD`).                                                                                         |
 
 #### Композиция примитивов
 
@@ -958,7 +958,7 @@ activateAndUpdateOnNextVisitSW({
 | `onServiceWorkerMessage(messageType, handler)`                   | client           | Подписка на сообщения от SW c указанным `data.type`. Возвращает функцию отписки. Удобно для отображения баннеров "доступна новая версия" и других пользовательских уведомлений.                                             |
 | `isServiceWorkerSupported()`                                     | client           | Простая проверка поддержки Service Worker в текущем окружении. Полезно для кода, который может выполняться в SSR / тестах или старых браузерах, чтобы условно включать регистрацию SW и связанные утилиты.                  |
 | `postMessageToServiceWorker(message, options?)`                  | client           | Отправляет сообщение в активный Service Worker. Возвращает `Promise<boolean>`: `true`, если сообщение было отправлено (есть `controller` или `active`), `false` — если SW не поддерживается или активного воркера нет.      |
-| `sendSkipWaitingSignal()`                                         | client           | Отправляет сигнал skip-waiting **ожидающему** SW (активация по сигналу). Использовать с плагином `skipWaitingOnMessage`. Возвращает `Promise<boolean>`.                                                                   |
+| `sendSkipWaitingSignal()`                                        | client           | Отправляет сигнал skip-waiting **ожидающему** SW (активация по сигналу). Использовать с плагином `skipWaitingOnMessage`. Возвращает `Promise<boolean>`.                                                                     |
 | `getServiceWorkerVersion(options?)`                              | client           | Запрашивает у активного SW его версию (поле `version` из `ServiceWorkerInitOptions`). Возвращает `Promise<string \| null>`. Работает через внутренний протокол библиотеки и не требует ручной настройки сообщений.          |
 | `pingServiceWorker(options?)`                                    | client           | Выполняет ping-запрос `GET /sw-ping` (обрабатывается плагином `ping`). Будит SW, если он был "усыплён", и проверяет базовую доступность обработчика fetch. Возвращает `'ok' \| 'no-sw' \| 'error'`.                         |
 | `isBackgroundFetchSupported()`                                   | client           | Проверка поддержки [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API). Возвращает `Promise<boolean>`.                                                                            |
@@ -967,12 +967,49 @@ activateAndUpdateOnNextVisitSW({
 | `abortBackgroundFetch(registration, id)`                         | client           | Отменить фоновую загрузку. Возвращает `Promise<boolean>`.                                                                                                                                                                   |
 | `getBackgroundFetchIds(registration)`                            | client           | Список id активных фоновых загрузок. Возвращает `Promise<string[]>`.                                                                                                                                                        |
 | `normalizeUrl(url)`                                              | SW               | Нормализует URL (относительный → абсолютный по origin SW) для сравнения.                                                                                                                                                    |
-| `resolveAssetUrls(assets, base?)`                                | SW               | Собирает полный адрес из путей в `assets` и base. В `assets` — пути к ресурсам относительно корня приложения (см. выше).                                                                        |
-| `isRequestUrlInAssets(requestUrl, assets)`                        | SW               | Проверяет, входит ли адрес запроса в список assets (пути относительно корня приложения; сравнение по нормализованным URL).                                                                        |
-| `matchByUrl(cache, request, options?)`                          | SW               | Ищет ответ в кэше по URL (path). Игнорирует mode; по умолчанию игнорирует query (`ignoreSearch: true`) и Vary (`ignoreVary: true`), напр. `/a.js?v=1` находит `/a.js`. См. ниже.                                                                 |
+| `resolveAssetUrls(assets, base?)`                                | SW               | Собирает полный адрес из путей в `assets` и base. В `assets` — пути к ресурсам относительно корня приложения (см. выше).                                                                                                    |
+| `isRequestUrlInAssets(requestUrl, assets)`                       | SW               | Проверяет, входит ли адрес запроса в список assets (пути относительно корня приложения; сравнение по нормализованным URL).                                                                                                  |
+| `matchByUrl(cache, request, options?)`                           | SW               | Ищет ответ в кэше по URL (path). Игнорирует mode; по умолчанию игнорирует query (`ignoreSearch: true`) и Vary (`ignoreVary: true`), напр. `/a.js?v=1` находит `/a.js`. См. ниже.                                            |
+| `cachePut(cache, request, response)`                             | SW               | `cache.put`, который при `QuotaExceededError` уведомляет страницу и возвращает `false` вместо исключения, чтобы сетевой ответ всё равно ушёл клиенту.                                                                       |
+| `cacheAddAll(cache, requests)`                                   | SW               | `cache.addAll`, который при `QuotaExceededError` уведомляет страницу и пробрасывает ошибку, чтобы install не завершился с неполным кэшем.                                                                                   |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW               | Отправляет `{ type: messageType }` или `{ type: messageType, ...data }` всем окнам-клиентам, контролируемым данным SW. Если `includeUncontrolled = true`, дополнительно шлёт сообщение и неконтролируемым вкладкам в scope. |
 
 **`matchByUrl` для сторонних плагинов:** `cache.match(event.request)` сопоставляет по полному запросу (URL + mode + credentials). У запросов с страницы свой mode (скрипты, стили, изображения и т.д.); precache кладёт в кэш с другим mode. Совпадения нет → промах. Используйте `matchByUrl(cache, event.request)` при поиске в кэше по запросу для любых типов ресурсов. Третий аргумент (опционально): `{ ignoreSearch?: boolean; ignoreVary?: boolean }` (оба по умолчанию `true`) — `ignoreSearch` игнорирует query; `ignoreVary` возвращает ответ из кэша даже если у него заголовок `Vary` (напр. `Vary: Origin`), иначе требующий совпадения заголовков запроса. Для строгого совпадения передайте `false`.
+
+**`cachePut` / `cacheAddAll` для сторонних плагинов:** не вызывайте `cache.put` и `cache.addAll` напрямую. Используйте `cachePut` / `cacheAddAll` из `@budarin/pluggable-serviceworker/utils`, чтобы `QuotaExceededError` доходил до страницы так же, как во встроенных плагинах. `cachePut` уведомляет и возвращает `false` (сетевой ответ всё равно можно отдать). `cacheAddAll` уведомляет и пробрасывает ошибку (install не завершится с неполным кэшем).
+
+### Нехватка места на диске
+
+Когда браузер не может записать ответ в Cache Storage (`QuotaExceededError` — обычно закончилось место), странице нужно об этом узнать даже при первой установке, когда этот воркер ещё никого не контролирует.
+
+Встроенные плагины, которые пишут в кэш (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`), идут через `cacheAddAll` / `cachePut`. При `QuotaExceededError` сервис-воркер шлёт `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` через `notifyClients` с `includeUncontrolled: true`.
+
+- `phase: 'install'` (`QuotaExceededPhase.INSTALL`) — не удалось `addAll` при precache. Ошибка пробрасывается, install не завершается, `precacheWithNotification` не отправляет сообщение об успешной установке.
+- `phase: 'runtime'` (`QuotaExceededPhase.RUNTIME`) — не удалось `put` во время fetch. Сетевой ответ всё равно отдаётся странице, в кэш он не попадает.
+
+Подпишитесь на странице через `onServiceWorkerMessage`. Константу `PLUGGABLE_SW_QUOTA_EXCEEDED` можно взять из `@budarin/pluggable-serviceworker` или `@budarin/pluggable-serviceworker/client`.
+
+```ts
+import {
+    onServiceWorkerMessage,
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    QuotaExceededPhase,
+    type QuotaExceededMessage,
+} from '@budarin/pluggable-serviceworker/client';
+
+const unsubscribeQuota = onServiceWorkerMessage(
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    (event) => {
+        const { phase } = event.data as QuotaExceededMessage;
+
+        if (phase === QuotaExceededPhase.INSTALL) {
+            // первая установка или обновление не смогли закэшировать ассеты
+        } else {
+            // поздняя запись в кэш не удалась; страница всё равно получила ответ сети
+        }
+    }
+);
+```
 
 **Клиентские подпути (для меньшего бандла):** можно импортировать из `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health` или `.../client/background-fetch` вместо `.../client`, чтобы подтянуть только нужные утилиты.
 

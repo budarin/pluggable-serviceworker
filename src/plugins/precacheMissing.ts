@@ -1,5 +1,6 @@
 import type { Plugin } from '../index.js';
 
+import { cacheAddAll } from '../utils/cacheAddAll.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
 
@@ -28,12 +29,12 @@ export function precacheMissing(config: PrecacheMissingConfig): Plugin {
             const hrefToUrl = new Map(
                 resolved.map((url) => [normalizeUrl(url), url] as const)
             );
-            const missing = [...hrefToUrl.keys()].filter(
-                (href) => !cachedHrefs.has(href)
-            ).map((href) => hrefToUrl.get(href)!);
+            const missing = [...hrefToUrl.keys()]
+                .filter((href) => !cachedHrefs.has(href))
+                .map((href) => hrefToUrl.get(href)!);
 
             if (missing.length > 0) {
-                await cache.addAll(missing);
+                await cacheAddAll(cache, missing);
             }
         },
     };

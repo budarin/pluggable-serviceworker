@@ -1,3 +1,5 @@
+export { cacheAddAll } from './cacheAddAll.js';
+export { cachePut } from './cachePut.js';
 export { isRequestUrlInAssets } from './isRequestUrlInAssets.js';
 export { matchByUrl, type MatchByUrlOptions } from './matchByUrl.js';
 export { normalizeUrl } from './normalizeUrl.js';

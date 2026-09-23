@@ -8,14 +8,17 @@
 
 ## Экспорты
 
-| Имя | Описание |
-|-----|----------|
-| `onServiceWorkerMessage` | Подписка на сообщения от SW с заданным `data.type`. Возвращает функцию отписки. |
-| `postMessageToServiceWorker` | Отправка сообщения в активный Service Worker. |
-| `sendSkipWaitingSignal` | Отправка сигнала skip-waiting **ожидающему** SW (активация по сигналу). |
-| `getServiceWorkerVersion` | Запрос версии активного SW (из опций `initServiceWorker`). |
-| `PostMessageToServiceWorkerOptions` | Тип опций для `postMessageToServiceWorker`. |
-| `GetServiceWorkerVersionOptions` | Тип опций для `getServiceWorkerVersion`. |
+| Имя                                 | Описание                                                                            |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| `onServiceWorkerMessage`            | Подписка на сообщения от SW с заданным `data.type`. Возвращает функцию отписки.     |
+| `postMessageToServiceWorker`        | Отправка сообщения в активный Service Worker.                                       |
+| `sendSkipWaitingSignal`             | Отправка сигнала skip-waiting **ожидающему** SW (активация по сигналу).             |
+| `getServiceWorkerVersion`           | Запрос версии активного SW (из опций `initServiceWorker`).                          |
+| `PLUGGABLE_SW_QUOTA_EXCEEDED`       | Тип сообщения, которое SW шлёт, когда запись в кэш не удалась из‑за нехватки места. |
+| `QuotaExceededPhase`                | `install` или `runtime` — какая запись в кэш не удалась.                            |
+| `QuotaExceededMessage`              | Тип payload: `{ type, phase }`.                                                     |
+| `PostMessageToServiceWorkerOptions` | Тип опций для `postMessageToServiceWorker`.                                         |
+| `GetServiceWorkerVersionOptions`    | Тип опций для `getServiceWorkerVersion`.                                            |
 
 ---
 
@@ -31,10 +34,10 @@
 
 **Параметры:**
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `messageType` | `string` | Точное значение типа для прослушивания (например `'SW_MSG_NEW_VERSION_READY'`). |
-| `handler` | `(event: MessageEvent) => void` | Вызывается при получении сообщения с этим типом. |
+| Параметр      | Тип                             | Описание                                                                        |
+| ------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `messageType` | `string`                        | Точное значение типа для прослушивания (например `'SW_MSG_NEW_VERSION_READY'`). |
+| `handler`     | `(event: MessageEvent) => void` | Вызывается при получении сообщения с этим типом.                                |
 
 - **Возвращает:** `() => void` — вызов для отписки (удаляет слушатель). Если Service Worker не поддерживается, возвращается пустая функция.
 
@@ -49,11 +52,14 @@
 ```typescript
 import { onServiceWorkerMessage } from '@budarin/pluggable-serviceworker/client/messaging';
 
-const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) => {
-    const data = event.data as { type: string; version?: string };
-    console.log('Новая версия готова', data.version);
-    showReloadBanner();
-});
+const unsubscribe = onServiceWorkerMessage(
+    'SW_MSG_NEW_VERSION_READY',
+    (event) => {
+        const data = event.data as { type: string; version?: string };
+        console.log('Новая версия готова', data.version);
+        showReloadBanner();
+    }
+);
 
 // Когда компонент размонтирован или подписка не нужна:
 unsubscribe();
@@ -77,6 +83,32 @@ unsub1();
 unsub2();
 ```
 
+**Пример — нехватка места на диске:**
+
+Встроенные плагины, которые пишут в кэш, шлют `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }`, когда Cache Storage бросает `QuotaExceededError`. Страница получает сообщение и при первой установке (`includeUncontrolled: true`). `phase` равен `'install'`, если не удался precache (install не завершается), или `'runtime'`, если не удался поздний `put` (сетевой ответ всё равно отдаётся).
+
+```typescript
+import {
+    onServiceWorkerMessage,
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    QuotaExceededPhase,
+    type QuotaExceededMessage,
+} from '@budarin/pluggable-serviceworker/client/messaging';
+
+const unsubscribeQuota = onServiceWorkerMessage(
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    (event) => {
+        const { phase } = event.data as QuotaExceededMessage;
+
+        if (phase === QuotaExceededPhase.INSTALL) {
+            showStorageError('Не удалось установить офлайн-кэш');
+        } else {
+            showStorageError('Не удалось сохранить ответ для офлайна');
+        }
+    }
+);
+```
+
 ---
 
 ## 2. `postMessageToServiceWorker(message, options?)`
@@ -85,16 +117,16 @@ unsub2();
 
 **Параметры:**
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
-| `message` | `unknown` | Любое [structured-cloneable](https://developer.mozilla.org/ru/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) значение (например `{ type: 'PING', id: 1 }`). |
-| `options` | `PostMessageToServiceWorkerOptions` (опционально) | См. ниже. |
+| Параметр  | Тип                                               | Описание                                                                                                                                                              |
+| --------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `message` | `unknown`                                         | Любое [structured-cloneable](https://developer.mozilla.org/ru/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) значение (например `{ type: 'PING', id: 1 }`). |
+| `options` | `PostMessageToServiceWorkerOptions` (опционально) | См. ниже.                                                                                                                                                             |
 
 **`PostMessageToServiceWorkerOptions`:**
 
-| Свойство | Тип | По умолчанию | Описание |
-|----------|-----|--------------|----------|
-| `waitForReady` | `boolean` | `true` | Если контроллера ещё нет: при `true` ждёт `navigator.serviceWorker.ready` и отправляет через `registration.active`, если есть; при `false` сразу возвращает `false`. |
+| Свойство       | Тип       | По умолчанию | Описание                                                                                                                                                             |
+| -------------- | --------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `waitForReady` | `boolean` | `true`       | Если контроллера ещё нет: при `true` ждёт `navigator.serviceWorker.ready` и отправляет через `registration.active`, если есть; при `false` сразу возвращает `false`. |
 
 - **Возвращает:** `Promise<boolean>` — `true`, если сообщение отправлено (найден controller или active), `false` если Service Worker не поддерживается или нет активного воркера (и при `waitForReady === false` — если контроллера ещё нет).
 
@@ -166,20 +198,20 @@ async function onUpdateClick() {
 
 **Параметры:**
 
-| Параметр | Тип | Описание |
-|----------|-----|----------|
+| Параметр  | Тип                                            | Описание  |
+| --------- | ---------------------------------------------- | --------- |
 | `options` | `GetServiceWorkerVersionOptions` (опционально) | См. ниже. |
 
 **`GetServiceWorkerVersionOptions`:**
 
-| Свойство | Тип | По умолчанию | Описание |
-|----------|-----|--------------|----------|
-| `timeoutMs` | `number` | `5000` | Максимальное время ожидания ответа с версией, мс. |
+| Свойство    | Тип      | По умолчанию | Описание                                          |
+| ----------- | -------- | ------------ | ------------------------------------------------- |
+| `timeoutMs` | `number` | `5000`       | Максимальное время ожидания ответа с версией, мс. |
 
 - **Возвращает:** `Promise<string | null>` — строка версии или `null`, если:
-  - Service Worker не поддерживается, или
-  - Нет активного воркера (сообщение не отправлено), или
-  - Ответ не пришёл за `timeoutMs`.
+    - Service Worker не поддерживается, или
+    - Нет активного воркера (сообщение не отправлено), или
+    - Ответ не пришёл за `timeoutMs`.
 
 **Пример — показать версию в UI:**
 
@@ -190,7 +222,9 @@ const version = await getServiceWorkerVersion({ timeoutMs: 3000 });
 if (version != null) {
     document.getElementById('sw-version').textContent = version;
 } else {
-    console.warn('Не удалось получить версию SW (не поддерживается, нет воркера или таймаут)');
+    console.warn(
+        'Не удалось получить версию SW (не поддерживается, нет воркера или таймаут)'
+    );
 }
 ```
 
@@ -214,10 +248,15 @@ import {
 } from '@budarin/pluggable-serviceworker/client/messaging';
 
 // 1) Подписка на сообщения SW по типу
-const unsubscribe = onServiceWorkerMessage('SW_MSG_NEW_VERSION_READY', (event) => {
-    const data = event.data as { type: string; version?: string };
-    showBanner('Новая версия ' + (data.version ?? '') + ' — перезагрузите страницу');
-});
+const unsubscribe = onServiceWorkerMessage(
+    'SW_MSG_NEW_VERSION_READY',
+    (event) => {
+        const data = event.data as { type: string; version?: string };
+        showBanner(
+            'Новая версия ' + (data.version ?? '') + ' — перезагрузите страницу'
+        );
+    }
+);
 
 // 2) Отправка своего сообщения в активный SW
 const sent = await postMessageToServiceWorker({ type: 'PING', id: 1 });

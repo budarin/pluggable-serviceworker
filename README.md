@@ -211,8 +211,8 @@ The second parameter `options` is of type `ServiceWorkerInitOptions`: required `
 
 ```ts
 interface PluginContext {
-    logger?: Logger;            // default: console
-    base?: string;              // app base path
+    logger?: Logger; // default: console
+    base?: string; // app base path
     passthroughHeader: string; // header name for passthrough requests (set by library from passthroughRequestHeader option or PSW_PASSTHROUGH_HEADER)
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, available only in plugin context
 }
@@ -355,7 +355,7 @@ fetch: async (event, context) => {
     // ✅ correct — bypasses the plugin chain, no CORS issues
     const response = await context.fetchPassthrough(event.request);
     // ...
-}
+};
 ```
 
 **Never** call bare `fetch()` for internal requests — the response will re-enter the handler and loop through all plugins again:
@@ -364,7 +364,7 @@ fetch: async (event, context) => {
 fetch: async (event, context) => {
     // ❌ wrong — re-enters the plugin chain
     const response = await fetch(event.request);
-}
+};
 ```
 
 The built-in plugins (`cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) all use `context.fetchPassthrough` internally.
@@ -526,8 +526,8 @@ A plugin implements `ServiceWorkerPlugin`. Plugin-specific config is set when ca
 
 ```ts
 interface PluginContext {
-    logger?: Logger;            // Logger (default: console).
-    base?: string;              // App base path.
+    logger?: Logger; // Logger (default: console).
+    base?: string; // App base path.
     passthroughHeader: string; // Header name for passthrough requests (set by library).
     fetchPassthrough: (request: Request) => Promise<Response>; // fetch that bypasses all plugins, no CORS issues.
 }
@@ -810,23 +810,23 @@ function authPlugin(config: {
 One primitive = one operation. Import from `@budarin/pluggable-serviceworker/plugins`.
 All primitives are **plugin factories**: config (if any) is passed at the call site; `initServiceWorker` options are `version` (required), `pingPath?`, `base?`, `logger?`, `debug?`, `logFetchInDebug?`, `onError?`. Use `order` in plugin config to control execution order. Configs that include `assets` expect the path part of the URL (see **Asset parameters are pathnames** under `base` above).
 
-| Name                               | Event      | Description                                                                                                                                                                  |
-| ---------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `claim()`                          | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
-| `claimAndReloadClients()`          | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
-| `reloadClients()`                  | `activate` | Reloads all client windows.                                                                                                                                                  |
-| `pruneStaleCache(config)`          | `activate` | Removes cache entries whose URL is not in `config.assets`.                                                                                                                   |
-| `cacheFirst(config)`               | `fetch`    | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                                                               |
-| `networkFirst(config)`             | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
-| `restoreAssetToCache(config)`      | `fetch`    | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                                                |
-| `serveFromCache(config)`           | `fetch`    | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                                                         |
-| `staleWhileRevalidate(config)`     | `fetch`    | Serve from cache, revalidate in background.                                                                                                                                  |
-| `precache(config)`                 | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
-| `precacheWithNotification(config)` | `install`  | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
-| `precacheMissing(config)`          | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
-| `skipWaiting()`                    | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
-| `skipWaitingOnMessage(config?)`    | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
-| `skipWaitingAndNotifyPageReload(config?)` | `message`  | On `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `SW_MSG_PAGE_RELOAD`).               |
+| Name                                      | Event      | Description                                                                                                                                                                  |
+| ----------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claim()`                                 | `activate` | Calls `clients.claim()`.                                                                                                                                                     |
+| `claimAndReloadClients()`                 | `activate` | **claim** + **reloadClients** in one plugin (order guaranteed).                                                                                                              |
+| `reloadClients()`                         | `activate` | Reloads all client windows.                                                                                                                                                  |
+| `pruneStaleCache(config)`                 | `activate` | Removes cache entries whose URL is not in `config.assets`.                                                                                                                   |
+| `cacheFirst(config)`                      | `fetch`    | Serve from cache `config.cacheName`; on miss, fetch and cache.                                                                                                               |
+| `networkFirst(config)`                    | `fetch`    | Fetch from network, on success cache. On error serve from cache. Otherwise undefined.                                                                                        |
+| `restoreAssetToCache(config)`             | `fetch`    | For URLs in `config.assets`: serve from cache or fetch and put in cache. Otherwise undefined.                                                                                |
+| `serveFromCache(config)`                  | `fetch`    | Serves from cache `config.cacheName`; if missing, returns undefined.                                                                                                         |
+| `staleWhileRevalidate(config)`            | `fetch`    | Serve from cache, revalidate in background.                                                                                                                                  |
+| `precache(config)`                        | `install`  | Caches `config.assets` in cache `config.cacheName`.                                                                                                                          |
+| `precacheWithNotification(config)`        | `install`  | Same as **precache**, plus sends `startInstallingMessage` (default `SW_MSG_START_INSTALLING`) to clients, then caches, then `installedMessage` (default `SW_MSG_INSTALLED`). |
+| `precacheMissing(config)`                 | `install`  | Adds to cache only assets from `config.assets` that are not yet cached.                                                                                                      |
+| `skipWaiting()`                           | `install`  | Calls `skipWaiting()`.                                                                                                                                                       |
+| `skipWaitingOnMessage(config?)`           | `message`  | Triggers on message with `messageType` (default `SW_MSG_SKIP_WAITING`).                                                                                                      |
+| `skipWaitingAndNotifyPageReload(config?)` | `message`  | On `messageType` (default `SW_MSG_SKIP_WAITING`) calls `skipWaiting()` and sends `{ type: pageReloadMessageType }` to clients (default `SW_MSG_PAGE_RELOAD`).                |
 
 #### Composing primitives
 
@@ -951,7 +951,7 @@ activateAndUpdateOnNextVisitSW({
 | `onServiceWorkerMessage(messageType, handler)`                   | client | Subscribe to messages from SW with given `data.type`. Returns an unsubscribe function. E.g. "new version available" banners.                                                                |
 | `isServiceWorkerSupported()`                                     | client | Check if Service Worker is supported. Useful for SSR/tests/old browsers.                                                                                                                    |
 | `postMessageToServiceWorker(message, options?)`                  | client | Send message to active Service Worker. Returns `Promise<boolean>`.                                                                                                                          |
-| `sendSkipWaitingSignal()`                                         | client | Send skip-waiting message to the **waiting** SW (for activation on signal). Use with `skipWaitingOnMessage` plugin. Returns `Promise<boolean>`.                                              |
+| `sendSkipWaitingSignal()`                                        | client | Send skip-waiting message to the **waiting** SW (for activation on signal). Use with `skipWaitingOnMessage` plugin. Returns `Promise<boolean>`.                                             |
 | `getServiceWorkerVersion(options?)`                              | client | Get active SW version (`version` from `ServiceWorkerInitOptions`). Returns `Promise<string \| null>`.                                                                                       |
 | `pingServiceWorker(options?)`                                    | client | GET /sw-ping (handled by ping plugin). Wakes SW if sleeping, checks fetch availability. Returns `'ok' \| 'no-sw' \| 'error'`.                                                               |
 | `isBackgroundFetchSupported()`                                   | client | Check if [Background Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Background_Fetch_API) is available. Returns `Promise<boolean>`.                                            |
@@ -960,12 +960,49 @@ activateAndUpdateOnNextVisitSW({
 | `abortBackgroundFetch(registration, id)`                         | client | Abort a background fetch. Returns `Promise<boolean>`.                                                                                                                                       |
 | `getBackgroundFetchIds(registration)`                            | client | List ids of active background fetches. Returns `Promise<string[]>`.                                                                                                                         |
 | `normalizeUrl(url)`                                              | SW     | Normalize URL (relative → absolute by SW origin) for comparison.                                                                                                                            |
-| `resolveAssetUrls(assets, base?)`                                | SW     | Build full URLs from asset pathnames and base. `assets` are the path part of the URL only (see above).                                                                                        |
-| `isRequestUrlInAssets(requestUrl, assets)`                        | SW     | Check if request URL is in the asset list (path part of URL; normalized comparison).                                                                                                                  |
-| `matchByUrl(cache, request, options?)`                          | SW     | Match cached response by URL path. Ignores request mode; by default ignores query (`ignoreSearch: true`) and Vary (`ignoreVary: true`), so e.g. `/a.js?v=1` finds `/a.js`. See below. |
+| `resolveAssetUrls(assets, base?)`                                | SW     | Build full URLs from asset pathnames and base. `assets` are the path part of the URL only (see above).                                                                                      |
+| `isRequestUrlInAssets(requestUrl, assets)`                       | SW     | Check if request URL is in the asset list (path part of URL; normalized comparison).                                                                                                        |
+| `matchByUrl(cache, request, options?)`                           | SW     | Match cached response by URL path. Ignores request mode; by default ignores query (`ignoreSearch: true`) and Vary (`ignoreVary: true`), so e.g. `/a.js?v=1` finds `/a.js`. See below.       |
+| `cachePut(cache, request, response)`                             | SW     | `cache.put` that notifies the page on `QuotaExceededError` and returns `false` instead of throwing, so the network response can still be returned.                                          |
+| `cacheAddAll(cache, requests)`                                   | SW     | `cache.addAll` that notifies the page on `QuotaExceededError` and rethrows, so install does not finish with an incomplete cache.                                                            |
 | `notifyClients(messageType, data?, includeUncontrolled = false)` | SW     | Send `{ type: messageType }` or `{ type: messageType, ...data }` to all client windows controlled by this SW. If `includeUncontrolled = true`, also sends to uncontrolled windows in scope. |
 
 **`matchByUrl` for third-party plugins:** `cache.match(event.request)` matches by full request (URL + mode + credentials). Page requests have their own mode (scripts, styles, images, etc.); precache stores with a different mode. No match → cache miss. Use `matchByUrl(cache, event.request)` when looking up any resource in the cache by request. Optional third argument: `{ ignoreSearch?: boolean; ignoreVary?: boolean }` (both default `true`) — `ignoreSearch` ignores the query string; `ignoreVary` returns cached responses even when the response's `Vary` header would otherwise require matching request headers (e.g. `Vary: Origin`). Set to `false` for strict matching.
+
+**`cachePut` / `cacheAddAll` for third-party plugins:** do not call `cache.put` or `cache.addAll` directly. Use `cachePut` / `cacheAddAll` from `@budarin/pluggable-serviceworker/utils` so a `QuotaExceededError` reaches the page the same way as in the built-in plugins. `cachePut` notifies and returns `false` (the network response can still be returned). `cacheAddAll` notifies and rethrows (install does not finish with an incomplete cache).
+
+### Storage quota
+
+When the browser cannot write to Cache Storage (`QuotaExceededError` — typically not enough disk space), the page needs to hear about it even during the first install, when this worker does not control any tab yet.
+
+Built-in plugins that write to the cache (`precache`, `precacheMissing`, `cacheFirst`, `networkFirst`, `staleWhileRevalidate`, `restoreAssetToCache`) go through `cacheAddAll` / `cachePut`. On `QuotaExceededError` the service worker sends `{ type: PLUGGABLE_SW_QUOTA_EXCEEDED, phase }` via `notifyClients` with `includeUncontrolled: true`.
+
+- `phase: 'install'` (`QuotaExceededPhase.INSTALL`) — precache `addAll` failed. The error is rethrown, so install does not complete and `precacheWithNotification` does not send the installed message.
+- `phase: 'runtime'` (`QuotaExceededPhase.RUNTIME`) — a `put` during fetch failed. The network response is still returned; only the cache write is skipped.
+
+Subscribe on the page with `onServiceWorkerMessage`. Import `PLUGGABLE_SW_QUOTA_EXCEEDED` from `@budarin/pluggable-serviceworker` or `@budarin/pluggable-serviceworker/client`.
+
+```ts
+import {
+    onServiceWorkerMessage,
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    QuotaExceededPhase,
+    type QuotaExceededMessage,
+} from '@budarin/pluggable-serviceworker/client';
+
+const unsubscribeQuota = onServiceWorkerMessage(
+    PLUGGABLE_SW_QUOTA_EXCEEDED,
+    (event) => {
+        const { phase } = event.data as QuotaExceededMessage;
+
+        if (phase === QuotaExceededPhase.INSTALL) {
+            // first install or update could not cache assets
+        } else {
+            // a later cache write failed; the page still got the network response
+        }
+    }
+);
+```
 
 **Client subpaths (for smaller bundles):** you can import from `@budarin/pluggable-serviceworker/client/registration`, `.../client/messaging`, `.../client/health`, or `.../client/background-fetch` instead of `.../client` to pull in only the utilities you need.
 

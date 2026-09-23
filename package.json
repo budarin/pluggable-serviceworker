@@ -1,6 +1,6 @@
 {
     "name": "@budarin/pluggable-serviceworker",
-    "version": "1.17.12",
+    "version": "1.18.12",
     "description": "Extensible via plugins service worker",
     "keywords": [
         "serviceworker",
@@ -32,15 +32,15 @@
         "./utils": "./dist/utils/index.js"
     },
     "devDependencies": {
-        "@types/node": "^25.9.2",
-        "@types/serviceworker": "^0.0.197",
-        "@types/web": "^0.0.350",
-        "prettier": "^3.8.3",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.8"
+        "@types/node": "^26.6.2",
+        "@types/serviceworker": "^0.0.202",
+        "@types/web": "^0.0.357",
+        "prettier": "^3.9.8",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.1"
     },
     "dependencies": {
-        "@budarin/http-constants": "^1.0.24"
+        "@budarin/http-constants": "^1.0.26"
     },
     "scripts": {
         "build": "tsc",

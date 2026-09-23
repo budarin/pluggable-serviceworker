@@ -3,6 +3,7 @@ export { registerServiceWorkerWithClaimWorkaround } from './registration/index.j
 export { onNewServiceWorkerVersion } from './registration/index.js';
 
 // Сообщения
+export * from '../constants/quotaMessages.js';
 export { onServiceWorkerMessage } from './messaging/index.js';
 export {
     postMessageToServiceWorker,

@@ -1,4 +1,5 @@
 import type { Plugin } from '../index.js';
+import { cachePut } from '../utils/cachePut.js';
 import { matchByUrl } from '../utils/matchByUrl.js';
 import { normalizeUrl } from '../utils/normalizeUrl.js';
 import { resolveAssetUrls } from '../utils/resolveAssetUrls.js';
@@ -54,7 +55,7 @@ export function restoreAssetToCache(config: RestoreAssetToCacheConfig): Plugin {
             try {
                 const response = await context.fetchPassthrough(event.request);
                 if (response.ok) {
-                    await cache.put(event.request, response.clone());
+                    await cachePut(cache, event.request, response.clone());
                 }
                 return response;
             } catch {
